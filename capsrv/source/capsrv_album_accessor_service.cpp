@@ -2,18 +2,18 @@
 
 namespace ams::capsrv {
 
-    Result AlbumAccessorService::GetAlbumFileCount(sf::Out<u64> out, const u8 storage) {
-        out.SetValue(0);
+    Result AlbumAccessorService::GetAlbumFileCount(sf::Out<u64> out, const StorageId storage) {
+        out.SetValue((u64)storage);
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetAlbumFileList(sf::OutBuffer buffer, sf::Out<u64> out, const u8 storage) {
-        out.SetValue(0);
+    Result AlbumAccessorService::GetAlbumFileList(sf::OutBuffer buffer, sf::Out<u64> out, const StorageId storage) {
+        out.SetValue(buffer.GetSize());
         return ResultSuccess();
     }
 
     Result AlbumAccessorService::LoadAlbumFile(sf::OutBuffer buffer, sf::Out<u64> out, const CapsAlbumFileId &fileId) {
-        out.SetValue(0);
+        out.SetValue(buffer.GetSize());
         return ResultSuccess();
     }
 
@@ -21,15 +21,15 @@ namespace ams::capsrv {
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::StorageCopyAlbumFile(const u8 storage, const CapsAlbumFileId &fileId) {
+    Result AlbumAccessorService::StorageCopyAlbumFile(const StorageId storage, const CapsAlbumFileId &fileId) {
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::IsAlbumMounted(const u8 storage) {
+    Result AlbumAccessorService::IsAlbumMounted(const StorageId storage) {
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetAlbumUsage(sf::Out<CapsAlbumUsage2> out, const u8 storage) {
+    Result AlbumAccessorService::GetAlbumUsage(sf::Out<CapsAlbumUsage2> out, const StorageId storage) {
         out.SetValue({0});
         return ResultSuccess();
     }
@@ -68,15 +68,15 @@ namespace ams::capsrv {
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetAlbumUsage3(sf::Out<CapsAlbumUsage3> usage, const u8 storage) {
+    Result AlbumAccessorService::GetAlbumUsage3(sf::Out<CapsAlbumUsage3> usage, const StorageId storage) {
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetAlbumMountResult(const u8 storage) {
+    Result AlbumAccessorService::GetAlbumMountResult(const StorageId storage) {
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetAlbumUsage16(sf::OutFixedSizeBuffer usage, const u8 storage, const u8 flags) {
+    Result AlbumAccessorService::GetAlbumUsage16(sf::Out<AlbumUsage16> usage, const StorageId storage, const u8 flags) {
         return ResultSuccess();
     }
 
@@ -84,11 +84,11 @@ namespace ams::capsrv {
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetAlbumFileCountEx0(sf::Out<u64> out, const u8 storage, const u8 flags) {
+    Result AlbumAccessorService::GetAlbumFileCountEx0(sf::Out<u64> out, const StorageId storage, const u8 flags) {
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetAlbumFileListEx0(sf::OutFixedSizeBuffer buffer, sf::Out<u64> out, const u8 storage, const u8 flags) {
+    Result AlbumAccessorService::GetAlbumFileListEx0(sf::OutBuffer buffer, sf::Out<u64> out, const StorageId storage, const u8 flags) {
         return ResultSuccess();
     }
 
@@ -114,31 +114,31 @@ namespace ams::capsrv {
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::LoadAlbumScreenShotImageEx1(sf::OutFixedSizeBuffer out, sf::OutBuffer image, sf::OutNonSecureBuffer work, const CapsAlbumFileId &fileId, const CapsScreenShotDecodeOption &opts) {
+    Result AlbumAccessorService::LoadAlbumScreenShotImageEx1(sf::Out<LoadAlbumScreenShotImageOutput>  out, sf::OutBuffer image, sf::OutNonSecureBuffer work, const CapsAlbumFileId &fileId, const CapsScreenShotDecodeOption &opts) {
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::LoadAlbumScreenShotThumbnailImageEx1(sf::OutFixedSizeBuffer out, sf::OutBuffer image, sf::OutNonSecureBuffer work, const CapsAlbumFileId &fileId, const CapsScreenShotDecodeOption &opts) {
+    Result AlbumAccessorService::LoadAlbumScreenShotThumbnailImageEx1(sf::Out<LoadAlbumScreenShotImageOutput>  out, sf::OutBuffer image, sf::OutNonSecureBuffer work, const CapsAlbumFileId &fileId, const CapsScreenShotDecodeOption &opts) {
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::ForceAlbumUnmounted(const u8 storage) {
+    Result AlbumAccessorService::ForceAlbumUnmounted(const StorageId storage) {
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::ResetAlbumMountStatus(const u8 storage) {
+    Result AlbumAccessorService::ResetAlbumMountStatus(const StorageId storage) {
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::RefreshAlbumCache(const u8 storage) {
+    Result AlbumAccessorService::RefreshAlbumCache(const StorageId storage) {
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetAlbumCache(sf::Out<CapsAlbumCache> cache, const u8 storage) {
+    Result AlbumAccessorService::GetAlbumCache(sf::Out<CapsAlbumCache> cache, const StorageId storage) {
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetAlbumCacheEx(sf::Out<CapsAlbumCache> cache, const u8 storage, const u8 type) {
+    Result AlbumAccessorService::GetAlbumCacheEx(sf::Out<CapsAlbumCache> cache, const StorageId storage, const u8 type) {
         return ResultSuccess();
     }
 

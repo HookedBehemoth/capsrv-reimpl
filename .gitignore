@@ -1,5 +1,6 @@
 capsrv/capsrv.kip
-capsrv/capsrv.json
+capsrv/capsrv.npdm
+capsrv/capsrv.nsp
 capsrv/capsrv.elf
 capsrv/build/
 .vscode/

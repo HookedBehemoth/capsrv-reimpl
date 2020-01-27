@@ -7,7 +7,7 @@ extern "C" {
 
     u32 __nx_applet_type = AppletType_None;
 
-    #define INNER_HEAP_SIZE 0x20000
+    #define INNER_HEAP_SIZE 0x2000
     size_t nx_inner_heap_size = INNER_HEAP_SIZE;
     char   nx_inner_heap[INNER_HEAP_SIZE];
     
@@ -23,7 +23,7 @@ extern "C" {
 }
 
 namespace ams {
-    ncm::ProgramId CurrentProgramId = ncm::ProgramId::CapSrv;
+    ncm::ProgramId CurrentProgramId = { 0x0100013370000022ul };
 
     namespace result {
 
@@ -55,13 +55,13 @@ void __libnx_initheap(void) {
 void __appInit(void) {
     hos::SetVersionForLibnx();
 
-    R_ASSERT(fsInitialize());
+    //R_ASSERT(fsInitialize());
 }
 
 void __appExit(void) {
     /* Cleanup services. */
-    fsdevUnmountAll();
-    fsExit();
+    //fsdevUnmountAll();
+    //fsExit();
 }
 
 //static constexpr auto MakeAlbumAccessor = []() { return std::make_shared<capsrv::AlbumAccessorService>(); };
@@ -71,10 +71,10 @@ void __appExit(void) {
 namespace {
 
     /* caps:a, caps:c, caps:u. */
-    constexpr size_t NumServers  = 3;
+    constexpr size_t NumServers  = 1;
     sf::hipc::ServerManager<NumServers> g_server_manager;
 
-    constexpr sm::ServiceName AlbumAccessorServiceName    = sm::ServiceName::Encode("caps:a");
+    constexpr sm::ServiceName AlbumAccessorServiceName    = sm::ServiceName::Encode("lmao:a");
     constexpr size_t          AlbumAccessorMaxSessions    = 4;
 
     constexpr sm::ServiceName AlbumControlServiceName     = sm::ServiceName::Encode("caps:c");
@@ -90,11 +90,11 @@ int main(int argc, char **argv)
     /* Create services */
     R_ASSERT(g_server_manager.RegisterServer<capsrv::AlbumAccessorService>(AlbumAccessorServiceName, AlbumAccessorMaxSessions));
 
-    R_ASSERT(g_server_manager.RegisterServer<capsrv::AlbumControlService>(AlbumControlServiceName, AlbumControlMaxSessions));
+    //R_ASSERT(g_server_manager.RegisterServer<capsrv::AlbumControlService>(AlbumControlServiceName, AlbumControlMaxSessions));
 
-    if (hos::GetVersion() >= hos::Version_500) {
+    /*if (hos::GetVersion() >= hos::Version_500) {
         R_ASSERT(g_server_manager.RegisterServer<capsrv::AlbumApplicationService>(AlbumApplicationServiceName, AlbumApplicationMaxSessions));
-    }
+    }*/
 
     g_server_manager.LoopProcess();
 
