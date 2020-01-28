@@ -35,11 +35,6 @@ namespace ams {
 
 using namespace ams;
 
-void __libnx_exception_handler(ThreadExceptionDump *ctx) {
-    ams::CrashHandler(ctx);
-}
-
-
 void __libnx_initheap(void) {
     void*  addr = nx_inner_heap;
     size_t size = nx_inner_heap_size;
@@ -55,13 +50,17 @@ void __libnx_initheap(void) {
 void __appInit(void) {
     hos::SetVersionForLibnx();
 
-    //R_ASSERT(fsInitialize());
+    sm::DoWithSession([] {
+        R_ASSERT(fsInitialize());
+        fsdevMountSdmc();
+    });
 }
 
 void __appExit(void) {
     /* Cleanup services. */
-    //fsdevUnmountAll();
-    //fsExit();
+    
+    fsdevUnmountAll();
+    fsExit();
 }
 
 //static constexpr auto MakeAlbumAccessor = []() { return std::make_shared<capsrv::AlbumAccessorService>(); };

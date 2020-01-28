@@ -1,5 +1,6 @@
 #pragma once
 #include <stratosphere.hpp>
+#include "capsrv_types.hpp"
 
 namespace ams::capsrv {
 
@@ -11,7 +12,7 @@ namespace ams::capsrv {
                 NotifyAlbumStorageIsAvailable   = 2001,
             };
         public:
-            virtual Result NotifyAlbumStorageIsAvailable(const u8 storage);
+            virtual Result NotifyAlbumStorageIsAvailable(const StorageId storage);
         public:
             DEFINE_SERVICE_DISPATCH_TABLE {
                 MAKE_SERVICE_COMMAND_META(NotifyAlbumStorageIsAvailable),

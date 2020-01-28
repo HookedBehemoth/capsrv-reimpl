@@ -12,10 +12,16 @@
 	"is_64_bit":	true,
 	"address_space_type":	3,
 	"filesystem_access":	{
-		"permissions":	"0x0000000000001000"
+		"permissions":	"0xFFFFFFFFFFFFFFFF"
 	},
-	"service_access":	[],
-	"service_host":	["lmao:a"],
+    "service_host":
+    [
+        "*"
+    ],
+    "service_access":
+    [
+        "*"
+    ],
 	"kernel_capabilities":	[{
 			"type":	"kernel_flags",
 			"value":	{

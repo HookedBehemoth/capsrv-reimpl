@@ -2,10 +2,11 @@
 #include <stratosphere.hpp>
 #include "capsrv_types.hpp"
 
+/*namespace ams::sf {
+    using OutFixedSizeBuffer = typename impl::OutBufferImpl<BufferTransferMode::MapAlias, SfBufferAttr_FixedSize>;
+}
+*/
 namespace ams::capsrv {
-
-    class AlbumUsage16 : public sf::LargeData, public CapsAlbumUsage16 {};
-    class LoadAlbumScreenShotImageOutput : public sf::LargeData, public CapsLoadAlbumScreenShotImageOutput {};
 
     /* Service definition. */
     class AlbumAccessorService final : public sf::IServiceObject {
@@ -54,41 +55,41 @@ namespace ams::capsrv {
         public:
             virtual Result GetAlbumFileCount(sf::Out<u64> out, const StorageId storage);
             virtual Result GetAlbumFileList(sf::OutBuffer buffer, sf::Out<u64> out, const StorageId storage);
-            virtual Result LoadAlbumFile(sf::OutBuffer buffer, sf::Out<u64> out, const CapsAlbumFileId &fileId);
-            virtual Result DeleteAlbumFile(const CapsAlbumFileId &fileId);
-            virtual Result StorageCopyAlbumFile(const StorageId storage, const CapsAlbumFileId &fileId);
-            virtual Result IsAlbumMounted(const StorageId storage);
+            virtual Result LoadAlbumFile(sf::OutBuffer buffer, sf::Out<u64> out, const FileId &fileId);
+            virtual Result DeleteAlbumFile(const FileId &fileId);
+            virtual Result StorageCopyAlbumFile(const StorageId storage, const FileId &fileId);
+            virtual Result IsAlbumMounted(sf::Out<bool> out, const StorageId storage);
             virtual Result GetAlbumUsage(sf::Out<CapsAlbumUsage2> usage, const StorageId storage);
-            virtual Result GetAlbumFileSize(sf::Out<u64> out, const CapsAlbumFileId &fileId);
-            virtual Result LoadAlbumFileThumbnail(sf::OutBuffer image, sf::Out<u64> out, const CapsAlbumFileId &fileId);
-            virtual Result LoadAlbumScreenShotImage(sf::Out<u64> width, sf::Out<u64> height, sf::OutBuffer image, sf::OutNonSecureBuffer work, const CapsAlbumFileId &fileId);
-            virtual Result LoadAlbumScreenShotThumbnailImage(sf::Out<u64> width, sf::Out<u64> height, sf::OutBuffer image, sf::OutNonSecureBuffer work, const CapsAlbumFileId &fileId);
-            virtual Result GetAlbumEntryFromApplicationAlbumEntry(sf::Out<CapsAlbumEntry> out, const CapsApplicationAlbumEntry &appEntry, u64 appId);
-            virtual Result LoadAlbumScreenShotImageEx(sf::Out<u64> width, sf::Out<u64> height, sf::OutBuffer image, sf::OutNonSecureBuffer work, const CapsAlbumFileId &fileId, const CapsScreenShotDecodeOption &opts);
-            virtual Result LoadAlbumScreenShotThumbnailImageEx(sf::Out<u64> width, sf::Out<u64> height, sf::OutBuffer image, sf::OutNonSecureBuffer work, const CapsAlbumFileId &fileId, const CapsScreenShotDecodeOption &opts);
-            virtual Result LoadAlbumScreenShotImageEx0(sf::Out<CapsScreenShotAttribute> attrs, sf::Out<u64> width, sf::Out<u64> height, sf::OutBuffer image, sf::OutNonSecureBuffer work, const CapsAlbumFileId &fileId, const CapsScreenShotDecodeOption &opts);
+            virtual Result GetAlbumFileSize(sf::Out<u64> out, const FileId &fileId);
+            virtual Result LoadAlbumFileThumbnail(sf::OutBuffer image, sf::Out<u64> out, const FileId &fileId);
+            virtual Result LoadAlbumScreenShotImage(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId);
+            virtual Result LoadAlbumScreenShotThumbnailImage(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId);
+            virtual Result GetAlbumEntryFromApplicationAlbumEntry(sf::Out<CapsAlbumEntry> out, const ApplicationEntry &appEntry, u64 appId);
+            virtual Result LoadAlbumScreenShotImageEx(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
+            virtual Result LoadAlbumScreenShotThumbnailImageEx(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
+            virtual Result LoadAlbumScreenShotImageEx0(sf::Out<CapsScreenShotAttribute> attrs, sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
             virtual Result GetAlbumUsage3(sf::Out<CapsAlbumUsage3> usage, const StorageId storage);
             virtual Result GetAlbumMountResult(const StorageId storage);
             virtual Result GetAlbumUsage16(sf::Out<AlbumUsage16> usage, const StorageId storage, const u8 flags);
-            virtual Result GetMinMaxAppletId(sf::OutBuffer minMax, sf::Out<bool> success);
+            virtual Result GetMinMaxAppletId(sf::OutNonSecureBuffer minMax, sf::Out<bool> success);
             virtual Result GetAlbumFileCountEx0(sf::Out<u64> out, const StorageId storage, const u8 flags);
-            virtual Result GetAlbumFileListEx0(sf::OutBuffer buffer, sf::Out<u64> out, const StorageId storage, const u8 flags);
+            virtual Result GetAlbumFileListEx0(sf::OutBuffer buffer, sf::Out<u64> out, const u64 storage, const u64 flags);
             //virtual Result SaveEditedScreenShot
             virtual Result GetLastOverlayScreenShotThumbnail(sf::OutBuffer buffer, sf::Out<CapsOverlayThumbnailData> out);
             virtual Result GetLastOverlayMovieThumbnail(sf::OutBuffer buffer, sf::Out<CapsOverlayThumbnailData> out);
-            virtual Result GetAutoSavingStorage(sf::Out<u8> out);
-            virtual Result GetRequiredStorageSpaceSizeToCopyAll(sf::Out<u64> out, const u8 dst, const u8 src);
-            virtual Result LoadAlbumScreenShotThumbnailImageEx0(sf::Out<CapsScreenShotAttribute> attrs, sf::Out<u64> width, sf::Out<u64> height, sf::OutBuffer image, sf::OutNonSecureBuffer work, const CapsAlbumFileId &fileId, const CapsScreenShotDecodeOption &opts);
-            virtual Result LoadAlbumScreenShotImageEx1(sf::Out<LoadAlbumScreenShotImageOutput> out, sf::OutBuffer image, sf::OutNonSecureBuffer work, const CapsAlbumFileId &fileId, const CapsScreenShotDecodeOption &opts);
-            virtual Result LoadAlbumScreenShotThumbnailImageEx1(sf::Out<LoadAlbumScreenShotImageOutput> out, sf::OutBuffer image, sf::OutNonSecureBuffer work, const CapsAlbumFileId &fileId, const CapsScreenShotDecodeOption &opts);
+            virtual Result GetAutoSavingStorage(sf::Out<StorageId> out);
+            virtual Result GetRequiredStorageSpaceSizeToCopyAll(sf::Out<u64> out, const StorageId dst, const StorageId src);
+            virtual Result LoadAlbumScreenShotThumbnailImageEx0(sf::Out<CapsScreenShotAttribute> attrs, sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
+            virtual Result LoadAlbumScreenShotImageEx1(sf::Out<LoadAlbumScreenShotImageOutput> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
+            virtual Result LoadAlbumScreenShotThumbnailImageEx1(sf::Out<LoadAlbumScreenShotImageOutput> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
             virtual Result ForceAlbumUnmounted(const StorageId storage);
             virtual Result ResetAlbumMountStatus(const StorageId storage);
             virtual Result RefreshAlbumCache(const StorageId storage);
             virtual Result GetAlbumCache(sf::Out<CapsAlbumCache> cache, const StorageId storage);
             virtual Result GetAlbumCacheEx(sf::Out<CapsAlbumCache> cache, const StorageId storage, const u8 type);
-            virtual Result GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<CapsAlbumEntry> out, const CapsApplicationAlbumEntry &appEntry, u64 aruid);
+            virtual Result GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<CapsAlbumEntry> out, const ApplicationEntry &appEntry, u64 aruid, const sf::ClientProcessId &client_pid);
             virtual Result SetInternalErrorConversionEnabled(const bool enabled);
-            //virtual Result LoadMakerNoteInfoForDebug(sf::Out<u64> out, sf::OutBuffer unk0, sf::OutBuffer unk1, const CapsAlbumFileId &fileId);
+            //virtual Result LoadMakerNoteInfoForDebug(sf::Out<u64> out, sf::OutBuffer unk0, sf::OutBuffer unk1, const FileId &fileId);
             //virtual Result OpenAccessorSession(Out<std::shared_ptr<IContentStorage>> out, StorageId storage_id);
         public:
             DEFINE_SERVICE_DISPATCH_TABLE {
@@ -113,7 +114,7 @@ namespace ams::capsrv {
                 MAKE_SERVICE_COMMAND_META(GetMinMaxAppletId,                            hos::Version_600),
                 MAKE_SERVICE_COMMAND_META(GetAlbumFileCountEx0,                         hos::Version_500),
                 MAKE_SERVICE_COMMAND_META(GetAlbumFileListEx0,                          hos::Version_500),
-                //MAKE_SERVICE_COMMAND_META(SaveEditedScreenShot,                       hos::Version_100, hos::Version_300),
+                //MAKE_SERVICE_COMMAND_META(SaveEditedScreenShot,                       hos::Version_100, hos::Version_200),
                 MAKE_SERVICE_COMMAND_META(GetLastOverlayScreenShotThumbnail),
                 MAKE_SERVICE_COMMAND_META(GetLastOverlayMovieThumbnail,                 hos::Version_400),
                 MAKE_SERVICE_COMMAND_META(GetAutoSavingStorage),

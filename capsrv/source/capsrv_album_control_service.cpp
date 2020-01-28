@@ -2,7 +2,7 @@
 
 namespace ams::capsrv {
 
-    Result AlbumControlService::NotifyAlbumStorageIsAvailable(const u8 storage) {
+    Result AlbumControlService::NotifyAlbumStorageIsAvailable(const StorageId storage) {
         return ResultSuccess();
     }
 }
