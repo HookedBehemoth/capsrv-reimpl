@@ -1,7 +1,9 @@
 #pragma once
 
+#include <stratosphere/sf/sf_buffer_tags.hpp>
+#include <switch.h>
+#include <string>
 #include <type_traits>
-#include <stratosphere.hpp>
 
 namespace ams::capsrv {
 
@@ -12,7 +14,7 @@ namespace ams::capsrv {
     };
 
     /* Content IDs. */
-    enum class ContentId : u8 {
+    enum class ContentType : u8 {
         Screenshot      = 0,
         Movie           = 1,
         ExtraScreenshot = 2,
@@ -32,11 +34,11 @@ namespace ams::capsrv {
         u64 applicationId;
         DateTime datetime;
         StorageId storage;
-        ContentId content;
+        ContentType type;
         std::string AsString() const {
             const char* tmp = "%016lx, %s, %hhd, %hhd";
             char out[60];
-            snprintf(out, 36, tmp, this->applicationId, this->datetime.AsString().c_str(), this->storage, this->content);
+            snprintf(out, 36, tmp, this->applicationId, this->datetime.AsString().c_str(), this->storage, this->type);
             return std::string(out);
         }
     };

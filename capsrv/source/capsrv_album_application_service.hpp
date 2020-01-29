@@ -1,5 +1,6 @@
 #pragma once
-#include <stratosphere.hpp>
+
+#include <stratosphere/sf.hpp>
 
 namespace ams::capsrv {
 

@@ -1,5 +1,6 @@
-#include "impl/capsrv_album_accessor.hpp"
 #include "capsrv_album_accessor_service.hpp"
+#include "impl/capsrv_album_accessor.hpp"
+
 #include "logger.h"
 
 namespace ams::capsrv {
@@ -174,17 +175,15 @@ namespace ams::capsrv {
 
     Result AlbumAccessorService::GetAlbumCache(sf::Out<CapsAlbumCache> cache, const StorageId storage) {
         WriteLogFile(LogType_Info, "GetAlbumCache: storage(%hhd)", storage);
-        return ResultSuccess();
+        return impl::GetAlbumCache(cache.GetPointer(), storage, ContentType::Screenshot);
     }
 
-    Result AlbumAccessorService::GetAlbumCacheEx(sf::Out<CapsAlbumCache> cache, const StorageId storage, const u8 type) {
+    Result AlbumAccessorService::GetAlbumCacheEx(sf::Out<CapsAlbumCache> cache, const StorageId storage, const ContentType type) {
         WriteLogFile(LogType_Info, "GetAlbumCacheEx: storage(%hhd), type(%hhd)", storage, type);
-        return ResultSuccess();
+        return impl::GetAlbumCache(cache.GetPointer(), storage, type);
     }
 
-    Result AlbumAccessorService::GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<CapsAlbumEntry> out, const ApplicationEntry &appEntry, u64 aruid, const sf::ClientProcessId &client_pid) {
-        return ResultSuccess();
-    }
+    //Result AlbumAccessorService::GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<CapsAlbumEntry> out, const ApplicationEntry &appEntry, u64 aruid, const sf::ClientProcessId &client_pid)
 
     Result AlbumAccessorService::SetInternalErrorConversionEnabled(const bool enabled) {
         WriteLogFile(LogType_Info, "SetInternalErrorConversionEnabled: enabled(%s)", enabled ? "true" : "false");

@@ -1,13 +1,21 @@
-#include "../capsrv_settings.hpp"
 #include "capsrv_album_accessor.hpp"
-#include <stratosphere.hpp>
+#include "../capsrv_settings.hpp"
+
+#include <stratosphere/os.hpp>
+#include <switch.h>
 #include <mutex>
 
 namespace ams::capsrv::impl {
 
+    struct Storage {
+        CapsAlbumCache usage[4];
+    };
+
     namespace {
         os::Mutex g_mutex;
         Settings g_Settings;
+        bool g_mountStatus[2];
+        Storage g_storage[2];
     }
 
     Result InitializeAlbumAccessor() {
@@ -50,6 +58,26 @@ namespace ams::capsrv::impl {
 
     Result LoadAlbumScreenShotThumbnail(u64 *width, u64 *height, CapsScreenShotAttribute *attr, void* dat0, void* dat1, void* dat2, void* image, u64 imageSize, void* work, u64 workSize, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
         return 100;
+    }
+
+    Result MountAlbum(const StorageId storage) {
+        return g_Settings.MountAlbum(storage);
+    }
+
+    Result UnmountAlbum(const StorageId storage) {
+        return g_Settings.UnmountAlbum(storage);
+    }
+
+    Result GetAlbumCache(CapsAlbumCache *out, const StorageId storage, const ContentType type) {
+        if (!g_Settings.StorageValid(storage))
+            return capsrv::ResultInvalidStorageId();
+
+        if (!g_Settings.SupportsType(type))
+            return capsrv::ResultInvalidContentType();
+
+        *out = g_storage[(u8)storage].usage[(u8)type];
+
+        return ResultSuccess();
     }
 
 }

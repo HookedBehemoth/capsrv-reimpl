@@ -2,6 +2,10 @@
 #include "capsrv_album_control_service.hpp"
 #include "capsrv_album_application_service.hpp"
 
+#include <stratosphere/sm.hpp>
+#include <stratosphere/sf.hpp>
+#include <vapours/results.hpp>
+
 extern "C" {
     extern u32 __start__;
 

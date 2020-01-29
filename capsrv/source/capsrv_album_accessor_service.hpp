@@ -1,6 +1,8 @@
 #pragma once
-#include <stratosphere.hpp>
 #include "capsrv_types.hpp"
+
+#include <stratosphere/hos.hpp>
+#include <stratosphere/sf.hpp>
 
 /*namespace ams::sf {
     using OutFixedSizeBuffer = typename impl::OutBufferImpl<BufferTransferMode::MapAlias, SfBufferAttr_FixedSize>;
@@ -47,10 +49,10 @@ namespace ams::capsrv {
                 RefreshAlbumCache                           = 8011,
                 GetAlbumCache                               = 8012,
                 GetAlbumCacheEx                             = 8013,
-                GetAlbumEntryFromApplicationAlbumEntryAruid = 8021,
+                //GetAlbumEntryFromApplicationAlbumEntryAruid = 8021,
                 SetInternalErrorConversionEnabled           = 10011,
-                LoadMakerNoteInfoForDebug                   = 50000,
-                OpenAccessorSession                         = 60002,
+                //LoadMakerNoteInfoForDebug                   = 50000,
+                //OpenAccessorSession                         = 60002,
             };
         public:
             virtual Result GetAlbumFileCount(sf::Out<u64> out, const StorageId storage);
@@ -86,8 +88,8 @@ namespace ams::capsrv {
             virtual Result ResetAlbumMountStatus(const StorageId storage);
             virtual Result RefreshAlbumCache(const StorageId storage);
             virtual Result GetAlbumCache(sf::Out<CapsAlbumCache> cache, const StorageId storage);
-            virtual Result GetAlbumCacheEx(sf::Out<CapsAlbumCache> cache, const StorageId storage, const u8 type);
-            virtual Result GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<CapsAlbumEntry> out, const ApplicationEntry &appEntry, u64 aruid, const sf::ClientProcessId &client_pid);
+            virtual Result GetAlbumCacheEx(sf::Out<CapsAlbumCache> cache, const StorageId storage, const ContentType type);
+            //virtual Result GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<CapsAlbumEntry> out, const ApplicationEntry &appEntry, u64 aruid, const sf::ClientProcessId &client_pid);
             virtual Result SetInternalErrorConversionEnabled(const bool enabled);
             //virtual Result LoadMakerNoteInfoForDebug(sf::Out<u64> out, sf::OutBuffer unk0, sf::OutBuffer unk1, const FileId &fileId);
             //virtual Result OpenAccessorSession(Out<std::shared_ptr<IContentStorage>> out, StorageId storage_id);
@@ -127,7 +129,7 @@ namespace ams::capsrv {
                 MAKE_SERVICE_COMMAND_META(RefreshAlbumCache),
                 MAKE_SERVICE_COMMAND_META(GetAlbumCache),
                 MAKE_SERVICE_COMMAND_META(GetAlbumCacheEx,                              hos::Version_400),
-                MAKE_SERVICE_COMMAND_META(GetAlbumEntryFromApplicationAlbumEntryAruid,  hos::Version_200),
+                //MAKE_SERVICE_COMMAND_META(GetAlbumEntryFromApplicationAlbumEntryAruid,  hos::Version_200),
                 MAKE_SERVICE_COMMAND_META(SetInternalErrorConversionEnabled),
                 //MAKE_SERVICE_COMMAND_META(LoadMakerNoteInfoForDebug,                  hos::Version_600),
                 //MAKE_SERVICE_COMMAND_META(OpenAccessorSession,                        hos::Version_400)

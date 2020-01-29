@@ -1,22 +1,25 @@
 #include "capsrv_settings.hpp"
+#include "capsrv_fs.hpp"
 
-//#include <stratosphere.hpp>
-#include <switch.h>
+#include <stratosphere/settings.hpp>
+extern "C" {
+    #include <switch/services/set.h>
+}
 
 #define CAPSRV_SET_GET_BOOL(var, key)\
 rc = setsysGetSettingsItemValue("capsrv", key, &temp, 1, &size);\
-if (R_SUCCEEDED(rc) && size == 1) var = temp || rc == 0;
+if (R_SUCCEEDED(rc) && size == 1) var = temp || rc.IsSuccess();
 
 namespace ams::capsrv {
 
     Settings::Settings() {
         this->defaultDirectory = true;
-        this->isDebug = false;
+        this->debugMode = false;
         this->screenshotSupport = false;
         this->movieSupport = false;
-        this->screenshotFiledataVerification = true;
-        this->movieFilesignVerification = true;
-        this->movieFilehashVerification = true;
+        this->verifyScreenShotFiledata = true;
+        this->verifyMovieFileSignature = true;
+        this->verifyMovieFileHash = true;
         this->nandScreenshotMax = 0;
         this->nandMovieMax = 0;
         this->sdScreenshotMax = 0;
@@ -39,11 +42,15 @@ namespace ams::capsrv {
         this->sdScreenshotMax = 10000;
         this->sdMovieMax = 1000;
 
+        bool debug = settings::fwdbg::IsDebugModeEnabled();
+        this->debugMode = debug;
+        this->defaultDirectory = !debug;
+
         CAPSRV_SET_GET_BOOL(this->screenshotSupport, "enable_album_screenshot_file_support");
         CAPSRV_SET_GET_BOOL(this->movieSupport, "enable_album_movie_file_support");
-        CAPSRV_SET_GET_BOOL(this->screenshotFiledataVerification, "enable_album_screenshot_filedata_verification");
-        CAPSRV_SET_GET_BOOL(this->movieFilesignVerification, "enable_album_movie_filesign_verification");
-        CAPSRV_SET_GET_BOOL(this->movieFilehashVerification, "enable_album_movie_filehash_verification");
+        CAPSRV_SET_GET_BOOL(this->verifyScreenShotFiledata, "enable_album_screenshot_filedata_verification");
+        CAPSRV_SET_GET_BOOL(this->verifyMovieFileSignature, "enable_album_movie_filesign_verification");
+        CAPSRV_SET_GET_BOOL(this->verifyMovieFileHash, "enable_album_movie_filehash_verification");
         bool changeDirectory = false;
         CAPSRV_SET_GET_BOOL(changeDirectory, "enable_album_directory_change");
         if (changeDirectory) {
@@ -57,52 +64,69 @@ namespace ams::capsrv {
         }
     }
 
-    bool Settings::IsDefaultDirectory() {
-        return this->defaultDirectory;
+    bool Settings::SupportsType(const ContentType type) const {
+        switch (type) {
+            case ContentType::Screenshot:
+            case ContentType::ExtraScreenshot:
+                return this->screenshotSupport;
+            case ContentType::Movie:
+            case ContentType::ExtraMovie:
+                return this->movieSupport;
+        }
+        return false;
     }
 
-    bool Settings::IsDebug() {
-        return this->isDebug;
-    }
-
-    bool Settings::SupportsScreenshot() {
-        return this->screenshotSupport;
-    }
-
-    bool Settings::SupportsMovie() {
-        return this->movieSupport;
-    }
-
-    bool Settings::VerifyScreenshotFiledata() {
-        return this->screenshotFiledataVerification;
-    }
-
-    bool Settings::VerifyMovieFilesign() {
-        return this->movieFilesignVerification;
-    }
-
-    bool Settings::VerifyMovieFilehash() {
-        return this->movieFilehashVerification;
-    }
-
-    u64 Settings::GetNandScreenshotMax() {
-        return this->nandScreenshotMax;
+    bool Settings::StorageValid(const StorageId storage) const {
+        return storage == StorageId::Nand || storage == StorageId::Sd;
     }
     
-    u64 Settings::GetNandMovieMax() {
-        return this->nandMovieMax;
+    u64 Settings::GetMax(const StorageId storage, const ContentType type) const {
+        switch (storage) {
+            case StorageId::Nand:
+                switch (type) {
+                    case ContentType::Screenshot:
+                    case ContentType::ExtraScreenshot:
+                        return this->nandScreenshotMax;
+                    case ContentType::Movie:
+                    case ContentType::ExtraMovie:
+                        return this->nandMovieMax;
+                }
+                break;
+            case StorageId::Sd:
+                switch (type) {
+                    case ContentType::Screenshot:
+                    case ContentType::ExtraScreenshot:
+                        return this->sdScreenshotMax;
+                    case ContentType::Movie:
+                    case ContentType::ExtraMovie:
+                        return this->sdMovieMax;
+                }
+        }
+        return 0;
     }
 
-    u64 Settings::GetSdScreenshotMax() {
-        return this->sdScreenshotMax;
+    const char* Settings::GetCustomDirectoryPath() const {
+        if (this->defaultDirectory)
+            return nullptr;
+        return this->directoryPath;
     }
 
-    u64 Settings::GetSdMovieMax() {
-        return this->sdMovieMax;
+    Result Settings::MountAlbum(const StorageId storage) {
+        if (storage != StorageId::Nand && storage != StorageId::Sd)
+            return capsrv::ResultInvalidStorageId();
+
+        const char* customDirectory = this->GetCustomDirectoryPath();
+        if (storage == StorageId::Sd && customDirectory) {
+
+        }
+        return MountImageDirectory(storage);
     }
 
-    std::string Settings::GetCustomDirectoryPath() {
-        return std::string(this->directoryPath);
+    Result Settings::UnmountAlbum(const StorageId storage) {
+        if (storage != StorageId::Nand && storage != StorageId::Sd)
+            return capsrv::ResultInvalidStorageId();
+
+        return UnmountImageDirectory(storage);
     }
 
 }

@@ -1,17 +1,18 @@
 #pragma once
+#include "capsrv_types.hpp"
+
 #include <string>
-#include <switch/types.h>
 
 namespace ams::capsrv {
     class Settings {
         private:
             bool defaultDirectory;
-            bool isDebug;
+            bool debugMode;
             bool screenshotSupport;
             bool movieSupport;
-            bool screenshotFiledataVerification;
-            bool movieFilesignVerification;
-            bool movieFilehashVerification;
+            bool verifyScreenShotFiledata;
+            bool verifyMovieFileSignature;
+            bool verifyMovieFileHash;
             u64 nandScreenshotMax;
             u64 nandMovieMax;
             u64 sdScreenshotMax;
@@ -22,17 +23,12 @@ namespace ams::capsrv {
             ~Settings();
             void Initialize();
 
-            bool IsDefaultDirectory();
-            bool IsDebug();
-            bool SupportsScreenshot();
-            bool SupportsMovie();
-            bool VerifyScreenshotFiledata();
-            bool VerifyMovieFilesign();
-            bool VerifyMovieFilehash();
-            u64 GetNandScreenshotMax();
-            u64 GetNandMovieMax();
-            u64 GetSdScreenshotMax();
-            u64 GetSdMovieMax();
-            std::string GetCustomDirectoryPath();
+            inline bool SupportsType(const ContentType type) const;
+            inline bool StorageValid(const StorageId storage) const;
+            inline u64 GetMax(const StorageId storage, const ContentType type) const;
+            const char* GetCustomDirectoryPath() const;
+
+            Result MountAlbum(const StorageId storage);
+            Result UnmountAlbum(const StorageId storage);
     };
 }
