@@ -1,7 +1,7 @@
 #include "capsrv_album_accessor_service.hpp"
-#include "impl/capsrv_album_accessor.hpp"
+#include "impl/capsrv_manager.hpp"
 
-#include "logger.h"
+#include "logger.hpp"
 
 namespace ams::capsrv {
 
@@ -115,17 +115,17 @@ namespace ams::capsrv {
 
     Result AlbumAccessorService::GetLastOverlayScreenShotThumbnail(sf::OutBuffer buffer, sf::Out<CapsOverlayThumbnailData> out) {
         WriteLogFile(LogType_Info, "GetLastOverlayScreenShotThumbnail: bufferSize(%ld)", buffer.GetSize());
-        return ResultSuccess();;
+        return ResultSuccess();
     }
 
     Result AlbumAccessorService::GetLastOverlayMovieThumbnail(sf::OutBuffer buffer, sf::Out<CapsOverlayThumbnailData> out) {
         WriteLogFile(LogType_Info, "GetLastOverlayScreenShotThumbnail: bufferSize(%ld)", buffer.GetSize());
-        return ResultSuccess();;
+        return ResultSuccess();
     }
 
     Result AlbumAccessorService::GetAutoSavingStorage(sf::Out<StorageId> out) {
         WriteLogFile(LogType_Info, "GetAutoSavingStorage");
-        return ResultSuccess();;
+        return ResultSuccess();
     }
 
     Result AlbumAccessorService::GetRequiredStorageSpaceSizeToCopyAll(sf::Out<u64> out, const StorageId dst, const StorageId src) {

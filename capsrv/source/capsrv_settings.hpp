@@ -1,6 +1,7 @@
 #pragma once
 #include "capsrv_types.hpp"
 
+#include <vapours/results.hpp>
 #include <string>
 
 namespace ams::capsrv {
@@ -23,8 +24,8 @@ namespace ams::capsrv {
             ~Settings();
             void Initialize();
 
-            inline bool SupportsType(const ContentType type) const;
-            inline bool StorageValid(const StorageId storage) const;
+            bool SupportsType(const ContentType type) const;
+            bool StorageValid(const StorageId storage) const;
             inline u64 GetMax(const StorageId storage, const ContentType type) const;
             const char* GetCustomDirectoryPath() const;
 

@@ -56,8 +56,11 @@ void __appInit(void) {
 
     sm::DoWithSession([] {
         R_ASSERT(fsInitialize());
-        fsdevMountSdmc();
+        R_ASSERT(timeInitialize());
     });
+
+    /* TODO: remove this for a better logging solution (TMA, LogManager?) */
+    fsdevMountSdmc();
 }
 
 void __appExit(void) {
@@ -67,6 +70,7 @@ void __appExit(void) {
     fsExit();
 }
 
+// TODO: Custom Init function call?
 //static constexpr auto MakeAlbumAccessor = []() { return std::make_shared<capsrv::AlbumAccessorService>(); };
 //static constexpr auto MakeAlbumControl = []() { return std::make_shared<capsrv::AlbumControlService>(); };
 //static constexpr auto AlbumApplication = []() { return std::make_shared<capsrv::AlbumApplicationService>(); };
@@ -93,7 +97,7 @@ int main(int argc, char **argv)
     /* Create services */
     R_ASSERT(g_server_manager.RegisterServer<capsrv::AlbumAccessorService>(AlbumAccessorServiceName, AlbumAccessorMaxSessions));
 
-    //R_ASSERT(g_server_manager.RegisterServer<capsrv::AlbumControlService>(AlbumControlServiceName, AlbumControlMaxSessions));
+    R_ASSERT(g_server_manager.RegisterServer<capsrv::AlbumControlService>(AlbumControlServiceName, AlbumControlMaxSessions));
 
     /*if (hos::GetVersion() >= hos::Version_500) {
         R_ASSERT(g_server_manager.RegisterServer<capsrv::AlbumApplicationService>(AlbumApplicationServiceName, AlbumApplicationMaxSessions));

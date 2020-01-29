@@ -8,7 +8,7 @@
 namespace ams::capsrv {
 
     /* Storage IDs. */
-    enum class StorageId : u8 {
+    enum StorageId : u8 {
         Nand    = 0,
         Sd      = 1,
     };

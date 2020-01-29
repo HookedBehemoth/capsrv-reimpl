@@ -117,7 +117,7 @@ namespace ams::capsrv {
 
         const char* customDirectory = this->GetCustomDirectoryPath();
         if (storage == StorageId::Sd && customDirectory) {
-
+            return MountCustomImageDirectory(customDirectory);
         }
         return MountImageDirectory(storage);
     }

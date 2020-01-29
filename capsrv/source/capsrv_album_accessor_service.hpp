@@ -4,10 +4,6 @@
 #include <stratosphere/hos.hpp>
 #include <stratosphere/sf.hpp>
 
-/*namespace ams::sf {
-    using OutFixedSizeBuffer = typename impl::OutBufferImpl<BufferTransferMode::MapAlias, SfBufferAttr_FixedSize>;
-}
-*/
 namespace ams::capsrv {
 
     /* Service definition. */

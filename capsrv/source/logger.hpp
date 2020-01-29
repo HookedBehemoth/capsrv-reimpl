@@ -21,43 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-#include <time.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+#pragma once
 
 typedef enum {
 	LogType_Error = 0,
 	LogType_Info = 1,
 } LogType;
 
-void WriteLogFile(LogType type, const char *fmt, ...) {
-	time_t lTime = time(NULL);
-	struct tm* timestruct = localtime((const time_t *) &lTime);
-	int hour = timestruct->tm_hour;
-	int min = timestruct->tm_min;
-	int sec = timestruct->tm_sec;
-	char time[9];
-	sprintf(time, "%02d:%02d:%02d", hour, min, sec);
-        char _type[16];
-	switch (type) {
-		case LogType_Error: 
-			strcpy(_type, "ERROR");
-			break;
-		case LogType_Info: 
-			strcpy(_type, "INFO");
-			break;
-	}
-	FILE* pFile = fopen("sdmc:/log.txt", "a");
-	if(pFile) {
-		fprintf(pFile, "[%s] [%s] ", time, _type);
-		va_list args;
-		va_start(args, fmt);
-		vfprintf(pFile, fmt, args);
-		va_end(args);
-		fprintf(pFile, "\n");
-		fclose(pFile);
-	}
-}
-
+void WriteLogFile(LogType type, const char *fmt, ...);

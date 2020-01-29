@@ -1,4 +1,5 @@
-#include "capsrv_album_accessor.hpp"
+#include "capsrv_manager.hpp"
+#include "../capsrv_file_id_generator.hpp"
 #include "../capsrv_settings.hpp"
 
 #include <stratosphere/os.hpp>
@@ -16,6 +17,7 @@ namespace ams::capsrv::impl {
         Settings g_Settings;
         bool g_mountStatus[2];
         Storage g_storage[2];
+        FileIdGenerator g_FileIdGenerator;
     }
 
     Result InitializeAlbumAccessor() {
@@ -25,6 +27,30 @@ namespace ams::capsrv::impl {
 
     void FinalizeAlbumAccessor() {
 
+    }
+
+    StorageId GetPrimaryStorage() {
+        SetSysPrimaryAlbumStorage storage;
+        Result rc = setsysGetPrimaryAlbumStorage(&storage);
+        if (R_FAILED(rc))
+            std::abort();
+
+        return StorageId(storage);
+    }
+
+    Result GetAutoSavingStorage(StorageId *out) {
+        StorageId storage = GetPrimaryStorage();
+        Result rc = MountAlbum(storage);
+        if (rc.IsFailure())
+            return capsrv::ResultFailedToMountImageDirectory();
+
+        *out = storage;
+        return ResultSuccess();
+    }
+
+    Result GenerateCurrentAlbumFileId(FileId *out, u64 appId, ContentType type) {
+        FileId fileId;
+        return g_FileIdGenerator.GenerateFileId(&fileId, appId, type);
     }
 
     Result GetAlbumFileCount(u64* outCount, const StorageId storageId) {
@@ -61,11 +87,15 @@ namespace ams::capsrv::impl {
     }
 
     Result MountAlbum(const StorageId storage) {
-        return g_Settings.MountAlbum(storage);
+        R_TRY(g_Settings.MountAlbum(storage));
+        g_mountStatus[(u8)storage] = true;
+        return ResultSuccess();
     }
 
     Result UnmountAlbum(const StorageId storage) {
-        return g_Settings.UnmountAlbum(storage);
+        R_TRY(g_Settings.UnmountAlbum(storage));
+        g_mountStatus[(u8)storage] = false;
+        return ResultSuccess();
     }
 
     Result GetAlbumCache(CapsAlbumCache *out, const StorageId storage, const ContentType type) {
