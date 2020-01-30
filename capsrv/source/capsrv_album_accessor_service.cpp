@@ -98,6 +98,13 @@ namespace ams::capsrv {
 
     Result AlbumAccessorService::GetMinMaxAppletId(sf::OutNonSecureBuffer minMax, sf::Out<bool> success) {
         WriteLogFile(LogType_Info, "GetMinMaxAppletId");
+        u64 bufSize = minMax->GetSize();
+        if (bufSize != 0) {
+            u64[2] arr = minMax->GetPointer();
+            arr[0] = 0x100000000001000;
+            arr[1] = 0x100000000001fff;
+        }
+        success.SetValue(buf_size != 0);
         return ResultSuccess();
     }
 

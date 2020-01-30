@@ -12,12 +12,12 @@ namespace ams::capsrv {
         protected:
             /* Command IDs. */
             enum class CommandId {
-                //CaptureRawImage                       = 1,
-                //CaptureRawImageWithTimeout            = 2,
+                //CaptureRawImage                         = 1,
+                //CaptureRawImageWithTimeout              = 2,
                 SetShimLibraryVersion                   = 33,
-                //RequestTakingScreenShot               = 1001,
-                //RequestTakingScreenShotWithTimeout    = 1002,
-                //NotifyTakingScreenShotRefused         = 1011,
+                //RequestTakingScreenShot                 = 1001,
+                //RequestTakingScreenShotWithTimeout      = 1002,
+                //NotifyTakingScreenShotRefused           = 1011,
                 NotifyAlbumStorageIsAvailable           = 2001,
                 NotifyAlbumStorageIsUnavailable         = 2002,
                 RegisterAppletResourceUserId            = 2011,

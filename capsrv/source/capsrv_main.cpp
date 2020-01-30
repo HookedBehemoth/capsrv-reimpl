@@ -31,7 +31,7 @@ namespace ams {
 
     namespace result {
 
-        bool CallFatalOnResultAssertion = false;
+        bool CallFatalOnResultAssertion = true;
 
     }
 
@@ -99,9 +99,9 @@ int main(int argc, char **argv)
 
     R_ASSERT(g_server_manager.RegisterServer<capsrv::AlbumControlService>(AlbumControlServiceName, AlbumControlMaxSessions));
 
-    /*if (hos::GetVersion() >= hos::Version_500) {
+    if (hos::GetVersion() >= hos::Version_500) {
         R_ASSERT(g_server_manager.RegisterServer<capsrv::AlbumApplicationService>(AlbumApplicationServiceName, AlbumApplicationMaxSessions));
-    }*/
+    }
 
     g_server_manager.LoopProcess();
 

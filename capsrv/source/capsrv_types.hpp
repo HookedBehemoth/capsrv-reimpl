@@ -43,6 +43,19 @@ namespace ams::capsrv {
         }
     };
 
+    struct ApplicationFileId {
+        u64 unk_x0;
+        u64 unk_x8;
+        DateTime dateTime;
+        u64 unk;
+    };
+
+    struct ApplicationFileEntry {
+        ApplicationFileId fileId;
+        DateTime datetime;
+        u64 unk_x28;
+    };
+
     struct ApplicationEntry : CapsApplicationAlbumEntry {
         std::string AsString() const {
             return ((DateTime*)&this->v1.datetime)->AsString();
@@ -56,5 +69,6 @@ namespace ams::capsrv {
 
     struct AlbumUsage16 : sf::LargeData, sf::PrefersMapAliasTransferMode, CapsAlbumUsage16 {};
     struct LoadAlbumScreenShotImageOutput : sf::LargeData, sf::PrefersMapAliasTransferMode, CapsLoadAlbumScreenShotImageOutput {};
+    struct LoadAlbumScreenShotImageOutputForApplication : sf::LargeData, sf::PrefersMapAliasTransferMode, CapsLoadAlbumScreenShotImageOutputForApplication {};
 
 }
