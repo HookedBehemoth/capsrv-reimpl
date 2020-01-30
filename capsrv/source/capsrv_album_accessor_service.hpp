@@ -53,7 +53,7 @@ namespace ams::capsrv {
         public:
             virtual Result GetAlbumFileCount(sf::Out<u64> out, const StorageId storage);
             virtual Result GetAlbumFileList(sf::OutBuffer buffer, sf::Out<u64> out, const StorageId storage);
-            virtual Result LoadAlbumFile(sf::OutBuffer buffer, sf::Out<u64> out, const FileId &fileId);
+            virtual Result LoadAlbumFile(sf::OutBuffer image, sf::Out<u64> out, const FileId &fileId);
             virtual Result DeleteAlbumFile(const FileId &fileId);
             virtual Result StorageCopyAlbumFile(const StorageId storage, const FileId &fileId);
             virtual Result IsAlbumMounted(sf::Out<bool> out, const StorageId storage);

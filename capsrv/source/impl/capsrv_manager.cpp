@@ -77,15 +77,6 @@ namespace ams::capsrv::impl {
         return res;
     }
 
-    Result LoadAlbumFile(void* ptr, u64 size, u64* outSize, const FileId &fileId) {
-        *outSize = 0;
-        return ResultSuccess();
-    }
-
-    Result LoadAlbumScreenShotThumbnail(u64 *width, u64 *height, CapsScreenShotAttribute *attr, void* dat0, void* dat1, void* dat2, void* image, u64 imageSize, void* work, u64 workSize, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
-        return 100;
-    }
-
     Result MountAlbum(const StorageId storage) {
         R_TRY(g_Settings.MountAlbum(storage));
         g_mountStatus[(u8)storage] = true;

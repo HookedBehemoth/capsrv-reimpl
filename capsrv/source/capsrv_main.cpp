@@ -84,10 +84,10 @@ namespace {
     constexpr sm::ServiceName AlbumAccessorServiceName    = sm::ServiceName::Encode("lmao:a");
     constexpr size_t          AlbumAccessorMaxSessions    = 4;
 
-    constexpr sm::ServiceName AlbumControlServiceName     = sm::ServiceName::Encode("caps:c");
+    constexpr sm::ServiceName AlbumControlServiceName     = sm::ServiceName::Encode("lmao:c");
     constexpr size_t          AlbumControlMaxSessions     = 4;
 
-    constexpr sm::ServiceName AlbumApplicationServiceName = sm::ServiceName::Encode("caps:u");
+    constexpr sm::ServiceName AlbumApplicationServiceName = sm::ServiceName::Encode("lmao:u");
     constexpr size_t          AlbumApplicationMaxSessions = 4;
 
 }
