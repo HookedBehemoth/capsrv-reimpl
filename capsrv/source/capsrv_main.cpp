@@ -78,7 +78,7 @@ void __appExit(void) {
 namespace {
 
     /* caps:a, caps:c, caps:u. */
-    constexpr size_t NumServers  = 1;
+    constexpr size_t NumServers  = 3;
     sf::hipc::ServerManager<NumServers> g_server_manager;
 
     constexpr sm::ServiceName AlbumAccessorServiceName    = sm::ServiceName::Encode("lmao:a");
