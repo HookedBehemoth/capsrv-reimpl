@@ -1,7 +1,6 @@
 #pragma once
+#include <stratosphere.hpp>
 #include "capsrv_types.hpp"
-
-#include <vapours/results.hpp>
 
 namespace ams::capsrv {
 

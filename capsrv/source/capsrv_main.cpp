@@ -2,10 +2,6 @@
 #include "capsrv_album_control_service.hpp"
 #include "capsrv_album_application_service.hpp"
 
-#include <stratosphere/sm.hpp>
-#include <stratosphere/sf.hpp>
-#include <vapours/results.hpp>
-
 extern "C" {
     extern u32 __start__;
 
@@ -20,7 +16,7 @@ extern "C" {
     void __appExit(void);
 
     /* Exception handling. */
-    alignas(16) u8 __nx_exception_stack[ams::os::MemoryBlockUnitSize];
+    alignas(16) u8 __nx_exception_stack[ams::os::MemoryPageSize];
     u64 __nx_exception_stack_size = sizeof(__nx_exception_stack);
     void __libnx_exception_handler(ThreadExceptionDump *ctx);
 

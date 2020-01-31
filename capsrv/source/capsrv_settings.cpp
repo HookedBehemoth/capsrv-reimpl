@@ -1,11 +1,6 @@
 #include "capsrv_settings.hpp"
 #include "capsrv_fs.hpp"
 
-#include <stratosphere/settings.hpp>
-extern "C" {
-    #include <switch/services/set.h>
-}
-
 #define CAPSRV_SET_GET_BOOL(var, key)\
 rc = setsysGetSettingsItemValue("capsrv", key, &temp, 1, &size);\
 if (R_SUCCEEDED(rc) && size == 1) var = temp || rc.IsSuccess();

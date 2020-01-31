@@ -2,8 +2,6 @@
 #include "capsrv_util.hpp"
 #include "impl/capsrv_manager.hpp"
 
-#include <vapours/results.hpp>
-
 namespace ams::capsrv {
 
     FileIdGenerator::FileIdGenerator() {

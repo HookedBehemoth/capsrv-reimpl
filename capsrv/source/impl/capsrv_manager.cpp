@@ -2,8 +2,6 @@
 #include "../capsrv_file_id_generator.hpp"
 #include "../capsrv_settings.hpp"
 
-#include <stratosphere/os.hpp>
-#include <switch.h>
 #include <mutex>
 
 namespace ams::capsrv::impl {

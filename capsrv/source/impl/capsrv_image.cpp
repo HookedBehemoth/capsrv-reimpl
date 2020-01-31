@@ -1,6 +1,5 @@
+#include <stratosphere.hpp>
 #include "capsrv_image.hpp"
-
-#include <vapours/results.hpp>
 
 namespace ams::capsrv::impl {
 

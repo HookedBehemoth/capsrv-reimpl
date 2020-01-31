@@ -1,7 +1,6 @@
 #pragma once
+#include <stratosphere.hpp>
 
-#include <stratosphere/sf/sf_buffer_tags.hpp>
-#include <switch.h>
 #include <string>
 #include <type_traits>
 
