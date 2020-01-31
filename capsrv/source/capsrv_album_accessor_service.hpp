@@ -45,9 +45,9 @@ namespace ams::capsrv {
                 RefreshAlbumCache                           = 8011,
                 GetAlbumCache                               = 8012,
                 GetAlbumCacheEx                             = 8013,
-                //GetAlbumEntryFromApplicationAlbumEntryAruid = 8021,
+                GetAlbumEntryFromApplicationAlbumEntryAruid = 8021,
                 SetInternalErrorConversionEnabled           = 10011,
-                //LoadMakerNoteInfoForDebug                   = 50000,
+                LoadMakerNoteInfoForDebug                   = 50000,
                 //OpenAccessorSession                         = 60002,
             };
         public:
@@ -85,9 +85,9 @@ namespace ams::capsrv {
             virtual Result RefreshAlbumCache(const StorageId storage);
             virtual Result GetAlbumCache(sf::Out<CapsAlbumCache> cache, const StorageId storage);
             virtual Result GetAlbumCacheEx(sf::Out<CapsAlbumCache> cache, const StorageId storage, const ContentType type);
-            //virtual Result GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<CapsAlbumEntry> out, const ApplicationEntry &appEntry, u64 aruid, const sf::ClientProcessId &client_pid);
+            virtual Result GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<CapsAlbumEntry> out, const ApplicationEntry &appEntry, u64 aruid, const sf::ClientProcessId &client_pid);
             virtual Result SetInternalErrorConversionEnabled(const bool enabled);
-            //virtual Result LoadMakerNoteInfoForDebug(sf::Out<u64> out, sf::OutBuffer unk0, sf::OutBuffer unk1, const FileId &fileId);
+            virtual Result LoadMakerNoteInfoForDebug(sf::Out<u64> out, sf::OutBuffer unk0, sf::OutBuffer unk1, const FileId &fileId);
             //virtual Result OpenAccessorSession(Out<std::shared_ptr<IContentStorage>> out, StorageId storage_id);
         public:
             DEFINE_SERVICE_DISPATCH_TABLE {
@@ -112,7 +112,7 @@ namespace ams::capsrv {
                 MAKE_SERVICE_COMMAND_META(GetMinMaxAppletId,                            hos::Version_600),
                 MAKE_SERVICE_COMMAND_META(GetAlbumFileCountEx0,                         hos::Version_500),
                 MAKE_SERVICE_COMMAND_META(GetAlbumFileListEx0,                          hos::Version_500),
-                //MAKE_SERVICE_COMMAND_META(SaveEditedScreenShot,                       hos::Version_100, hos::Version_200),
+                //MAKE_SERVICE_COMMAND_META(SaveEditedScreenShot,                         hos::Version_100, hos::Version_200),
                 MAKE_SERVICE_COMMAND_META(GetLastOverlayScreenShotThumbnail),
                 MAKE_SERVICE_COMMAND_META(GetLastOverlayMovieThumbnail,                 hos::Version_400),
                 MAKE_SERVICE_COMMAND_META(GetAutoSavingStorage),
@@ -125,10 +125,10 @@ namespace ams::capsrv {
                 MAKE_SERVICE_COMMAND_META(RefreshAlbumCache),
                 MAKE_SERVICE_COMMAND_META(GetAlbumCache),
                 MAKE_SERVICE_COMMAND_META(GetAlbumCacheEx,                              hos::Version_400),
-                //MAKE_SERVICE_COMMAND_META(GetAlbumEntryFromApplicationAlbumEntryAruid,  hos::Version_200),
+                MAKE_SERVICE_COMMAND_META(GetAlbumEntryFromApplicationAlbumEntryAruid,  hos::Version_200),
                 MAKE_SERVICE_COMMAND_META(SetInternalErrorConversionEnabled),
-                //MAKE_SERVICE_COMMAND_META(LoadMakerNoteInfoForDebug,                  hos::Version_600),
-                //MAKE_SERVICE_COMMAND_META(OpenAccessorSession,                        hos::Version_400)
+                MAKE_SERVICE_COMMAND_META(LoadMakerNoteInfoForDebug,                    hos::Version_600),
+                //MAKE_SERVICE_COMMAND_META(OpenAccessorSession,                          hos::Version_400)
             };
     };
 }

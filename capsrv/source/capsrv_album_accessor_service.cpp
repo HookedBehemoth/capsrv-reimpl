@@ -180,13 +180,24 @@ namespace ams::capsrv {
         return impl::GetAlbumCache(cache.GetPointer(), storage, type);
     }
 
-    //Result AlbumAccessorService::GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<CapsAlbumEntry> out, const ApplicationEntry &appEntry, u64 aruid, const sf::ClientProcessId &client_pid)
+    Result AlbumAccessorService::GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<CapsAlbumEntry> out, const ApplicationEntry &appEntry, u64 aruid, const sf::ClientProcessId &client_pid) {
+        WriteLogFile(LogType_Info, "GetAlbumEntryFromApplicationAlbumEntryAruid: ApplicationEntry(%s), aruid(%ld)", appEntry.AsString().c_str(), aruid);
+        return ResultSuccess();
+    }
 
     Result AlbumAccessorService::SetInternalErrorConversionEnabled(const bool enabled) {
         WriteLogFile(LogType_Info, "SetInternalErrorConversionEnabled: enabled(%s)", enabled ? "true" : "false");
         return ResultSuccess();
     }
 
-    //Result AlbumAccessorService::LoadMakerNoteInfoForDebug(sf::Out<u64> out, sf::OutBuffer unk0, sf::OutBuffer unk1, const FileId &fileId)
-    //Result AlbumAccessorService::OpenAccessorSession(sf::Out<std::shared_ptr<IContentStorage>> out, StorageId storage_id)
+    Result AlbumAccessorService::LoadMakerNoteInfoForDebug(sf::Out<u64> out, sf::OutBuffer unk0, sf::OutBuffer unk1, const FileId &fileId) {
+        WriteLogFile(LogType_Info, "LoadMakerNoteInfoForDebug: bufferSize(%ld), bufferSize(%ld), fileId(%s)", unk0.GetSize(), unk1.GetSize(), fileId.AsString().c_str());
+        return ResultSuccess();
+    }
+
+    /*Result AlbumAccessorService::OpenAccessorSession(sf::Out<std::shared_ptr<IContentStorage>> out, StorageId storage_id) {
+        WriteLogFile(LogType_Info, "LoadMakerNoteInfoForDebug: bufferSize(%ld), bufferSize(%ld), fileId(%s)", unk0.GetSize(), unk1.GetSize(), fileId.AsString().c_str());
+        return ResultSuccess();
+    }*/
+
 }
