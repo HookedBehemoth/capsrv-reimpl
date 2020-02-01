@@ -11,12 +11,12 @@ namespace ams::capsrv::impl {
     Result GetAutoSavingStorage(StorageId *storage);
     Result GenerateCurrentAlbumFileId(FileId *out, u64 appId, ContentType type);
 
-    Result GetAlbumFileCount(u64* outCount, const StorageId storageId);
-    Result GetAlbumFileList(void* ptr, u64 size, u64* outCount, const StorageId storageId);
+    Result GetAlbumFileCount(u64* outCount, StorageId storageId);
+    Result GetAlbumFileList(void* ptr, u64 size, u64* outCount, StorageId storageId);
 
-    Result MountAlbum(const StorageId storage);
-    Result UnmountAlbum(const StorageId storage);
+    Result MountAlbum(StorageId storage);
+    Result UnmountAlbum(StorageId storage);
 
-    Result GetAlbumCache(CapsAlbumCache *out, const StorageId storage, const ContentType type);
+    Result GetAlbumCache(CapsAlbumCache *out, StorageId storage, ContentType type);
 
 }

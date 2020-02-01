@@ -59,7 +59,7 @@ namespace ams::capsrv {
         }
     }
 
-    bool Settings::SupportsType(const ContentType type) const {
+    bool Settings::SupportsType(ContentType type) const {
         switch (type) {
             case ContentType::Screenshot:
             case ContentType::ExtraScreenshot:
@@ -71,11 +71,11 @@ namespace ams::capsrv {
         return false;
     }
 
-    bool Settings::StorageValid(const StorageId storage) const {
+    bool Settings::StorageValid(StorageId storage) const {
         return storage == StorageId::Nand || storage == StorageId::Sd;
     }
     
-    u64 Settings::GetMax(const StorageId storage, const ContentType type) const {
+    u64 Settings::GetMax(StorageId storage, ContentType type) const {
         switch (storage) {
             case StorageId::Nand:
                 switch (type) {
@@ -106,7 +106,7 @@ namespace ams::capsrv {
         return this->directoryPath;
     }
 
-    Result Settings::MountAlbum(const StorageId storage) {
+    Result Settings::MountAlbum(StorageId storage) {
         if (storage != StorageId::Nand && storage != StorageId::Sd)
             return capsrv::ResultInvalidStorageId();
 
@@ -117,7 +117,7 @@ namespace ams::capsrv {
         return MountImageDirectory(storage);
     }
 
-    Result Settings::UnmountAlbum(const StorageId storage) {
+    Result Settings::UnmountAlbum(StorageId storage) {
         if (storage != StorageId::Nand && storage != StorageId::Sd)
             return capsrv::ResultInvalidStorageId();
 

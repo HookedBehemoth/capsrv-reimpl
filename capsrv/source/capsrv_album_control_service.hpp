@@ -36,8 +36,8 @@ namespace ams::capsrv {
             //virtual Result RequestTakingScreenShot();
             //virtual Result RequestTakingScreenShotWithTimeout();
             //virtual Result NotifyTakingScreenShotRefused();
-            virtual Result NotifyAlbumStorageIsAvailable(const StorageId storage);
-            virtual Result NotifyAlbumStorageIsUnavailable(const StorageId storage);
+            virtual Result NotifyAlbumStorageIsAvailable(StorageId storage);
+            virtual Result NotifyAlbumStorageIsUnavailable(StorageId storage);
             virtual Result RegisterAppletResourceUserId(u64 aruid);
             virtual Result UnregisterAppletResourceUserId(u64 aruid);
             virtual Result GetApplicationIdFromAruid(sf::Out<u64> appId, u64 aruid);

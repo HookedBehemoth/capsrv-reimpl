@@ -2,49 +2,49 @@
 
 namespace ams::capsrv {
 
-    Result AlbumApplicationService::SetShimLibraryVersion(const u64 version, const u64 aruid) {
+    Result AlbumApplicationService::SetShimLibraryVersion( u64 version,  u64 aruid) {
         return ResultSuccess();
     }
 
-    Result AlbumApplicationService::GetAlbumFileList0AafeAruidDeprecated(sf::OutBuffer buffer, const ContentType type, const u64 startTimestamp, const u64 endTimestamp, const u64 aruid) {
+    Result AlbumApplicationService::GetAlbumFileList0AafeAruidDeprecated(sf::OutBuffer buffer, ContentType type,  u64 startTimestamp,  u64 endTimestamp,  u64 aruid) {
         return ResultSuccess();
     }
 
-    Result AlbumApplicationService::DeleteAlbumFileByAruid(const ContentType type, const ApplicationFileEntry &entry, const u64 aruid) {
+    Result AlbumApplicationService::DeleteAlbumFileByAruid(ContentType type, const ApplicationFileEntry &entry,  u64 aruid) {
         return ResultSuccess();
     }
 
-    Result AlbumApplicationService::GetAlbumFileSizeByAruid(sf::Out<u64> out, const ApplicationFileEntry &entry, const u64 aruid) {
+    Result AlbumApplicationService::GetAlbumFileSizeByAruid(sf::Out<u64> out, const ApplicationFileEntry &entry,  u64 aruid) {
         return ResultSuccess();
     }
 
     //Result AlbumApplicationService::DeleteAlbumFileByAruidForDebug();
 
-    Result AlbumApplicationService::LoadAlbumScreenShotImageByAruid(sf::Out<LoadAlbumScreenShotImageOutputForApplication> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const ApplicationFileEntry &entry, const CapsScreenShotDecodeOption &opts, const u64 aruid) {
+    Result AlbumApplicationService::LoadAlbumScreenShotImageByAruid(sf::Out<LoadAlbumScreenShotImageOutputForApplication> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const ApplicationFileEntry &entry, const CapsScreenShotDecodeOption &opts,  u64 aruid) {
         return ResultSuccess();
     }
 
-    Result AlbumApplicationService::LoadAlbumScreenShotThumbnailImageByAruid(sf::Out<LoadAlbumScreenShotImageOutputForApplication> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const ApplicationFileEntry &entry, const CapsScreenShotDecodeOption &opts, const u64 aruid) {
+    Result AlbumApplicationService::LoadAlbumScreenShotThumbnailImageByAruid(sf::Out<LoadAlbumScreenShotImageOutputForApplication> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const ApplicationFileEntry &entry, const CapsScreenShotDecodeOption &opts,  u64 aruid) {
         return ResultSuccess();
     }
 
-    Result AlbumApplicationService::PrecheckToCreateContentsByAruid(const ContentType type, const u64 unk, const u64 aruid) {
+    Result AlbumApplicationService::PrecheckToCreateContentsByAruid(ContentType type,  u64 unk,  u64 aruid) {
         return ResultSuccess();
     }
 
-    Result AlbumApplicationService::GetAlbumFileList1AafeAruidDeprecated(sf::OutBuffer buffer, sf::Out<u64> out, const ContentType type, const DateTime &start, const DateTime &end, const u64 aruid) {
+    Result AlbumApplicationService::GetAlbumFileList1AafeAruidDeprecated(sf::OutBuffer buffer, sf::Out<u64> out, ContentType type, const DateTime &start, const DateTime &end,  u64 aruid) {
         return ResultSuccess();
     }
 
-    Result AlbumApplicationService::GetAlbumFileList2AafeUidAruidDeprecated(sf::OutBuffer buffer, sf::Out<u64> out, const ContentType type, const DateTime &start, const DateTime &end, AccountUid uid, const u64 aruid) {
+    Result AlbumApplicationService::GetAlbumFileList2AafeUidAruidDeprecated(sf::OutBuffer buffer, sf::Out<u64> out, ContentType type, const DateTime &start, const DateTime &end, AccountUid uid,  u64 aruid) {
         return ResultSuccess();
     }
 
-    Result AlbumApplicationService::GetAlbumFileList3AaeAruid(sf::OutBuffer buffer, sf::Out<u64> out, const ContentType type, const DateTime &start, const DateTime &end, const u64 aruid) {
+    Result AlbumApplicationService::GetAlbumFileList3AaeAruid(sf::OutBuffer buffer, sf::Out<u64> out, ContentType type, const DateTime &start, const DateTime &end,  u64 aruid) {
         return ResultSuccess();
     }
 
-    Result AlbumApplicationService::GetAlbumFileList4AaeUidAruid(sf::OutBuffer buffer, sf::Out<u64> out, const ContentType type, const DateTime &start, const DateTime &end, AccountUid uid, const u64 aruid) {
+    Result AlbumApplicationService::GetAlbumFileList4AaeUidAruid(sf::OutBuffer buffer, sf::Out<u64> out, ContentType type, const DateTime &start, const DateTime &end, AccountUid uid,  u64 aruid) {
         return ResultSuccess();
     }
 

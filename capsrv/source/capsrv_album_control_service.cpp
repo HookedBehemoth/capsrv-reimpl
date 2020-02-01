@@ -16,12 +16,12 @@ namespace ams::capsrv {
     //Result AlbumControlService::RequestTakingScreenShotWithTimeout();
     //Result AlbumControlService::NotifyTakingScreenShotRefused();
 
-    Result AlbumControlService::NotifyAlbumStorageIsAvailable(const StorageId storage) {
+    Result AlbumControlService::NotifyAlbumStorageIsAvailable(StorageId storage) {
         WriteLogFile(LogType_Info, "NotifyAlbumStorageIsAvailable: storage(%hhd)", storage);
         return ResultSuccess();
     }
 
-    Result AlbumControlService::NotifyAlbumStorageIsUnavailable(const StorageId storage) {
+    Result AlbumControlService::NotifyAlbumStorageIsUnavailable(StorageId storage) {
         WriteLogFile(LogType_Info, "NotifyAlbumStorageIsUnavailable: storage(%hhd)", storage);
         return ResultSuccess();
     }

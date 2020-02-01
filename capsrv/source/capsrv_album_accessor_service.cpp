@@ -6,12 +6,12 @@
 
 namespace ams::capsrv {
 
-    Result AlbumAccessorService::GetAlbumFileCount(sf::Out<u64> out, const StorageId storage) {
+    Result AlbumAccessorService::GetAlbumFileCount(sf::Out<u64> out, StorageId storage) {
         WriteLogFile(LogType_Info, "GetAlbumFileCount: storage(%hhd)", storage);
         return impl::GetAlbumFileCount(out.GetPointer(), storage);
     }
 
-    Result AlbumAccessorService::GetAlbumFileList(sf::OutBuffer buffer, sf::Out<u64> out, const StorageId storage) {
+    Result AlbumAccessorService::GetAlbumFileList(sf::OutBuffer buffer, sf::Out<u64> out, StorageId storage) {
         WriteLogFile(LogType_Info, "GetAlbumFileList: storage(%hhd), bufferSize(%ld)", storage, buffer.GetSize());
         return impl::GetAlbumFileList(buffer.GetPointer(), buffer.GetSize(), out.GetPointer(), storage);
     }
@@ -26,17 +26,17 @@ namespace ams::capsrv {
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::StorageCopyAlbumFile(const StorageId storage, const FileId &fileId) {
+    Result AlbumAccessorService::StorageCopyAlbumFile(StorageId storage, const FileId &fileId) {
         WriteLogFile(LogType_Info, "StorageCopyAlbumFile: fileId(%s), storage(%hhd)", fileId.AsString().c_str(), storage);
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::IsAlbumMounted(sf::Out<bool> out, const StorageId storage) {
+    Result AlbumAccessorService::IsAlbumMounted(sf::Out<bool> out, StorageId storage) {
         WriteLogFile(LogType_Info, "IsAlbumMounted: storage(%hhd)", storage);
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetAlbumUsage(sf::Out<CapsAlbumUsage2> out, const StorageId storage) {
+    Result AlbumAccessorService::GetAlbumUsage(sf::Out<CapsAlbumUsage2> out, StorageId storage) {
         WriteLogFile(LogType_Info, "GetAlbumUsage: storage(%hhd)", storage);
         return ResultSuccess();
     }
@@ -81,17 +81,17 @@ namespace ams::capsrv {
         return impl::LoadAlbumScreenShotImageEx0(attrs.GetPointer(), width.GetPointer(), height.GetPointer(), work.GetPointer(), work.GetSize(), image.GetPointer(), image.GetSize(), fileId, opts);
     }
 
-    Result AlbumAccessorService::GetAlbumUsage3(sf::Out<CapsAlbumUsage3> usage, const StorageId storage) {
+    Result AlbumAccessorService::GetAlbumUsage3(sf::Out<CapsAlbumUsage3> usage, StorageId storage) {
         WriteLogFile(LogType_Info, "GetAlbumUsage3: storage(%d)", storage);
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetAlbumMountResult(const StorageId storage) {
+    Result AlbumAccessorService::GetAlbumMountResult(StorageId storage) {
         WriteLogFile(LogType_Info, "GetAlbumMountResult: storage(%d)", storage);
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetAlbumUsage16(sf::Out<AlbumUsage16> usage, const StorageId storage, const u8 flags) {
+    Result AlbumAccessorService::GetAlbumUsage16(sf::Out<AlbumUsage16> usage, StorageId storage, u8 flags) {
         WriteLogFile(LogType_Info, "GetAlbumUsage16: storage(%hhd), flags(%hhd)", storage, flags);
         return ResultSuccess();
     }
@@ -108,12 +108,12 @@ namespace ams::capsrv {
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetAlbumFileCountEx0(sf::Out<u64> out, const StorageId storage, const u8 flags) {
+    Result AlbumAccessorService::GetAlbumFileCountEx0(sf::Out<u64> out, StorageId storage, u8 flags) {
         WriteLogFile(LogType_Info, "GetAlbumFileCountEx0: storage(%hhd), flags(%hhd)", storage, flags);
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetAlbumFileListEx0(sf::OutBuffer buffer, sf::Out<u64> out, const u64 storage, const u64 flags) {
+    Result AlbumAccessorService::GetAlbumFileListEx0(sf::OutBuffer buffer, sf::Out<u64> out, u64 storage, u64 flags) {
         WriteLogFile(LogType_Info, "GetAlbumFileListEx0: bufferSize(%ld), storage(%ld), flags(%ld)", buffer.GetSize(), storage, flags);
         return ResultSuccess();
     }
@@ -135,7 +135,7 @@ namespace ams::capsrv {
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetRequiredStorageSpaceSizeToCopyAll(sf::Out<u64> out, const StorageId dst, const StorageId src) {
+    Result AlbumAccessorService::GetRequiredStorageSpaceSizeToCopyAll(sf::Out<u64> out, StorageId dst, StorageId src) {
         WriteLogFile(LogType_Info, "GetRequiredStorageSpaceSizeToCopyAll: dst(%hhd), src(%hhd)", dst, src);
         return ResultSuccess();
     }
@@ -155,32 +155,32 @@ namespace ams::capsrv {
         return impl::LoadAlbumScreenShotThumbnailImageEx1(out.GetPointer(), work.GetPointer(), work.GetSize(), image.GetPointer(), image.GetSize(), fileId, opts);
     }
 
-    Result AlbumAccessorService::ForceAlbumUnmounted(const StorageId storage) {
+    Result AlbumAccessorService::ForceAlbumUnmounted(StorageId storage) {
         WriteLogFile(LogType_Info, "ForceAlbumUnmounted: storage(%hhd)", storage);
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::ResetAlbumMountStatus(const StorageId storage) {
+    Result AlbumAccessorService::ResetAlbumMountStatus(StorageId storage) {
         WriteLogFile(LogType_Info, "ResetAlbumMountStatus: storage(%hhd)", storage);
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::RefreshAlbumCache(const StorageId storage) {
+    Result AlbumAccessorService::RefreshAlbumCache(StorageId storage) {
         WriteLogFile(LogType_Info, "RefreshAlbumCache: storage(%hhd)", storage);
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetAlbumCache(sf::Out<CapsAlbumCache> cache, const StorageId storage) {
+    Result AlbumAccessorService::GetAlbumCache(sf::Out<CapsAlbumCache> cache, StorageId storage) {
         WriteLogFile(LogType_Info, "GetAlbumCache: storage(%hhd)", storage);
         return impl::GetAlbumCache(cache.GetPointer(), storage, ContentType::Screenshot);
     }
 
-    Result AlbumAccessorService::GetAlbumCacheEx(sf::Out<CapsAlbumCache> cache, const StorageId storage, const ContentType type) {
+    Result AlbumAccessorService::GetAlbumCacheEx(sf::Out<CapsAlbumCache> cache, StorageId storage, const ContentType type) {
         WriteLogFile(LogType_Info, "GetAlbumCacheEx: storage(%hhd), type(%hhd)", storage, type);
         return impl::GetAlbumCache(cache.GetPointer(), storage, type);
     }
 
-    Result AlbumAccessorService::GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<CapsAlbumEntry> out, const ApplicationEntry &appEntry, u64 aruid, const sf::ClientProcessId &client_pid) {
+    Result AlbumAccessorService::GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<CapsAlbumEntry> out, const sf::ClientProcessId &client_pid, const ApplicationEntry &appEntry, u64 aruid) {
         WriteLogFile(LogType_Info, "GetAlbumEntryFromApplicationAlbumEntryAruid: ApplicationEntry(%s), aruid(%ld)", appEntry.AsString().c_str(), aruid);
         return ResultSuccess();
     }

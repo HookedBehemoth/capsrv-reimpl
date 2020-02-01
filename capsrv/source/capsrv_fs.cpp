@@ -11,7 +11,7 @@ namespace ams::capsrv {
         [StorageId::Sd] =   "SD"
     };
 
-    Result MountImageDirectory(const StorageId storage) {
+    Result MountImageDirectory(StorageId storage) {
         FsFileSystem imgDirFs;
         R_TRY(fsOpenImageDirectoryFileSystem(&imgDirFs, FsImageDirectoryId(storage)));
 
@@ -30,12 +30,12 @@ namespace ams::capsrv {
         return fs::ResultHostFileSystemCorrupted();
     }
 
-    Result UnmountImageDirectory(const StorageId storage) {
+    Result UnmountImageDirectory(StorageId storage) {
         // TODO: Unmount Host PC when TMA is a thing.
         return fsdevUnmountDevice(mountNames[(u8)storage].data());
     }
 
-    std::string_view GetMountName(const StorageId storage) {
+    std::string_view GetMountName(StorageId storage) {
         return mountNames[(u8)storage];
     }
 

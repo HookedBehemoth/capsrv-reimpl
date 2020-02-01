@@ -2,7 +2,7 @@
 
 namespace ams::capsrv::util {
 
-    Result TimestampToCalendarTime(TimeCalendarTime *datetime, const u64 timestamp) {
+    Result TimestampToCalendarTime(TimeCalendarTime *datetime, u64 timestamp) {
         TimeLocationName locName;
         R_TRY(timeGetDeviceLocationName(&locName));
 

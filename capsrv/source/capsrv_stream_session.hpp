@@ -34,13 +34,13 @@ namespace ams::capsrv {
             };
         public:
             virtual Result OpenAlbumMovieReadStream(sf::Out<u64> stream, const FileId &fileId) = 0;
-            virtual Result CloseAlbumMovieReadStream(const u64 stream) = 0;
-            virtual Result GetAlbumMovieReadStreamMovieDataSize(sf::Out<u64> size, const u64 stream) = 0;
-            virtual Result ReadMovieDataFromAlbumMovieReadStream(sf::OutBuffer buffer, sf::Out<u64> size, const u64 stream, const u64 offset) = 0;
-            virtual Result GetAlbumMovieReadStreamBrokenReason(const u64 stream) = 0;
-            virtual Result GetAlbumMovieReadStreamImageDataSize(sf::Out<u64> size, const u64 stream) = 0;
-            virtual Result ReadImageDataFromAlbumMovieReadStream(sf::OutBuffer buffer, sf::Out<u64> size, const u64 stream, const u64 offset) = 0;
-            virtual Result ReadFileAttributeFromAlbumMovieReadStream(sf::Out<CapsScreenshotAttribute> attrs) = 0;
+            virtual Result CloseAlbumMovieReadStream(u64 stream) = 0;
+            virtual Result GetAlbumMovieReadStreamMovieDataSize(sf::Out<u64> size, u64 stream) = 0;
+            virtual Result ReadMovieDataFromAlbumMovieReadStream(sf::OutBuffer buffer, sf::Out<u64> size, u64 stream, u64 offset) = 0;
+            virtual Result GetAlbumMovieReadStreamBrokenReason(u64 stream) = 0;
+            virtual Result GetAlbumMovieReadStreamImageDataSize(sf::Out<u64> size, u64 stream) = 0;
+            virtual Result ReadImageDataFromAlbumMovieReadStream(sf::OutBuffer buffer, sf::Out<u64> size, u64 stream, u64 offset) = 0;
+            virtual Result ReadFileAttributeFromAlbumMovieReadStream(sf::Out<CapsScreenShotAttribute> attrs) = 0;
     };
 
 }

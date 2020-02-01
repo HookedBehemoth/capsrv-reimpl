@@ -9,7 +9,7 @@ namespace ams::capsrv {
         this->id = 0;
     }
 
-    Result FileIdGenerator::GenerateFileId(FileId *fileId, const u64 appId, const ContentType type) {
+    Result FileIdGenerator::GenerateFileId(FileId *fileId, u64 appId, ContentType type) {
         StorageId storage = impl::GetPrimaryStorage();
         Result rc = impl::MountAlbum(storage);
         if (rc.IsFailure())

@@ -24,12 +24,12 @@ namespace ams::capsrv {
             ~Settings();
             void Initialize();
 
-            bool SupportsType(const ContentType type) const;
-            bool StorageValid(const StorageId storage) const;
-            inline u64 GetMax(const StorageId storage, const ContentType type) const;
+            bool SupportsType(ContentType type) const;
+            bool StorageValid(StorageId storage) const;
+            inline u64 GetMax(StorageId storage, ContentType type) const;
             const char* GetCustomDirectoryPath() const;
 
-            Result MountAlbum(const StorageId storage);
-            Result UnmountAlbum(const StorageId storage);
+            Result MountAlbum(StorageId storage);
+            Result UnmountAlbum(StorageId storage);
     };
 }

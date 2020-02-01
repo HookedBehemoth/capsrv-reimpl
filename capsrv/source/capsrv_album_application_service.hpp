@@ -24,18 +24,18 @@ namespace ams::capsrv {
                 //OpenAccessorSessionForApplication       = 60002
             };
         public:
-            virtual Result SetShimLibraryVersion(const u64 version, const u64 aruid);
-            virtual Result GetAlbumFileList0AafeAruidDeprecated(sf::OutBuffer buffer, const ContentType type, const u64 startTimestamp, const u64 endTimestamp, const u64 aruid);
-            virtual Result DeleteAlbumFileByAruid(const ContentType type, const ApplicationFileEntry &entry, const u64 aruid);
-            virtual Result GetAlbumFileSizeByAruid(sf::Out<u64> out, const ApplicationFileEntry &entry, const u64 aruid);
+            virtual Result SetShimLibraryVersion(u64 version, u64 aruid);
+            virtual Result GetAlbumFileList0AafeAruidDeprecated(sf::OutBuffer buffer, ContentType type, u64 startTimestamp, u64 endTimestamp, u64 aruid);
+            virtual Result DeleteAlbumFileByAruid(ContentType type, const ApplicationFileEntry &entry, u64 aruid);
+            virtual Result GetAlbumFileSizeByAruid(sf::Out<u64> out, const ApplicationFileEntry &entry, u64 aruid);
             //virtual Result DeleteAlbumFileByAruidForDebug();
-            virtual Result LoadAlbumScreenShotImageByAruid(sf::Out<LoadAlbumScreenShotImageOutputForApplication> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const ApplicationFileEntry &entry, const CapsScreenShotDecodeOption &opts, const u64 aruid);
-            virtual Result LoadAlbumScreenShotThumbnailImageByAruid(sf::Out<LoadAlbumScreenShotImageOutputForApplication> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const ApplicationFileEntry &entry, const CapsScreenShotDecodeOption &opts, const u64 aruid);
-            virtual Result PrecheckToCreateContentsByAruid(const ContentType type, const u64 unk, const u64 aruid);
-            virtual Result GetAlbumFileList1AafeAruidDeprecated(sf::OutBuffer buffer, sf::Out<u64> out, const ContentType type, const DateTime &start, const DateTime &end, const u64 aruid);
-            virtual Result GetAlbumFileList2AafeUidAruidDeprecated(sf::OutBuffer buffer, sf::Out<u64> out, const ContentType type, const DateTime &start, const DateTime &end, AccountUid uid, const u64 aruid);
-            virtual Result GetAlbumFileList3AaeAruid(sf::OutBuffer buffer, sf::Out<u64> out, const ContentType type, const DateTime &start, const DateTime &end, const u64 aruid);
-            virtual Result GetAlbumFileList4AaeUidAruid(sf::OutBuffer buffer, sf::Out<u64> out, const ContentType type, const DateTime &start, const DateTime &end, AccountUid uid, const u64 aruid);
+            virtual Result LoadAlbumScreenShotImageByAruid(sf::Out<LoadAlbumScreenShotImageOutputForApplication> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const ApplicationFileEntry &entry, const CapsScreenShotDecodeOption &opts, u64 aruid);
+            virtual Result LoadAlbumScreenShotThumbnailImageByAruid(sf::Out<LoadAlbumScreenShotImageOutputForApplication> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const ApplicationFileEntry &entry, const CapsScreenShotDecodeOption &opts, u64 aruid);
+            virtual Result PrecheckToCreateContentsByAruid(ContentType type, u64 unk, u64 aruid);
+            virtual Result GetAlbumFileList1AafeAruidDeprecated(sf::OutBuffer buffer, sf::Out<u64> out, ContentType type, const DateTime &start, const DateTime &end, u64 aruid);
+            virtual Result GetAlbumFileList2AafeUidAruidDeprecated(sf::OutBuffer buffer, sf::Out<u64> out, ContentType type, const DateTime &start, const DateTime &end, AccountUid uid, u64 aruid);
+            virtual Result GetAlbumFileList3AaeAruid(sf::OutBuffer buffer, sf::Out<u64> out, ContentType type, const DateTime &start, const DateTime &end, u64 aruid);
+            virtual Result GetAlbumFileList4AaeUidAruid(sf::OutBuffer buffer, sf::Out<u64> out, ContentType type, const DateTime &start, const DateTime &end, AccountUid uid, u64 aruid);
             //virtual Result OpenAccessorSessionForApplication();
         public:
             DEFINE_SERVICE_DISPATCH_TABLE {
