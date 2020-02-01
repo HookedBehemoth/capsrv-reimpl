@@ -180,8 +180,8 @@ namespace ams::capsrv {
         return impl::GetAlbumCache(cache.GetPointer(), storage, type);
     }
 
-    Result AlbumAccessorService::GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<CapsAlbumEntry> out, const sf::ClientProcessId &client_pid, const ApplicationEntry &appEntry, u64 aruid) {
-        WriteLogFile(LogType_Info, "GetAlbumEntryFromApplicationAlbumEntryAruid: ApplicationEntry(%s), aruid(%ld)", appEntry.AsString().c_str(), aruid);
+    Result AlbumAccessorService::GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<CapsAlbumEntry> out, const sf::ClientAppletResourceUserId &aruid, const ApplicationEntry &appEntry) {
+        WriteLogFile(LogType_Info, "GetAlbumEntryFromApplicationAlbumEntryAruid: ApplicationEntry(%s), aruid(%ld)", appEntry.AsString().c_str(), aruid.GetValue());
         return ResultSuccess();
     }
 
@@ -195,9 +195,11 @@ namespace ams::capsrv {
         return ResultSuccess();
     }
 
-    /*Result AlbumAccessorService::OpenAccessorSession(sf::Out<std::shared_ptr<IContentStorage>> out, StorageId storage_id) {
-        WriteLogFile(LogType_Info, "LoadMakerNoteInfoForDebug: bufferSize(%ld), bufferSize(%ld), fileId(%s)", unk0.GetSize(), unk1.GetSize(), fileId.AsString().c_str());
+    Result AlbumAccessorService::OpenAccessorSession(sf::Out<std::shared_ptr<AccessorSession>> out, const sf::ClientAppletResourceUserId &aruid) {
+        WriteLogFile(LogType_Info, "OpenAccessorSession: pid(%ld), aruid(%ld)", aruid.GetValue(), aruid);
+        auto session = std::make_shared<AccessorSession>();
+        out.SetValue(std::move(session));
         return ResultSuccess();
-    }*/
+    }
 
 }

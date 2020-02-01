@@ -1,6 +1,7 @@
 #pragma once
 #include <stratosphere.hpp>
 #include "capsrv_types.hpp"
+#include "capsrv_stream_session.hpp"
 
 namespace ams::capsrv {
 
@@ -46,7 +47,7 @@ namespace ams::capsrv {
                 GetAlbumEntryFromApplicationAlbumEntryAruid = 8021,
                 SetInternalErrorConversionEnabled           = 10011,
                 LoadMakerNoteInfoForDebug                   = 50000,
-                //OpenAccessorSession                         = 60002,
+                OpenAccessorSession                         = 60002,
             };
         public:
             virtual Result GetAlbumFileCount(sf::Out<u64> out, StorageId storage);
@@ -83,10 +84,10 @@ namespace ams::capsrv {
             virtual Result RefreshAlbumCache(StorageId storage);
             virtual Result GetAlbumCache(sf::Out<CapsAlbumCache> cache, StorageId storage);
             virtual Result GetAlbumCacheEx(sf::Out<CapsAlbumCache> cache, StorageId storage, const ContentType type);
-            virtual Result GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<CapsAlbumEntry> out, const sf::ClientProcessId &client_pid, const ApplicationEntry &appEntry, u64 aruid);
+            virtual Result GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<CapsAlbumEntry> out, const sf::ClientAppletResourceUserId &aruid, const ApplicationEntry &appEntry);
             virtual Result SetInternalErrorConversionEnabled(const bool enabled);
             virtual Result LoadMakerNoteInfoForDebug(sf::Out<u64> out, sf::OutBuffer unk0, sf::OutBuffer unk1, const FileId &fileId);
-            //virtual Result OpenAccessorSession(Out<std::shared_ptr<IContentStorage>> out, StorageId storage_id);
+            virtual Result OpenAccessorSession(sf::Out<std::shared_ptr<AccessorSession>> out, const sf::ClientAppletResourceUserId &aruid);
         public:
             DEFINE_SERVICE_DISPATCH_TABLE {
                 MAKE_SERVICE_COMMAND_META(GetAlbumFileCount),
@@ -126,7 +127,7 @@ namespace ams::capsrv {
                 MAKE_SERVICE_COMMAND_META(GetAlbumEntryFromApplicationAlbumEntryAruid,  hos::Version_200),
                 MAKE_SERVICE_COMMAND_META(SetInternalErrorConversionEnabled),
                 MAKE_SERVICE_COMMAND_META(LoadMakerNoteInfoForDebug,                    hos::Version_600),
-                //MAKE_SERVICE_COMMAND_META(OpenAccessorSession,                          hos::Version_400)
+                MAKE_SERVICE_COMMAND_META(OpenAccessorSession,                          hos::Version_400)
             };
     };
 }

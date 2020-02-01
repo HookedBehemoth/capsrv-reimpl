@@ -51,7 +51,10 @@ namespace ams::capsrv {
         return ResultSuccess();
     }
 
-    //Result AlbumControlService::GenerateApplicationAlbumEntry(sf::Out<FileId> out, u64 appId, ContentType type);
+    Result AlbumControlService::GenerateApplicationAlbumEntry(sf::Out<CapsApplicationAlbumEntry> out, u64 appId, ContentType type) {
+        WriteLogFile(LogType_Info, "GenerateApplicationAlbumEntry: applicationId(%ld), type(%hhd)", appId, type);
+        return ResultSuccess();
+    }
     
     Result AlbumControlService::SaveAlbumScreenShotFile(sf::InBuffer buffer, const FileId &fileId) {
         WriteLogFile(LogType_Info, "SaveAlbumScreenShotFile: bufferSize(%ld), applicationId(%s)", buffer.GetSize(), fileId.AsString().c_str());
@@ -72,5 +75,11 @@ namespace ams::capsrv {
         WriteLogFile(LogType_Info, "SetOverlayMovieThumbnailData: bufferSize(%ld), applicationId(%s)", buffer.GetSize(), fileId.AsString().c_str());
         return ResultSuccess();
     }
-    //Result AlbumControlService::OpenControlSession();
+
+    Result AlbumControlService::OpenControlSession(sf::Out<std::shared_ptr<ControlSession>> out, const sf::ClientProcessId &client_pid, u64 aruid) {
+        WriteLogFile(LogType_Info, "OpenControlSession: pid(%ld), aruid(%ld)", client_pid.GetValue(), aruid);
+        auto session = std::make_shared<ControlSession>();
+        out.SetValue(std::move(session));
+        return ResultSuccess();
+    }
 }

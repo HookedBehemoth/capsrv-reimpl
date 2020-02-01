@@ -1,6 +1,7 @@
 #pragma once
 #include <stratosphere.hpp>
 #include "capsrv_types.hpp"
+#include "capsrv_stream_session.hpp"
 
 namespace ams::capsrv {
 
@@ -22,12 +23,12 @@ namespace ams::capsrv {
                 GetApplicationIdFromAruid               = 2013,
                 CheckApplicationIdRegistered            = 2014,
                 GenerateCurrentAlbumFileId              = 2101,
-                //GenerateApplicationAlbumEntry           = 2102,
+                GenerateApplicationAlbumEntry           = 2102,
                 SaveAlbumScreenShotFile                 = 2201,
                 SaveAlbumScreenShotFileEx               = 2202,
                 SetOverlayScreenShotThumbnailData       = 2301,
                 SetOverlayMovieThumbnailData            = 2302,
-                //OpenControlSession                      = 60001,
+                OpenControlSession                      = 60001,
             };
         public:
             //virtual Result CaptureRawImage();
@@ -43,12 +44,12 @@ namespace ams::capsrv {
             virtual Result GetApplicationIdFromAruid(sf::Out<u64> appId, u64 aruid);
             virtual Result CheckApplicationIdRegistered(u64 appId);
             virtual Result GenerateCurrentAlbumFileId(sf::Out<FileId> out, u64 appId, ContentType type);
-            //virtual Result GenerateApplicationAlbumEntry(sf::Out<FileId> out, u64 appId, ContentType type);
+            virtual Result GenerateApplicationAlbumEntry(sf::Out<CapsApplicationAlbumEntry> out, u64 appId, ContentType type);
             virtual Result SaveAlbumScreenShotFile(sf::InBuffer buffer, const FileId &fileId);
             virtual Result SaveAlbumScreenShotFileEx(sf::InNonSecureBuffer buffer, const FileId &fileId, u64 unk0, u64 unk1, u64 unk2);
             virtual Result SetOverlayScreenShotThumbnailData(sf::InNonSecureBuffer buffer, const FileId &fileId);
             virtual Result SetOverlayMovieThumbnailData(sf::InNonSecureBuffer buffer, const FileId &fileId);
-            //virtual Result OpenControlSession();
+            virtual Result OpenControlSession(sf::Out<std::shared_ptr<ControlSession>> out, const sf::ClientProcessId &client_pid, u64 aruid);
         public:
             DEFINE_SERVICE_DISPATCH_TABLE {
                 //MAKE_SERVICE_COMMAND_META(CaptureRawImage,                    hos::Version_100, hos::Version_100),
@@ -64,12 +65,12 @@ namespace ams::capsrv {
                 MAKE_SERVICE_COMMAND_META(GetApplicationIdFromAruid),
                 MAKE_SERVICE_COMMAND_META(CheckApplicationIdRegistered),
                 MAKE_SERVICE_COMMAND_META(GenerateCurrentAlbumFileId),
-                //MAKE_SERVICE_COMMAND_META(GenerateApplicationAlbumEntry),
+                MAKE_SERVICE_COMMAND_META(GenerateApplicationAlbumEntry),
                 MAKE_SERVICE_COMMAND_META(SaveAlbumScreenShotFile),
                 MAKE_SERVICE_COMMAND_META(SaveAlbumScreenShotFileEx),
                 MAKE_SERVICE_COMMAND_META(SetOverlayScreenShotThumbnailData),
                 MAKE_SERVICE_COMMAND_META(SetOverlayMovieThumbnailData),
-                //MAKE_SERVICE_COMMAND_META(OpenControlSession),
+                MAKE_SERVICE_COMMAND_META(OpenControlSession),
             };
     };
 }
