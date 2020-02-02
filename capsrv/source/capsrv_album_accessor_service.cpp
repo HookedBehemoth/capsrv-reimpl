@@ -33,7 +33,7 @@ namespace ams::capsrv {
 
     Result AlbumAccessorService::IsAlbumMounted(sf::Out<bool> out, StorageId storage) {
         WriteLogFile("Accessor", "IsAlbumMounted: storage(%hhd)", storage);
-        return ResultSuccess();
+        return impl::IsAlbumMounted(out.GetPointer(), storage);
     }
 
     Result AlbumAccessorService::GetAlbumUsage(sf::Out<CapsAlbumUsage2> out, StorageId storage) {

@@ -22,9 +22,8 @@ namespace ams::capsrv {
 
     struct DateTime : CapsAlbumFileDateTime {
         std::string AsString() const {
-            const char* tmp = "%04d:%02d:%02d %02d:%02d:%02d %02d";
             char out[36];
-            snprintf(out, 36, tmp, this->year, this->month, this->day, this->hour, this->minute, this->second, this->id);
+            snprintf(out, 36, "[%04d:%02d:%02d %02d:%02d:%02d %02d]", this->year, this->month, this->day, this->hour, this->minute, this->second, this->id);
             return std::string(out);
         }
     };
@@ -35,9 +34,8 @@ namespace ams::capsrv {
         StorageId storage;
         ContentType type;
         std::string AsString() const {
-            const char* tmp = "%016lx, %s, %hhd, %hhd";
             char out[60];
-            snprintf(out, 60, tmp, this->applicationId, this->datetime.AsString().c_str(), this->storage, this->type);
+            snprintf(out, 60, "%016lx, %s, %hhd, %hhd", this->applicationId, this->datetime.AsString().c_str(), this->storage, this->type);
             return std::string(out);
         }
     };
@@ -48,9 +46,8 @@ namespace ams::capsrv {
         DateTime datetime;
         u64 unk_x18;
         std::string AsString() const {
-            const char* tmp = "%016lx, %016lx, %s, %016lx";
             char out[120];
-            snprintf(out, 120, tmp, this->unk_x0, this->unk_x8, this->datetime.AsString().c_str(), this->unk_x18);
+            snprintf(out, 120, "%016lx, %016lx, %s, %016lx", this->unk_x0, this->unk_x8, this->datetime.AsString().c_str(), this->unk_x18);
             return std::string(out);
         }
     };
@@ -60,9 +57,8 @@ namespace ams::capsrv {
         DateTime datetime;
         u64 unk_x28;
         std::string AsString() const {
-            const char* tmp = "%s, %s, %016lx";
             char out[200];
-            snprintf(out, 200, tmp, this->fileId.AsString().c_str(), this->datetime.AsString().c_str(), this->unk_x28);
+            snprintf(out, 200, "%s, %s, %016lx", this->fileId.AsString().c_str(), this->datetime.AsString().c_str(), this->unk_x28);
             return std::string(out);
         }
     };

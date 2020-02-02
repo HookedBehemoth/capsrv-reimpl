@@ -48,7 +48,9 @@ namespace ams::capsrv::impl {
 
     Result GenerateCurrentAlbumFileId(FileId *out, u64 appId, ContentType type) {
         FileId fileId;
-        return g_FileIdGenerator.GenerateFileId(&fileId, appId, type);
+        R_TRY(g_FileIdGenerator.GenerateFileId(&fileId, appId, type));
+        *out = fileId;
+        return ResultSuccess();
     }
 
     Result GetAlbumFileCount(u64* outCount, StorageId storageId) {
@@ -75,13 +77,24 @@ namespace ams::capsrv::impl {
         return res;
     }
 
+    Result IsAlbumMounted(bool *out, StorageId storage) {
+        *out = false;
+        R_UNLESS(g_Settings.StorageValid(storage), capsrv::ResultInvalidStorageId());
+        *out = g_mountStatus[storage];
+        return ResultSuccess();
+    }
+
     Result MountAlbum(StorageId storage) {
+        if (g_mountStatus[storage])
+            return ResultSuccess();
         R_TRY(g_Settings.MountAlbum(storage));
         g_mountStatus[storage] = true;
         return ResultSuccess();
     }
 
     Result UnmountAlbum(StorageId storage) {
+        if (!g_mountStatus[storage])
+            return ResultSuccess();
         R_TRY(g_Settings.UnmountAlbum(storage));
         g_mountStatus[storage] = false;
         return ResultSuccess();

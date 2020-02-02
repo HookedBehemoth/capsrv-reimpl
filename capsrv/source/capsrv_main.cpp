@@ -2,6 +2,8 @@
 #include "capsrv_album_control_service.hpp"
 #include "capsrv_album_application_service.hpp"
 
+#include "impl/capsrv_manager.hpp"
+
 extern "C" {
     extern u32 __start__;
 
@@ -23,7 +25,8 @@ extern "C" {
 }
 
 namespace ams {
-    ncm::ProgramId CurrentProgramId = { 0x0100013370000022ul };
+    //ncm::ProgramId CurrentProgramId = { 0x0100013370000022ul };
+    ncm::ProgramId CurrentProgramId = ncm::ProgramId::CapSrv;
 
     namespace result {
 
@@ -79,19 +82,21 @@ namespace {
     constexpr size_t NumServers  = 3;
     sf::hipc::ServerManager<NumServers> g_server_manager;
 
-    constexpr sm::ServiceName AlbumAccessorServiceName    = sm::ServiceName::Encode("lmao:a");
+    constexpr sm::ServiceName AlbumAccessorServiceName    = sm::ServiceName::Encode("caps:a");
     constexpr size_t          AlbumAccessorMaxSessions    = 4;
 
-    constexpr sm::ServiceName AlbumControlServiceName     = sm::ServiceName::Encode("lmao:c");
+    constexpr sm::ServiceName AlbumControlServiceName     = sm::ServiceName::Encode("caps:c");
     constexpr size_t          AlbumControlMaxSessions     = 4;
 
-    constexpr sm::ServiceName AlbumApplicationServiceName = sm::ServiceName::Encode("lmao:u");
-    constexpr size_t          AlbumApplicationMaxSessions = 10;
+    constexpr sm::ServiceName AlbumApplicationServiceName = sm::ServiceName::Encode("caps:u");
+    constexpr size_t          AlbumApplicationMaxSessions = 4;
 
 }
 
 int main(int argc, char **argv)
 {
+    capsrv::impl::MountAlbum(capsrv::StorageId::Nand);
+
     /* Create services */
     R_ASSERT(g_server_manager.RegisterServer<capsrv::AlbumAccessorService>(AlbumAccessorServiceName, AlbumAccessorMaxSessions));
 

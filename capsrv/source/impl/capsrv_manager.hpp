@@ -14,6 +14,7 @@ namespace ams::capsrv::impl {
     Result GetAlbumFileCount(u64* outCount, StorageId storageId);
     Result GetAlbumFileList(void* ptr, u64 size, u64* outCount, StorageId storageId);
 
+    Result IsAlbumMounted(bool *out, StorageId storage);
     Result MountAlbum(StorageId storage);
     Result UnmountAlbum(StorageId storage);
 

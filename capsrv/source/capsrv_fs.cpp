@@ -15,7 +15,7 @@ namespace ams::capsrv {
         FsFileSystem imgDirFs;
         R_TRY(fsOpenImageDirectoryFileSystem(&imgDirFs, FsImageDirectoryId(storage)));
 
-        if (fsdevMountDevice(mountNames[(u8)storage].data(), imgDirFs) == -1) {
+        if (fsdevMountDevice(mountNames[storage].data(), imgDirFs) == -1) {
             std::abort();
         }
 
@@ -32,11 +32,11 @@ namespace ams::capsrv {
 
     Result UnmountImageDirectory(StorageId storage) {
         // TODO: Unmount Host PC when TMA is a thing.
-        return fsdevUnmountDevice(mountNames[(u8)storage].data());
+        return fsdevUnmountDevice(mountNames[storage].data());
     }
 
     std::string_view GetMountName(StorageId storage) {
-        return mountNames[(u8)storage];
+        return mountNames[storage];
     }
 
 }
