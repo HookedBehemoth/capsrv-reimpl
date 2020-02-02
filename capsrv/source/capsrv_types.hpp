@@ -13,7 +13,7 @@ namespace ams::capsrv {
     };
 
     /* Content IDs. */
-    enum class ContentType : u8 {
+    enum ContentType : u8 {
         Screenshot      = 0,
         Movie           = 1,
         ExtraScreenshot = 2,
@@ -37,7 +37,7 @@ namespace ams::capsrv {
         std::string AsString() const {
             const char* tmp = "%016lx, %s, %hhd, %hhd";
             char out[60];
-            snprintf(out, 36, tmp, this->applicationId, this->datetime.AsString().c_str(), this->storage, this->type);
+            snprintf(out, 60, tmp, this->applicationId, this->datetime.AsString().c_str(), this->storage, this->type);
             return std::string(out);
         }
     };
@@ -45,19 +45,25 @@ namespace ams::capsrv {
     struct ApplicationFileId {
         u64 unk_x0;
         u64 unk_x8;
-        DateTime dateTime;
-        u64 unk;
+        DateTime datetime;
+        u64 unk_x18;
+        std::string AsString() const {
+            const char* tmp = "%016lx, %016lx, %s, %016lx";
+            char out[120];
+            snprintf(out, 120, tmp, this->unk_x0, this->unk_x8, this->datetime.AsString().c_str(), this->unk_x18);
+            return std::string(out);
+        }
     };
 
-    struct ApplicationFileEntry {
+    struct ApplicationEntry {
         ApplicationFileId fileId;
         DateTime datetime;
         u64 unk_x28;
-    };
-
-    struct ApplicationEntry : CapsApplicationAlbumEntry {
         std::string AsString() const {
-            return ((DateTime*)&this->v1.datetime)->AsString();
+            const char* tmp = "%s, %s, %016lx";
+            char out[200];
+            snprintf(out, 200, tmp, this->fileId.AsString().c_str(), this->datetime.AsString().c_str(), this->unk_x28);
+            return std::string(out);
         }
     };
 

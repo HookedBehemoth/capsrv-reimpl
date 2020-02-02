@@ -23,9 +23,4 @@
  */
 #pragma once
 
-typedef enum {
-	LogType_Error = 0,
-	LogType_Info = 1,
-} LogType;
-
-void WriteLogFile(LogType type, const char *fmt, ...);
+void WriteLogFile(const char* type, const char *fmt, ...);

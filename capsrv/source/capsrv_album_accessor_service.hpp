@@ -61,7 +61,7 @@ namespace ams::capsrv {
             virtual Result LoadAlbumFileThumbnail(sf::OutBuffer image, sf::Out<u64> out, const FileId &fileId);
             virtual Result LoadAlbumScreenShotImage(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId);
             virtual Result LoadAlbumScreenShotThumbnailImage(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId);
-            virtual Result GetAlbumEntryFromApplicationAlbumEntry(sf::Out<CapsAlbumEntry> out, const ApplicationEntry &appEntry, u64 appId);
+            virtual Result GetAlbumEntryFromApplicationAlbumEntry(sf::Out<CapsAlbumEntry> out, const ApplicationFileId &appEntry, u64 appId);
             virtual Result LoadAlbumScreenShotImageEx(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
             virtual Result LoadAlbumScreenShotThumbnailImageEx(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
             virtual Result LoadAlbumScreenShotImageEx0(sf::Out<CapsScreenShotAttribute> attrs, sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
@@ -84,7 +84,7 @@ namespace ams::capsrv {
             virtual Result RefreshAlbumCache(StorageId storage);
             virtual Result GetAlbumCache(sf::Out<CapsAlbumCache> cache, StorageId storage);
             virtual Result GetAlbumCacheEx(sf::Out<CapsAlbumCache> cache, StorageId storage, const ContentType type);
-            virtual Result GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<CapsAlbumEntry> out, const sf::ClientAppletResourceUserId &aruid, const ApplicationEntry &appEntry);
+            virtual Result GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<CapsAlbumEntry> out, const sf::ClientAppletResourceUserId &aruid, const ApplicationFileId &appEntry);
             virtual Result SetInternalErrorConversionEnabled(const bool enabled);
             virtual Result LoadMakerNoteInfoForDebug(sf::Out<u64> out, sf::OutBuffer unk0, sf::OutBuffer unk1, const FileId &fileId);
             virtual Result OpenAccessorSession(sf::Out<std::shared_ptr<AccessorSession>> out, const sf::ClientAppletResourceUserId &aruid);

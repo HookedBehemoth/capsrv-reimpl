@@ -27,7 +27,7 @@ namespace ams {
 
     namespace result {
 
-        bool CallFatalOnResultAssertion = true;
+        bool CallFatalOnResultAssertion = false;
 
     }
 
@@ -52,6 +52,7 @@ void __appInit(void) {
 
     sm::DoWithSession([] {
         R_ASSERT(fsInitialize());
+        R_ASSERT(setsysInitialize());
         R_ASSERT(timeInitialize());
     });
 
@@ -64,6 +65,7 @@ void __appExit(void) {
     
     fsdevUnmountAll();
     fsExit();
+    setsysExit();
 }
 
 // TODO: Custom Init function call?
@@ -84,7 +86,7 @@ namespace {
     constexpr size_t          AlbumControlMaxSessions     = 4;
 
     constexpr sm::ServiceName AlbumApplicationServiceName = sm::ServiceName::Encode("lmao:u");
-    constexpr size_t          AlbumApplicationMaxSessions = 4;
+    constexpr size_t          AlbumApplicationMaxSessions = 10;
 
 }
 

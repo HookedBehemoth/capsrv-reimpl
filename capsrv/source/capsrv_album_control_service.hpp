@@ -44,12 +44,12 @@ namespace ams::capsrv {
             virtual Result GetApplicationIdFromAruid(sf::Out<u64> appId, u64 aruid);
             virtual Result CheckApplicationIdRegistered(u64 appId);
             virtual Result GenerateCurrentAlbumFileId(sf::Out<FileId> out, u64 appId, ContentType type);
-            virtual Result GenerateApplicationAlbumEntry(sf::Out<CapsApplicationAlbumEntry> out, u64 appId, ContentType type);
+            virtual Result GenerateApplicationAlbumEntry(sf::Out<ApplicationEntry> out, u64 appId, ContentType type);
             virtual Result SaveAlbumScreenShotFile(sf::InBuffer buffer, const FileId &fileId);
             virtual Result SaveAlbumScreenShotFileEx(sf::InNonSecureBuffer buffer, const FileId &fileId, u64 unk0, u64 unk1, u64 unk2);
             virtual Result SetOverlayScreenShotThumbnailData(sf::InNonSecureBuffer buffer, const FileId &fileId);
             virtual Result SetOverlayMovieThumbnailData(sf::InNonSecureBuffer buffer, const FileId &fileId);
-            virtual Result OpenControlSession(sf::Out<std::shared_ptr<ControlSession>> out, const sf::ClientProcessId &client_pid, u64 aruid);
+            virtual Result OpenControlSession(sf::Out<std::shared_ptr<ControlSession>> out, const sf::ClientAppletResourceUserId &aruid);
         public:
             DEFINE_SERVICE_DISPATCH_TABLE {
                 //MAKE_SERVICE_COMMAND_META(CaptureRawImage,                    hos::Version_100, hos::Version_100),

@@ -77,13 +77,13 @@ namespace ams::capsrv::impl {
 
     Result MountAlbum(StorageId storage) {
         R_TRY(g_Settings.MountAlbum(storage));
-        g_mountStatus[(u8)storage] = true;
+        g_mountStatus[storage] = true;
         return ResultSuccess();
     }
 
     Result UnmountAlbum(StorageId storage) {
         R_TRY(g_Settings.UnmountAlbum(storage));
-        g_mountStatus[(u8)storage] = false;
+        g_mountStatus[storage] = false;
         return ResultSuccess();
     }
 
@@ -94,7 +94,7 @@ namespace ams::capsrv::impl {
         if (!g_Settings.SupportsType(type))
             return capsrv::ResultInvalidContentType();
 
-        *out = g_storage[(u8)storage].usage[(u8)type];
+        *out = g_storage[storage].usage[type];
 
         return ResultSuccess();
     }
