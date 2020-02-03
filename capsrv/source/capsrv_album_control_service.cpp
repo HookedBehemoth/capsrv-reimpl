@@ -1,4 +1,5 @@
 #include "capsrv_album_control_service.hpp"
+#include "impl/capsrv_fs.hpp"
 #include "impl/capsrv_manager.hpp"
 
 #include "logger.hpp"

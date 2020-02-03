@@ -2,7 +2,7 @@
 #include "capsrv_album_control_service.hpp"
 #include "capsrv_album_application_service.hpp"
 
-#include "impl/capsrv_manager.hpp"
+#include "impl/capsrv_fs.hpp"
 
 extern "C" {
     extern u32 __start__;
@@ -54,6 +54,7 @@ void __appInit(void) {
     hos::SetVersionForLibnx();
 
     sm::DoWithSession([] {
+        R_ASSERT(capsdcInitialize());
         R_ASSERT(fsInitialize());
         R_ASSERT(setsysInitialize());
         R_ASSERT(timeInitialize());
@@ -65,10 +66,11 @@ void __appInit(void) {
 
 void __appExit(void) {
     /* Cleanup services. */
-    
+    timeExit();
+    setsysExit();
     fsdevUnmountAll();
     fsExit();
-    setsysExit();
+    capsdcExit();
 }
 
 // TODO: Custom Init function call?

@@ -1,4 +1,5 @@
 #include "capsrv_album_accessor_service.hpp"
+#include "impl/capsrv_fs.hpp"
 #include "impl/capsrv_manager.hpp"
 #include "impl/capsrv_image.hpp"
 
@@ -23,7 +24,7 @@ namespace ams::capsrv {
 
     Result AlbumAccessorService::DeleteAlbumFile(const FileId &fileId) {
         WriteLogFile("Accessor", "DeleteAlbumFile: fileId(%s)", fileId.AsString().c_str());
-        return ResultSuccess();
+        return impl::DeleteAlbumFile(fileId);
     }
 
     Result AlbumAccessorService::StorageCopyAlbumFile(StorageId storage, const FileId &fileId) {

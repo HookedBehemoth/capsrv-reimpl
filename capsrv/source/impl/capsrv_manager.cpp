@@ -1,25 +1,20 @@
 #include "capsrv_manager.hpp"
-#include "../capsrv_file_id_generator.hpp"
-#include "../capsrv_settings.hpp"
+#include "capsrv_fs.hpp"
+#include "../capsrv_util.hpp"
 
 #include <mutex>
 
 namespace ams::capsrv::impl {
 
-    struct Storage {
-        CapsAlbumCache usage[4];
-    };
-
     namespace {
+        struct {
+            u64 lastTimestamp = 0;
+            u32 id = 0;
+        } idGenerator;
         os::Mutex g_mutex;
-        Settings g_Settings;
-        bool g_mountStatus[2];
-        Storage g_storage[2];
-        FileIdGenerator g_FileIdGenerator;
     }
 
     Result InitializeAlbumAccessor() {
-        g_Settings.Initialize();
         return ResultSuccess();
     }
 
@@ -27,29 +22,32 @@ namespace ams::capsrv::impl {
 
     }
 
-    StorageId GetPrimaryStorage() {
-        SetSysPrimaryAlbumStorage storage;
-        Result rc = setsysGetPrimaryAlbumStorage(&storage);
-        if (R_FAILED(rc))
-            std::abort();
+    Result GenerateCurrentAlbumFileId(FileId *fileId, u64 appId, ContentType type) {
+        StorageId storage;
+        R_TRY(impl::GetAutoSavingStorage(&storage));
 
-        return StorageId(storage);
-    }
+        u64 timestamp;
+        R_TRY(timeGetCurrentTime(TimeType_Default, &timestamp));
+        
+        if (idGenerator.lastTimestamp == timestamp && idGenerator.id < 99) {
+            idGenerator.id ++;
+        } else {
+            idGenerator.lastTimestamp = timestamp;
+            idGenerator.id = 0;
+        }
 
-    Result GetAutoSavingStorage(StorageId *out) {
-        StorageId storage = GetPrimaryStorage();
-        Result rc = MountAlbum(storage);
-        if (rc.IsFailure())
-            return capsrv::ResultFailedToMountImageDirectory();
+        TimeCalendarTime datetime;
+        util::TimestampToCalendarTime(&datetime, timestamp);
 
-        *out = storage;
-        return ResultSuccess();
-    }
-
-    Result GenerateCurrentAlbumFileId(FileId *out, u64 appId, ContentType type) {
-        FileId fileId;
-        R_TRY(g_FileIdGenerator.GenerateFileId(&fileId, appId, type));
-        *out = fileId;
+        fileId->applicationId = appId;
+        fileId->datetime.year =   datetime.year;
+        fileId->datetime.month =  datetime.month;
+        fileId->datetime.day =    datetime.day;
+        fileId->datetime.hour =   datetime.hour;
+        fileId->datetime.minute = datetime.minute;
+        fileId->datetime.second = datetime.second;
+        fileId->storage = storage;
+        fileId->type = type;
         return ResultSuccess();
     }
 
@@ -75,41 +73,6 @@ namespace ams::capsrv::impl {
         if (res.IsSuccess() && outCount)
             *outCount = count;
         return res;
-    }
-
-    Result IsAlbumMounted(bool *out, StorageId storage) {
-        *out = false;
-        R_UNLESS(g_Settings.StorageValid(storage), capsrv::ResultInvalidStorageId());
-        *out = g_mountStatus[storage];
-        return ResultSuccess();
-    }
-
-    Result MountAlbum(StorageId storage) {
-        if (g_mountStatus[storage])
-            return ResultSuccess();
-        R_TRY(g_Settings.MountAlbum(storage));
-        g_mountStatus[storage] = true;
-        return ResultSuccess();
-    }
-
-    Result UnmountAlbum(StorageId storage) {
-        if (!g_mountStatus[storage])
-            return ResultSuccess();
-        R_TRY(g_Settings.UnmountAlbum(storage));
-        g_mountStatus[storage] = false;
-        return ResultSuccess();
-    }
-
-    Result GetAlbumCache(CapsAlbumCache *out, StorageId storage, ContentType type) {
-        if (!g_Settings.StorageValid(storage))
-            return capsrv::ResultInvalidStorageId();
-
-        if (!g_Settings.SupportsType(type))
-            return capsrv::ResultInvalidContentType();
-
-        *out = g_storage[storage].usage[type];
-
-        return ResultSuccess();
     }
 
 }

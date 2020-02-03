@@ -4,7 +4,6 @@
 namespace ams::capsrv::impl {
 
     namespace {
-        Result jpegDecDecode(void* out, u64 outSize, void* in, u64 inSize, u32 width, u32 height, const CapsScreenShotDecodeOption opts);
 
         Result LoadFile() {return ResultSuccess();}
         Result LoadImage() {return ResultSuccess();}
@@ -18,7 +17,7 @@ namespace ams::capsrv::impl {
             CapsScreenShotAttribute tmpAttr = {0};
             Result rc = LoadFile();
             if (rc.IsSuccess()) {
-                rc = jpegDecDecode(img, imgSize, work, workSize, 1280, 720, opts);
+                rc = capsdcDecodeJpeg(1280, 720, &opts, work, workSize, img, imgSize);
                 if (rc.IsSuccess()) {
                     if (width)  *width  = 1280;
                     if (height) *height = 720;
