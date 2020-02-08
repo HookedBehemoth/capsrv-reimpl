@@ -22,22 +22,23 @@
  * SOFTWARE.
  */
 
-#include <time.h>
-#include <cstdio>
-#include <cstdarg>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
-void WriteLogFile(const char* type, const char *fmt, ...) {
+#include <cstdarg>
+#include <cstdio>
+
+void WriteLogFile(const char *type, const char *fmt, ...) {
 	time_t lTime = time(NULL);
-	struct tm* timestruct = localtime((const time_t *) &lTime);
+	struct tm *timestruct = localtime((const time_t *)&lTime);
 	int hour = timestruct->tm_hour;
 	int min = timestruct->tm_min;
 	int sec = timestruct->tm_sec;
 	char time[9];
 	sprintf(time, "%02d:%02d:%02d", hour, min, sec);
-	FILE* pFile = fopen("sdmc:/log.txt", "a");
-	if(pFile) {
+	FILE *pFile = fopen("sdmc:/log.txt", "a");
+	if (pFile) {
 		fprintf(pFile, "[%s] [%s] ", time, type);
 		va_list args;
 		va_start(args, fmt);

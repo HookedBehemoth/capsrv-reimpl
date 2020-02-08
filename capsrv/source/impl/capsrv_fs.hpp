@@ -3,14 +3,17 @@
 
 namespace ams::capsrv::impl {
 
-    Result DeleteAlbumFile(const FileId &fileId);
+Result GetAlbumFileCount(u64 *outCount, StorageId storage, u8 flags);
+Result GetAlbumFileList(void *ptr, u64 size, u64 *outCount, StorageId storage, u8 flags);
 
-    Result GetAutoSavingStorage(StorageId *storage);
+Result DeleteAlbumFile(const FileId &fileId);
 
-    Result IsAlbumMounted(bool *out, StorageId storage);
-    Result MountAlbum(StorageId storage);
-    Result UnmountAlbum(StorageId storage);
+Result GetAutoSavingStorage(StorageId *storage);
 
-    Result GetAlbumCache(CapsAlbumCache *out, StorageId storage, ContentType type);
+Result IsAlbumMounted(bool *out, StorageId storage);
+Result MountAlbum(StorageId storage);
+Result UnmountAlbum(StorageId storage);
 
-}
+Result GetAlbumCache(CapsAlbumCache *out, StorageId storage, ContentType type);
+
+} // namespace ams::capsrv::impl

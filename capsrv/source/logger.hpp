@@ -23,4 +23,4 @@
  */
 #pragma once
 
-void WriteLogFile(const char* type, const char *fmt, ...);
+void WriteLogFile(const char *type, const char *fmt, ...);
