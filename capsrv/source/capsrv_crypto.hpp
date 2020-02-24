@@ -1,26 +1,27 @@
 #pragma once
 #include <stratosphere.hpp>
+
 #include "capsrv_types.hpp"
 
 namespace ams::capsrv::crypto {
 
-Result Initialize();
+    Result Initialize();
 
-Result GenerateScreenshotMac(u8 *out, u8 *in, size_t size);
-Result GenerateMovieMac(u8 *out, u8 *in, size_t size);
+    Result GenerateScreenshotMac(u8 *out, u8 *in, size_t size);
+    Result GenerateMovieMac(u8 *out, u8 *in, size_t size);
 
-namespace aes128 {
+    namespace aes128 {
 
-void Decrypt(u64 *dst, const u64 *src);
-void Encrypt(u64 *dst, const u64 *src);
+        void Decrypt(u64 *dst, const u64 *src);
+        void Encrypt(u64 *dst, const u64 *src);
 
-} // namespace aes128
+    }
 
-namespace aes256 {
+    namespace aes256 {
 
-void EncryptV0(ApplicationEntry *out, const Entry *src, const u8 v0Key[0x20]);
-Result EncryptV1(ApplicationEntry *out, const Entry *src, u64 version);
+        void EncryptV0(ApplicationEntry *out, const Entry *src, const u8 v0Key[0x20]);
+        Result EncryptV1(ApplicationEntry *out, const Entry *src, u64 version);
 
-} // namespace aes256
+    }
 
-} // namespace ams::capsrv::crypto
+}

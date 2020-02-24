@@ -5,7 +5,7 @@
 
 namespace ams::capsrv::util {
 
-Result TimestampToCalendarTime(DateTime *datetime, u64 timestamp);
-u64 DateTimeToTimestamp(DateTime datetime);
+    Result TimestampToCalendarTime(DateTime *datetime, u64 timestamp);
+    u64 DateTimeToTimestamp(DateTime datetime);
 
-} // namespace ams::capsrv::util
+}

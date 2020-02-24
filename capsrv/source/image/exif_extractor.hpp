@@ -16,24 +16,26 @@
 
 #pragma once
 #include <vapours.hpp>
+
 #include "exif_types.hpp"
 #include "impl/exif_detail.hpp"
 
 namespace ams::image {
 
     class ExifExtractor {
-    public:
+      public:
         ExifExtractor(detail::ExifBinary *exifBinary);
 
         void SetExifData(const u8 *data, u64 size);
         bool Analyse();
 
         const char *ExtractDateTime(u32 *size);
-        const char* ExtractMaker(u32 *size);
-        const u8* ExtractMakerNote(u32 *size);
+        const char *ExtractMaker(u32 *size);
+        const u8 *ExtractMakerNote(u32 *size);
         bool ExtractOrientation(ExifOrientation *orientation);
-        const u8* ExtractThumbnail(u32 *size);
-    private:
+        const u8 *ExtractThumbnail(u32 *size);
+
+      private:
         int state;
         const u8 *data;
         u64 size;

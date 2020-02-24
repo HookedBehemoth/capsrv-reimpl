@@ -70,26 +70,26 @@ namespace ams::image::detail {
         BinaryIo binaryIo;
         IfdHeader mainHeader;
         IfdTag mainTags[7] = {
-            {0x010f, asciiStrings, 0},      // Make
-            {0x0110, asciiStrings, 0},      // Model
-            {0x0112, unsignedShort, 1},     // Orientation
-            {0x0131, asciiStrings, 0},      // Software
-            {0x0132, asciiStrings, 0x14},   // DateTime
-            {0x8769, unsignedLong, 1},      // Exif Tag
-            {0x8825, unsignedLong, 1},      // GPS Tag
+            {0x010f, asciiStrings, 0},    // Make
+            {0x0110, asciiStrings, 0},    // Model
+            {0x0112, unsignedShort, 1},   // Orientation
+            {0x0131, asciiStrings, 0},    // Software
+            {0x0132, asciiStrings, 0x14}, // DateTime
+            {0x8769, unsignedLong, 1},    // Exif Tag
+            {0x8825, unsignedLong, 1},    // GPS Tag
         };
         IfdHeader exifHeader;
         IfdTag exifTags[4] = {
-            {0x927c, undefined, 0},         // MakerNote
-            {0xa002, unsignedShort, 1},     // Image Width  < N wrongly searches for signedShort
-            {0xa003, unsignedShort, 1},     // Image Height < N wrongly searches for signedShort
-            {0xa420, asciiStrings, 0x21},   // Image Unique ID
+            {0x927c, undefined, 0},       // MakerNote
+            {0xa002, unsignedShort, 1},   // Image Width  < N wrongly searches for signedShort
+            {0xa003, unsignedShort, 1},   // Image Height < N wrongly searches for signedShort
+            {0xa420, asciiStrings, 0x21}, // Image Unique ID
         };
         IfdHeader lastHeader;
         IfdTag lastTags[4] = {
-            {0x0103, unsignedShort, 1},     // Compression
-            {0x0201, unsignedLong, 1},      // Jpeg IF Offset
-            {0x0202, unsignedLong, 1},      // Jpeg IF Byte Count
+            {0x0103, unsignedShort, 1}, // Compression
+            {0x0201, unsignedLong, 1},  // Jpeg IF Offset
+            {0x0202, unsignedLong, 1},  // Jpeg IF Byte Count
         };
     };
 

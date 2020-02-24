@@ -44,19 +44,19 @@ namespace ams::image::detail {
 
     namespace intel {
         void ReadU32(u32 *dst, const u8 *src) {
-            *dst = *(u32*)src;
+            *dst = *(u32 *)src;
         }
 
         void ReadU16(u16 *dst, const u8 *src) {
-            *dst = *(u16*)src;
+            *dst = *(u16 *)src;
         }
 
         u32 GetU32(const u8 *src) {
-            return *(u32*)src;
+            return *(u32 *)src;
         }
 
         u16 GetU16(const u8 *src) {
-            return *(u16*)src;
+            return *(u16 *)src;
         }
     }
 
@@ -76,7 +76,7 @@ namespace ams::image::detail {
         }
 
         u16 tagMark = binaryIo->getU16(ptr + 2);
-        if(tagMark != 0x2A)
+        if (tagMark != 0x2A)
             return false;
 
         u32 offset = binaryIo->getU32(ptr + 4);
@@ -98,7 +98,7 @@ namespace ams::image::detail {
             return false;
 
         u16 ifdSize = exifBinary->binaryIo.getU32(exifBinary->data + (headerSize | 2) + offset);
-        
+
         if (ifdSize != 0 && (ifdSize < 8 || ifdSize > exifBinary->size - 6))
             return false;
 
@@ -131,7 +131,7 @@ namespace ams::image::detail {
             if (componentNumber >= 0xffff || (tags[tagIndex].count != 0 && tags[tagIndex].count != componentNumber)) {
                 continue;
             }
-            u8 formatSize = DataFormatSize[format-1];
+            u8 formatSize = DataFormatSize[format - 1];
             if (formatSize * componentNumber <= 4) {
                 tags[tagIndex].data.offset = offset + 0x8;
             } else {

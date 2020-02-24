@@ -31,11 +31,11 @@ namespace ams::image {
     bool ExifExtractor::Analyse() {
         if (this->state < 1)
             return false;
-            
+
         detail::ExifBinary *exifBinary = this->exifBinary;
         exifBinary->data = this->data;
         exifBinary->size = this->size;
-        
+
         u32 offset = 0;
         bool success = detail::ReadTiffHeader(&exifBinary->binaryIo, &offset, this->data, this->size);
         if (!success)
@@ -79,12 +79,12 @@ namespace ams::image {
         this->state = 2;
         return 0;
     }
-    
+
     const char *ExifExtractor::ExtractDateTime(u32 *size) {
         if (this->exifBinary->mainTags[4].data.size != 0x14)
             return nullptr;
 
-        const char *dateString = (const char*)this->exifBinary->data + this->exifBinary->mainTags[4].data.offset;
+        const char *dateString = (const char *)this->exifBinary->data + this->exifBinary->mainTags[4].data.offset;
 
         for (u32 i = 0; i < 0x13; i++)
             if (dateString[i] == '\0')
@@ -97,12 +97,12 @@ namespace ams::image {
         return dateString;
     }
 
-    const char* ExifExtractor::ExtractMaker(u32 *size) {
+    const char *ExifExtractor::ExtractMaker(u32 *size) {
         auto makerSize = this->exifBinary->mainTags[0].data.size;
         if (makerSize == 0)
             return nullptr;
 
-        const char *makerString = (const char*)this->exifBinary->data + this->exifBinary->mainTags[0].data.offset;
+        const char *makerString = (const char *)this->exifBinary->data + this->exifBinary->mainTags[0].data.offset;
 
         if (makerSize != 1) {
             for (u32 i = 0; i < makerSize - 1; i++) {
@@ -117,9 +117,9 @@ namespace ams::image {
         return makerString;
     }
 
-    const u8* ExifExtractor::ExtractMakerNote(u32 *size) {
+    const u8 *ExifExtractor::ExtractMakerNote(u32 *size) {
         auto mnSize = this->exifBinary->exifTags[0].data.size;
-        
+
         if (mnSize == 0)
             return nullptr;
 
@@ -127,22 +127,22 @@ namespace ams::image {
         return this->exifBinary->data + this->exifBinary->exifTags[0].data.offset;
     }
 
-    const u8* ExifExtractor::ExtractThumbnail(u32 *size) {
+    const u8 *ExifExtractor::ExtractThumbnail(u32 *size) {
         if (this->exifBinary->lastTags[0].data.size != 2 || this->exifBinary->lastTags[1].data.size != 4 || this->exifBinary->lastTags[2].data.size != 4)
             return nullptr;
-        
+
         u16 compression = this->exifBinary->binaryIo.getU16(this->exifBinary->data + this->exifBinary->lastTags[0].data.offset);
 
         if (compression != 6) // JPEG
             return nullptr;
-        
+
         u32 jpegOffset = this->exifBinary->binaryIo.getU32(this->exifBinary->data + this->exifBinary->lastTags[1].data.offset);
         u32 jpegSize = this->exifBinary->binaryIo.getU32(this->exifBinary->data + this->exifBinary->lastTags[2].data.offset);
 
         u32 max = this->exifBinary->size;
         if (jpegOffset + jpegSize > max || jpegOffset > max || jpegSize > max)
             return nullptr;
-        
+
         *size = jpegSize;
         return this->exifBinary->data + jpegOffset;
     }

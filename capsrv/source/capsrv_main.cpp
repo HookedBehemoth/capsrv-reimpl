@@ -1,10 +1,9 @@
 #include "capsrv_config.hpp"
 #include "capsrv_crypto.hpp"
+#include "image/exif_extractor.hpp"
 #include "impl/capsrv_controller.hpp"
 #include "impl/capsrv_fs.hpp"
 #include "impl/capsrv_overlay.hpp"
-
-#include "image/exif_extractor.hpp"
 
 //extern "C" {
 //extern u32 __start__;
@@ -28,9 +27,9 @@
 
 namespace ams::result {
 
-bool CallFatalOnResultAssertion = false;
+    bool CallFatalOnResultAssertion = false;
 
-} // namespace ams::result
+}
 
 using namespace ams;
 
@@ -73,102 +72,102 @@ using namespace ams;
 using namespace ams::capsrv;
 
 int main(int argc, char **argv) {
-	socketInitializeDefault();
-	int sock = nxlinkStdio();
-	setsysInitialize();
+    socketInitializeDefault();
+    int sock = nxlinkStdio();
+    setsysInitialize();
 
-	config::Initialize();
-	config::print();
-	printf("0x%x spl\n", splCryptoInitialize());
-	printf("0x%x crypto\n", crypto::Initialize().GetValue());
+    config::Initialize();
+    config::print();
+    printf("0x%x spl\n", splCryptoInitialize());
+    printf("0x%x crypto\n", crypto::Initialize().GetValue());
 
-	ovl::Initialize();
+    ovl::Initialize();
 
-	printf("0x%x mount nand\n", impl::MountAlbum(StorageId::Nand).GetValue());
-	printf("0x%x mount sd\n", impl::MountAlbum(StorageId::Sd).GetValue());
+    printf("0x%x mount nand\n", impl::MountAlbum(StorageId::Nand).GetValue());
+    printf("0x%x mount sd\n", impl::MountAlbum(StorageId::Sd).GetValue());
 
-	u64 count;
-	printf("0x%x count nand\n", impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie).GetValue());
-	printf("%ld\n", count);
-	printf("0x%x count sd\n", impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie).GetValue());
-	printf("%ld\n", count);
+    u64 count;
+    printf("0x%x count nand\n", impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie).GetValue());
+    printf("%ld\n", count);
+    printf("0x%x count sd\n", impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie).GetValue());
+    printf("%ld\n", count);
 
-	Entry entries[10] = {0};
-	printf("0x%x list nand\n", impl::GetAlbumFileList(entries, 2, &count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot).GetValue());
-	printf("%s\n", entries[0].AsString().c_str());
-	printf("%s\n", entries[1].AsString().c_str());
-	printf("%ld\n", count);
-	printf("0x%x list sd\n", impl::GetAlbumFileList(entries, 2, &count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot).GetValue());
-	printf("%s\n", entries[0].AsString().c_str());
-	printf("%s\n", entries[1].AsString().c_str());
-	printf("%ld\n", count);
+    Entry entries[10] = {0};
+    printf("0x%x list nand\n", impl::GetAlbumFileList(entries, 2, &count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot).GetValue());
+    printf("%s\n", entries[0].AsString().c_str());
+    printf("%s\n", entries[1].AsString().c_str());
+    printf("%ld\n", count);
+    printf("0x%x list sd\n", impl::GetAlbumFileList(entries, 2, &count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot).GetValue());
+    printf("%s\n", entries[0].AsString().c_str());
+    printf("%s\n", entries[1].AsString().c_str());
+    printf("%ld\n", count);
 
-	FILE *f = fopen(entries[1].fileId.GetFilePath().c_str(), "rb");
-	if (f) {
-		printf("open succ\n");
-		fseek(f, 0, SEEK_END);
-		auto fsize = ftell(f);
-		printf("size: %ld\n", fsize);
-		fseek(f, 0, SEEK_SET);
-		u8* img = (u8 *)malloc(fsize);
-    	fread(img, 1, fsize, f);
-		fclose(f);
-		printf("closed\n");
+    FILE *f = fopen(entries[1].fileId.GetFilePath().c_str(), "rb");
+    if (f) {
+        printf("open succ\n");
+        fseek(f, 0, SEEK_END);
+        auto fsize = ftell(f);
+        printf("size: %ld\n", fsize);
+        fseek(f, 0, SEEK_SET);
+        u8 *img = (u8 *)malloc(fsize);
+        fread(img, 1, fsize, f);
+        fclose(f);
+        printf("closed\n");
 
-		auto bin = ams::image::detail::ExifBinary();
-		auto exif = ams::image::ExifExtractor(&bin);
+        auto bin = ams::image::detail::ExifBinary();
+        auto exif = ams::image::ExifExtractor(&bin);
 
-		exif.SetExifData(img + 0xc, fsize - 0xc);
-		printf("0x%x\n", exif.Analyse());
+        exif.SetExifData(img + 0xc, fsize - 0xc);
+        printf("0x%x\n", exif.Analyse());
 
-		u32 size = 0;
-		const char *dateStr = exif.ExtractDateTime(&size);
-		if (dateStr) {
-			printf("%s\n", dateStr);
-			printf("size: %d\n", size);
-		} else {
-			printf("failed\n");
-		}
+        u32 size = 0;
+        const char *dateStr = exif.ExtractDateTime(&size);
+        if (dateStr) {
+            printf("%s\n", dateStr);
+            printf("size: %d\n", size);
+        } else {
+            printf("failed\n");
+        }
 
-		const char *makerStr = exif.ExtractMaker(&size);
-		if (makerStr) {
-			printf("%s\n", makerStr);
-			printf("size: %d\n", size);
-		} else {
-			printf("failed\n");
-		}
+        const char *makerStr = exif.ExtractMaker(&size);
+        if (makerStr) {
+            printf("%s\n", makerStr);
+            printf("size: %d\n", size);
+        } else {
+            printf("failed\n");
+        }
 
-		auto makernote = exif.ExtractMakerNote(&size);
-		if (makernote) {
-			for (u32 i = 0; i < 0x1f; i++)
-				printf("%02X", makernote[i]);
-			printf("\nsize: 0x%x\n", size);
-		} else {
-			printf("failed\n");
-		}
+        auto makernote = exif.ExtractMakerNote(&size);
+        if (makernote) {
+            for (u32 i = 0; i < 0x1f; i++)
+                printf("%02X", makernote[i]);
+            printf("\nsize: 0x%x\n", size);
+        } else {
+            printf("failed\n");
+        }
 
-		auto thumbnail = exif.ExtractThumbnail(&size);
-		if (thumbnail) {
-			for (u32 i = 0; i < 0x1f; i++)
-				printf("%02X", thumbnail[i]);
-			printf("\nsize: 0x%x\n", size);
-		} else {
-			printf("failed\n");
-		}
+        auto thumbnail = exif.ExtractThumbnail(&size);
+        if (thumbnail) {
+            for (u32 i = 0; i < 0x1f; i++)
+                printf("%02X", thumbnail[i]);
+            printf("\nsize: 0x%x\n", size);
+        } else {
+            printf("failed\n");
+        }
 
-		ams::image::ExifOrientation orientation;
-		bool success = exif.ExtractOrientation(&orientation);
-		if (success)
-			printf("orientation: %d\n", static_cast<u16>(orientation));
-		else
-			printf("failed\n");
+        ams::image::ExifOrientation orientation;
+        bool success = exif.ExtractOrientation(&orientation);
+        if (success)
+            printf("orientation: %d\n", static_cast<u16>(orientation));
+        else
+            printf("failed\n");
 
-		free(img);
-	} else {
-		printf("failed to open %s\n", entries[0].fileId.AsString().c_str());
-	}
+        free(img);
+    } else {
+        printf("failed to open %s\n", entries[0].fileId.AsString().c_str());
+    }
 
-	/*FileId fileId = {0};
+    /*FileId fileId = {0};
 	printf("0x%x generate fileId\n", control::GenerateCurrentAlbumFileId(&fileId, 0x1337, ContentType::Screenshot).GetValue());
 	printf("%s\n", fileId.AsString().c_str());
 
@@ -194,14 +193,14 @@ int main(int argc, char **argv) {
 
 	printf("0x%x unregister aruid\n", control::UnregisterAppletResourceUserId(0x420, 0x1337).GetValue());*/
 
-	printf("0x%x unmount nand\n", impl::UnmountAlbum(StorageId::Nand).GetValue());
-	printf("0x%x unmount sd\n", impl::UnmountAlbum(StorageId::Sd).GetValue());
+    printf("0x%x unmount nand\n", impl::UnmountAlbum(StorageId::Nand).GetValue());
+    printf("0x%x unmount sd\n", impl::UnmountAlbum(StorageId::Sd).GetValue());
 
-	ovl::Exit();
-	config::Exit();
+    ovl::Exit();
+    config::Exit();
 
-	splCryptoExit();
-	close(sock);
-	socketExit();
-	return 0;
+    splCryptoExit();
+    close(sock);
+    socketExit();
+    return 0;
 }
