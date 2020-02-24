@@ -1,8 +1,8 @@
 #pragma once
 #include <stratosphere.hpp>
 
+#include "../capsrv_types.hpp"
 #include "capsrv_stream_session.hpp"
-#include "capsrv_types.hpp"
 
 namespace ams::capsrv {
 
@@ -41,12 +41,12 @@ class AlbumControlService final : public sf::IServiceObject {
 	//virtual Result NotifyTakingScreenShotRefused();
 	virtual Result NotifyAlbumStorageIsAvailable(StorageId storage);
 	virtual Result NotifyAlbumStorageIsUnavailable(StorageId storage);
-	virtual Result RegisterAppletResourceUserId(u64 aruid);
-	virtual Result UnregisterAppletResourceUserId(u64 aruid);
+	virtual Result RegisterAppletResourceUserId(u64 aruid, u64 appId);
+	virtual Result UnregisterAppletResourceUserId(u64 aruid, u64 appId);
 	virtual Result GetApplicationIdFromAruid(sf::Out<u64> appId, u64 aruid);
 	virtual Result CheckApplicationIdRegistered(u64 appId);
 	virtual Result GenerateCurrentAlbumFileId(sf::Out<FileId> out, u64 appId, ContentType type);
-	virtual Result GenerateApplicationAlbumEntry(sf::Out<ApplicationEntry> out, u64 appId, ContentType type);
+	virtual Result GenerateApplicationAlbumEntry(sf::Out<ApplicationEntry> out, const Entry &entry, u64 appId);
 	virtual Result SaveAlbumScreenShotFile(sf::InBuffer buffer, const FileId &fileId);
 	virtual Result SaveAlbumScreenShotFileEx(sf::InNonSecureBuffer buffer, const FileId &fileId, u64 unk0, u64 unk1, u64 unk2);
 	virtual Result SetOverlayScreenShotThumbnailData(sf::InNonSecureBuffer buffer, const FileId &fileId);

@@ -1,6 +1,9 @@
 #include "capsrv_types.hpp"
 
+#include <machine/endian.h>
+
 #include "capsrv_crypto.hpp"
+#include "capsrv_config.hpp"
 #include "capsrv_util.hpp"
 
 namespace ams::capsrv {
@@ -13,7 +16,7 @@ constexpr const char *mountNames[] = {
 
 constexpr const char *mountPoints[] = {
 	[StorageId::Nand] = "NA:/",
-	[StorageId::Sd] = "NA:/"};
+	[StorageId::Sd] = "SD:/"};
 
 constexpr const char *fileExtensions[] = {
 	[0] = ".jpg",
@@ -48,7 +51,7 @@ Result GetFileType(ContentType *type, bool isExtra, const char *str) {
 
 std::string DateTime::AsString() const {
 	char out[36];
-	snprintf(out, 36, "[%04d:%02d:%02d %02d:%02d:%02d %02d]",
+	int size = snprintf(out, 36, "[%04d:%02d:%02d %02d:%02d:%02d %02d]",
 			 this->year,
 			 this->month,
 			 this->day,
@@ -56,7 +59,7 @@ std::string DateTime::AsString() const {
 			 this->minute,
 			 this->second,
 			 this->id);
-	return std::string(out);
+	return std::string(out, size);
 }
 
 Result DateTime::FromString(DateTime *date, const char *str, const char **next) {
@@ -70,7 +73,7 @@ Result DateTime::FromString(DateTime *date, const char *str, const char **next) 
 		   &tmp.second,
 		   &tmp.id);
 
-	R_UNLESS(tmp.year < 2700, capsrv::ResultInvalidFileId());
+	R_UNLESS(tmp.year < 10000, capsrv::ResultInvalidFileId());
 	R_UNLESS(tmp.month - 1 < 12, capsrv::ResultInvalidFileId());
 	R_UNLESS(tmp.day - 1 < 31, capsrv::ResultInvalidFileId());
 	R_UNLESS(tmp.hour < 24, capsrv::ResultInvalidFileId());
@@ -86,11 +89,11 @@ Result DateTime::FromString(DateTime *date, const char *str, const char **next) 
 
 std::string FileId::AsString() const {
 	char out[60];
-	snprintf(out, 60, "%016lx, %s, %hhd, %hhd",
+	int size = snprintf(out, 60, "%016lx, %s, %hhd, %hhd",
 			 this->applicationId,
 			 this->datetime.AsString().c_str(),
 			 this->storage, this->type);
-	return std::string(out);
+	return std::string(out, size);
 }
 
 std::string FileId::GetFolderPath() const {
@@ -132,7 +135,7 @@ std::string FileId::GetFileName() const {
 	aes[1] = __bswap64(aes[1]);
 	// TODO: std::fmt
 	char buf[0x36];
-	const char *fmt = isExtra ? "%04d%02d%02d%02d%02d%02d%02d-%ld%ld%s" : "%04d%02d%02d%02d%02d%02d%02d-%lX%lXX%s";
+	const char *fmt = isExtra ? "%04d%02d%02d%02d%02d%02d%02d-%lX%lXX%s" : "%04d%02d%02d%02d%02d%02d%02d-%lX%lX%s";
 	int size = std::snprintf(buf, 0x36, fmt,
 							 this->datetime.year,
 							 this->datetime.month,
@@ -150,29 +153,61 @@ std::string FileId::GetFilePath() const {
 	return this->GetFolderPath() + this->GetFileName();
 }
 
+Result FileId::Verify() const {
+	R_UNLESS(this->applicationId != 0, capsrv::ResultInvalidFileId());
+	R_UNLESS(this->datetime.year < 10000, capsrv::ResultInvalidFileId());
+	R_UNLESS(this->datetime.month - 1 < 12, capsrv::ResultInvalidFileId());
+	R_UNLESS(this->datetime.day - 1 < 31, capsrv::ResultInvalidFileId());
+	R_UNLESS(this->datetime.hour < 24, capsrv::ResultInvalidFileId());
+	R_UNLESS(this->datetime.minute < 60, capsrv::ResultInvalidFileId());
+	R_UNLESS(this->datetime.second < 60, capsrv::ResultInvalidFileId());
+	R_UNLESS(this->datetime.id < 100, capsrv::ResultInvalidFileId());
+	R_UNLESS(config::StorageValid(this->storage), capsrv::ResultInvalidStorageId());
+	R_UNLESS(config::SupportsType(this->type), capsrv::ResultInvalidContentType());
+	return ResultSuccess();
+}
+
 Result FileId::FromString(FileId *fileId, StorageId storage, const char *str) {
-	R_UNLESS(strlen(str) == 0x35, 0x10);
+	size_t length = strlen(str);
+	R_UNLESS(length == 0x35 || length == 0x36, 0x10);
 	R_TRY(DateTime::FromString(&fileId->datetime, str, &str));
-	R_UNLESS(*str == '-', 0x18ce);
+	R_UNLESS(*str == '-', capsrv::ResultInvalidFileId());
 	str++;
 	bool isExtra;
 	R_TRY(DecryptFileIdentifier(&fileId->applicationId, &isExtra, str, &str));
-	R_UNLESS(*str == '.', 0x18ce);
+	if (isExtra) {
+		R_UNLESS(*str == 'X', capsrv::ResultInvalidFileId());
+		str++;
+	}
+	R_UNLESS(*str == '.', capsrv::ResultInvalidFileId());
 	R_TRY(GetFileType(&fileId->type, isExtra, str));
 	fileId->storage = storage;
 	return ResultSuccess();
 }
 
-std::string ApplicationFileId::AsString() const {
+std::string Entry::AsString() const {
 	char out[120];
-	snprintf(out, 120, "%016lx, %016lx, %s, %016lx", this->unk_x0, this->unk_x8, this->datetime.AsString().c_str(), this->unk_x18);
-	return std::string(out);
+	int size = snprintf(out, 120, "[%ld, %s]", this->size, this->fileId.AsString().c_str());
+	return std::string(out, size);
 }
 
-std::string ApplicationEntry::AsString() const {
-	char out[200];
-	snprintf(out, 200, "%s, %s, %016lx", this->fileId.AsString().c_str(), this->datetime.AsString().c_str(), this->unk_x28);
-	return std::string(out);
+Result ContentStorage::CanSave(StorageId storage, ContentType type) const {
+	R_TRY(config::StorageValid(storage));
+	R_TRY(config::SupportsType(type));
+	u64 max = config::GetMax(storage, type);
+	u64 currentCount = this->position[storage].cache[type].count;
+	R_UNLESS(currentCount < max, 0xaf2ce);
+	return ResultSuccess();
+}
+
+void ContentStorage::Increment(StorageId storage, ContentType type) {
+	if (storage < 2 && type < 4)
+		this->position[storage].cache[type].count++;
+}
+
+void ContentStorage::Decrement(StorageId storage, ContentType type) {
+	if (storage < 2 && type < 4)
+		this->position[storage].cache[type].count--;
 }
 
 } // namespace ams::capsrv

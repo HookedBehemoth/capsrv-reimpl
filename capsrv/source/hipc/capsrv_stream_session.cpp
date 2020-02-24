@@ -62,7 +62,7 @@ Result ISession::DiscardAlbumMovieWriteStreamNoDelete(u64 stream) {
 	return ResultSuccess();
 }
 
-Result ISession::CommitAlbumMovieWriteStreamEx(sf::Out<CapsAlbumCommitOutput> output, u64 stream) {
+Result ISession::CommitAlbumMovieWriteStreamEx(sf::Out<CapsAlbumEntry> output, u64 stream) {
 	return ResultSuccess();
 }
 

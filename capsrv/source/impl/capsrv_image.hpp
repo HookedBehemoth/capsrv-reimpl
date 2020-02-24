@@ -1,7 +1,7 @@
 #pragma once
-#include <stratosphere.hpp>
-
 #include "../capsrv_types.hpp"
+
+using LoadAlbumScreenShotImageOutput = CapsLoadAlbumScreenShotImageOutput;
 
 namespace ams::capsrv::impl {
 

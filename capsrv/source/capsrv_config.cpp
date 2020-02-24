@@ -5,7 +5,7 @@
 #define CAPSRV_SET_GET_BOOL(var, key)                                \
 	rc = setsysGetSettingsItemValue("capsrv", key, &temp, 1, &size); \
 	if (R_SUCCEEDED(rc))                                             \
-		var = temp || rc.IsSuccess();
+		var = temp;
 
 namespace ams::capsrv::config {
 
@@ -25,30 +25,38 @@ char *directoryPath = nullptr;
 } // namespace
 
 void Initialize() {
-	u64 size = 0;
-	bool temp = false;
-	Result rc = 0;
-
 	nandScreenshotMax = 1000;
 	nandMovieMax = 100;
 	sdScreenshotMax = 10000;
 	sdMovieMax = 1000;
 
-	bool debug = settings::fwdbg::IsDebugModeEnabled();
+	// TODO: Debug mode implementation
+	/*bool debug = settings::fwdbg::IsDebugModeEnabled();
 	debugMode = debug;
-	defaultDirectory = !debug;
+	defaultDirectory = !debug;*/
+	debugMode = false;
+	defaultDirectory = true;
 
-	CAPSRV_SET_GET_BOOL(screenshotSupport, "enable_album_screenshot_file_support");
-	CAPSRV_SET_GET_BOOL(movieSupport, "enable_album_movie_file_support");
-	CAPSRV_SET_GET_BOOL(verifyScreenShotFiledata, "enable_album_screenshot_filedata_verification");
-	CAPSRV_SET_GET_BOOL(verifyMovieFileSignature, "enable_album_movie_filesign_verification");
-	CAPSRV_SET_GET_BOOL(verifyMovieFileHash, "enable_album_movie_filehash_verification");
+	settings::fwdbg::GetSettingsItemValue(&verifyScreenShotFiledata, 1, "capsrv", "enable_album_screenshot_filedata_verification");
+
+	if (hosversionBefore(4,0,0))
+		return;
+
+	settings::fwdbg::GetSettingsItemValue(&screenshotSupport, 1, "capsrv", "enable_album_screenshot_file_support");
+	settings::fwdbg::GetSettingsItemValue(&movieSupport, 1, "capsrv", "enable_album_movie_file_support");
+	settings::fwdbg::GetSettingsItemValue(&verifyMovieFileSignature, 1, "capsrv", "enable_album_movie_filesign_verification");
+	settings::fwdbg::GetSettingsItemValue(&verifyMovieFileHash, 1, "capsrv", "enable_album_movie_filehash_verification");
+
+	if (hosversionBefore(5,0,0))
+		return;
+
 	bool changeDirectory = false;
-	CAPSRV_SET_GET_BOOL(changeDirectory, "enable_album_directory_change");
+	settings::fwdbg::GetSettingsItemValue(&changeDirectory, 1, "capsrv", "enable_album_directory_change");
 	if (changeDirectory) {
+		u64 size = 0;
 		char *tempStr = new char[0x100];
-		rc = setsysGetSettingsItemValue("capsrv", "album_directory_path", tempStr, sizeof(tempStr), &size);
-		if (R_SUCCEEDED(rc) && size < 0x101) {
+		size = settings::fwdbg::GetSettingsItemValue(tempStr, sizeof(tempStr), "capsrv", "album_directory_path");
+		if (size <= 0x100) {
 			directoryPath = tempStr;
 			return;
 		}
@@ -64,11 +72,12 @@ void Exit() {
 bool SupportsType(ContentType type) {
 	switch (type) {
 		case ContentType::Screenshot:
-		case ContentType::ExtraScreenshot:
 			return screenshotSupport;
 		case ContentType::Movie:
-		case ContentType::ExtraMovie:
 			return movieSupport;
+		case ContentType::ExtraScreenshot:
+		case ContentType::ExtraMovie:
+			return true;
 	}
 	return false;
 }
@@ -106,6 +115,34 @@ const char *GetCustomDirectoryPath() {
 	if (defaultDirectory)
 		return nullptr;
 	return directoryPath;
+}
+
+void print() {
+	printf(R"(defaultDirectory: %d,
+debugMode: %d,
+screenshotSupport: %d,
+movieSupport: %d,
+verifyScreenShotFiledata: %d,
+verifyMovieFileSignature: %d,
+verifyMovieFileHash: %d,
+nandScreenshotMax: %ld,
+nandMovieMax: %ld,
+sdScreenshotMax: %ld,
+sdMovieMax: %ld,
+directoryPath: %s
+)",
+		   defaultDirectory,
+		   debugMode,
+		   screenshotSupport,
+		   movieSupport,
+		   verifyScreenShotFiledata,
+		   verifyMovieFileSignature,
+		   verifyMovieFileHash,
+		   nandScreenshotMax,
+		   nandMovieMax,
+		   sdScreenshotMax,
+		   sdMovieMax,
+		   directoryPath);
 }
 
 } // namespace ams::capsrv::config

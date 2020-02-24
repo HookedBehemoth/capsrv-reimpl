@@ -11,7 +11,9 @@ void Exit();
 
 bool SupportsType(ContentType type);
 bool StorageValid(StorageId storage);
-inline u64 GetMax(StorageId storage, ContentType type);
+u64 GetMax(StorageId storage, ContentType type);
 const char *GetCustomDirectoryPath();
+
+void print();
 
 } // namespace ams::capsrv::config

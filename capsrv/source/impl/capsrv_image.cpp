@@ -1,14 +1,14 @@
 #include "capsrv_image.hpp"
 
-#include <stratosphere.hpp>
-
 namespace ams::capsrv::impl {
 
 namespace {
 
-Result LoadFile() { return ResultSuccess(); }
 Result LoadImage() { return ResultSuccess(); }
 Result LoadImageFromVideo() { return ResultSuccess(); }
+Result LoadFile(CapsScreenShotAttribute *attr, void *dst, u64 size, u64 *outSize, const FileId &fileId) {
+	return fileId.type % 2 ? LoadImage() : LoadImageFromVideo();
+}
 
 Result LoadScreenShot(u64 *width, u64 *height, CapsScreenShotAttribute *attr, void *buf0, void *buf1, void *buf2, void *img, u64 imgSize, void *work, u64 workSize, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
 	if (attr)
@@ -20,14 +20,13 @@ Result LoadScreenShot(u64 *width, u64 *height, CapsScreenShotAttribute *attr, vo
 	if (buf2)
 		memset(buf2, 0, 0x400);
 	CapsScreenShotAttribute tmpAttr = {0};
-	Result rc = LoadFile();
+	u64 readSize;
+	Result rc = LoadFile(nullptr, work, workSize, &readSize, fileId);
 	if (rc.IsSuccess()) {
 		rc = capsdcDecodeJpeg(1280, 720, &opts, work, workSize, img, imgSize);
 		if (rc.IsSuccess()) {
-			if (width)
-				*width = 1280;
-			if (height)
-				*height = 720;
+			*width = 1280;
+			*height = 720;
 			if (attr)
 				*attr = tmpAttr;
 			return ResultSuccess();
@@ -46,7 +45,10 @@ Result LoadScreenShot(u64 *width, u64 *height, CapsScreenShotAttribute *attr, vo
 
 } // namespace
 
-Result LoadAlbumFile(void *ptr, u64 size, u64 *outSize, const FileId &fileId) { return ResultSuccess(); }
+Result LoadAlbumFile(void *ptr, u64 size, u64 *outSize, const FileId &fileId) {
+	return LoadFile(nullptr, ptr, size, outSize, fileId);
+}
+
 Result LoadAlbumFileThumbnail(void *ptr, u64 size, u64 *out, const FileId &fileId) { return ResultSuccess(); }
 
 Result LoadAlbumScreenShotImage(u64 *width, u64 *height, void *work, u64 workSize, void *img, u64 imgSize, const FileId &fileId) { return ResultSuccess(); }

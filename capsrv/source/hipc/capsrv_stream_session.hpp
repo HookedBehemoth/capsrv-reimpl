@@ -1,7 +1,7 @@
 #pragma once
 #include <stratosphere.hpp>
 
-#include "capsrv_types.hpp"
+#include "../capsrv_types.hpp"
 
 namespace ams::capsrv {
 
@@ -53,7 +53,7 @@ class ISession : public sf::IServiceObject {
 	virtual Result CommitAlbumMovieWriteStream(u64 stream);
 	virtual Result DiscardAlbumMovieWriteStream(u64 stream);
 	virtual Result DiscardAlbumMovieWriteStreamNoDelete(u64 stream);
-	virtual Result CommitAlbumMovieWriteStreamEx(sf::Out<CapsAlbumCommitOutput> output, u64 stream);
+	virtual Result CommitAlbumMovieWriteStreamEx(sf::Out<CapsAlbumEntry> output, u64 stream);
 	virtual Result StartAlbumMovieWriteStreamDataSection(u64 stream);
 	virtual Result EndAlbumMovieWriteStreamDataSection(u64 stream);
 	virtual Result StartAlbumMovieWriteStreamMetaSection(u64 stream);

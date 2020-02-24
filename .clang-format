@@ -7,7 +7,7 @@ TabWidth: 4
 AllowShortIfStatementsOnASingleLine: false
 IncludeBlocks: Regroup
 IncludeCategories: 
-  - Regex: '^<stratosphere.hpp>'
+  - Regex: '^<vapours.hpp>'
     Priority: 2
   - Regex: '^<.*\.h>'
     Priority: 1

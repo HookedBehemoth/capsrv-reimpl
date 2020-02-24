@@ -1,9 +1,9 @@
 #include "capsrv_album_accessor_service.hpp"
 
-#include "impl/capsrv_fs.hpp"
-#include "impl/capsrv_image.hpp"
-#include "impl/capsrv_manager.hpp"
-#include "logger.hpp"
+#include "../impl/capsrv_fs.hpp"
+#include "../impl/capsrv_image.hpp"
+#include "../impl/capsrv_overlay.hpp"
+#include "../logger.hpp"
 
 namespace ams::capsrv {
 
@@ -29,7 +29,7 @@ Result AlbumAccessorService::DeleteAlbumFile(const FileId &fileId) {
 
 Result AlbumAccessorService::StorageCopyAlbumFile(StorageId storage, const FileId &fileId) {
 	WriteLogFile("Accessor", "StorageCopyAlbumFile: fileId(%s), storage(%hhd)", fileId.AsString().c_str(), storage);
-	return ResultSuccess();
+	return impl::CopyAlbumFile(storage, fileId);
 }
 
 Result AlbumAccessorService::IsAlbumMounted(sf::Out<bool> out, StorageId storage) {
@@ -62,8 +62,8 @@ Result AlbumAccessorService::LoadAlbumScreenShotThumbnailImage(sf::Out<u64> widt
 	return impl::LoadAlbumScreenShotThumbnailImage(width.GetPointer(), height.GetPointer(), work.GetPointer(), work.GetSize(), image.GetPointer(), image.GetSize(), fileId);
 }
 
-Result AlbumAccessorService::GetAlbumEntryFromApplicationAlbumEntry(sf::Out<CapsAlbumEntry> out, const ApplicationFileId &appEntry, u64 appId) {
-	WriteLogFile("Accessor", "GetAlbumEntryFromApplicationAlbumEntry: appEntry(%s), appId(%016lx)", appEntry.AsString().c_str(), appId);
+Result AlbumAccessorService::GetAlbumEntryFromApplicationAlbumEntry(sf::Out<CapsAlbumEntry> out, const ApplicationEntry &appEntry, u64 appId) {
+	WriteLogFile("Accessor", "GetAlbumEntryFromApplicationAlbumEntry: appEntry(#), appId(%016lx)", appId);
 	return ResultSuccess();
 }
 
@@ -99,13 +99,12 @@ Result AlbumAccessorService::GetAlbumUsage16(sf::Out<AlbumUsage16> usage, Storag
 
 Result AlbumAccessorService::GetMinMaxAppletId(sf::OutNonSecureBuffer minMax, sf::Out<bool> success) {
 	WriteLogFile("Accessor", "GetMinMaxAppletId");
-	u64 bufSize = minMax.GetSize();
-	if (bufSize != 0) {
+	if (minMax.GetSize() != 0) {
 		u64 *arr = (u64 *)minMax.GetPointer();
 		arr[0] = 0x100000000001000;
 		arr[1] = 0x100000000001fff;
+		success.SetValue(true);
 	}
-	success.SetValue(bufSize != 0);
 	return ResultSuccess();
 }
 
@@ -120,15 +119,15 @@ Result AlbumAccessorService::GetAlbumFileListEx0(sf::OutBuffer buffer, sf::Out<u
 }
 
 //Result AlbumAccessorService::SaveEditedScreenShot
-
-Result AlbumAccessorService::GetLastOverlayScreenShotThumbnail(sf::OutBuffer buffer, sf::Out<CapsOverlayThumbnailData> out) {
+//Result GetLastOverlayThumbnail(void *ptr, u64 size, FileId *fileId, bool isMovie)
+Result AlbumAccessorService::GetLastOverlayScreenShotThumbnail(sf::OutBuffer buffer, sf::Out<FileId> out, sf::Out<u64> size) {
 	WriteLogFile("Accessor", "GetLastOverlayScreenShotThumbnail: bufferSize(%ld)", buffer.GetSize());
-	return ResultSuccess();
+	return ovl::GetLastOverlayThumbnail(buffer.GetPointer(), buffer.GetSize(), out.GetPointer(), size.GetPointer(), false);
 }
 
-Result AlbumAccessorService::GetLastOverlayMovieThumbnail(sf::OutBuffer buffer, sf::Out<CapsOverlayThumbnailData> out) {
+Result AlbumAccessorService::GetLastOverlayMovieThumbnail(sf::OutBuffer buffer, sf::Out<FileId> out, sf::Out<u64> size) {
 	WriteLogFile("Accessor", "GetLastOverlayScreenShotThumbnail: bufferSize(%ld)", buffer.GetSize());
-	return ResultSuccess();
+	return ovl::GetLastOverlayThumbnail(buffer.GetPointer(), buffer.GetSize(), out.GetPointer(), size.GetPointer(), true);
 }
 
 Result AlbumAccessorService::GetAutoSavingStorage(sf::Out<StorageId> out) {
@@ -181,8 +180,8 @@ Result AlbumAccessorService::GetAlbumCacheEx(sf::Out<CapsAlbumCache> cache, Stor
 	return impl::GetAlbumCache(cache.GetPointer(), storage, type);
 }
 
-Result AlbumAccessorService::GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<CapsAlbumEntry> out, const sf::ClientAppletResourceUserId &aruid, const ApplicationFileId &appEntry) {
-	WriteLogFile("Accessor", "GetAlbumEntryFromApplicationAlbumEntryAruid: ApplicationEntry(%s), aruid(%ld)", appEntry.AsString().c_str(), aruid.GetValue());
+Result AlbumAccessorService::GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<CapsAlbumEntry> out, const sf::ClientAppletResourceUserId &aruid, const ApplicationEntry &appEntry) {
+	WriteLogFile("Accessor", "GetAlbumEntryFromApplicationAlbumEntryAruid: ApplicationEntry(#), aruid(%ld)", aruid.GetValue());
 	return ResultSuccess();
 }
 

@@ -1,4 +1,5 @@
 #include "capsrv_util.hpp"
+#include <switch.h>
 
 #include <ctime>
 

@@ -32,46 +32,70 @@ struct DateTime {
 
 	static Result FromString(DateTime *date, const char *str, const char **next);
 };
+static_assert(sizeof(DateTime) == sizeof(CapsAlbumFileDateTime));
 
 struct FileId {
 	u64 applicationId;
 	DateTime datetime;
 	StorageId storage;
 	ContentType type;
+	u8 pad[0x6];
 
 	std::string AsString() const;
-    std::string GetFolderPath() const;
-    std::string GetFileName() const;
-    std::string GetFilePath() const;
+	std::string GetFolderPath() const;
+	std::string GetFileName() const;
+	std::string GetFilePath() const;
+
+	Result Verify() const;
 
 	static Result FromString(FileId *fileId, StorageId storage, const char *str);
 };
+static_assert(sizeof(FileId) == sizeof(CapsAlbumFileId));
 
 struct Entry {
 	u64 size;
 	FileId fileId;
-};
-
-struct ApplicationFileId {
-	u64 unk_x0;
-	u64 unk_x8;
-	DateTime datetime;
-	u64 unk_x18;
 
 	std::string AsString() const;
 };
+static_assert(sizeof(Entry) == sizeof(CapsAlbumEntry));
 
 struct ApplicationEntry {
-	ApplicationFileId fileId;
-	DateTime datetime;
-	u64 unk_x28;
+	union {
+		u8 data[0x20];
 
-	std::string AsString() const;
+		struct {
+			u8 unk_x0[0x20];
+		} v0;
+
+		struct {
+			u64 size;
+			u64 hash;
+			DateTime datetime;
+			u8 storage;
+			u8 content;
+			u8 pad_x1a[0x5];
+			u8 unk_x1f;
+		} v1;
+	};
 };
+static_assert(sizeof(ApplicationEntry) == sizeof(CapsApplicationAlbumEntry));
 
 struct Dimensions {
 	u64 width;
 	u64 height;
+};
+
+struct Storage {
+	CapsAlbumCache cache[4];
+};
+
+struct ContentStorage {
+	Storage position[2] = {0};
+
+	Result CanSave(StorageId storage, ContentType type) const;
+	void Increment(StorageId storage, ContentType type);
+	void Decrement(StorageId storage, ContentType type);
 };
 
 struct AlbumUsage16 : sf::LargeData, sf::PrefersMapAliasTransferMode, CapsAlbumUsage16 {};

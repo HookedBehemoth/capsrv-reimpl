@@ -21,7 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -37,14 +36,10 @@ void WriteLogFile(const char *type, const char *fmt, ...) {
 	int sec = timestruct->tm_sec;
 	char time[9];
 	sprintf(time, "%02d:%02d:%02d", hour, min, sec);
-	FILE *pFile = fopen("sdmc:/log.txt", "a");
-	if (pFile) {
-		fprintf(pFile, "[%s] [%s] ", time, type);
-		va_list args;
-		va_start(args, fmt);
-		vfprintf(pFile, fmt, args);
-		va_end(args);
-		fprintf(pFile, "\n");
-		fclose(pFile);
-	}
+	printf("[%s] [%s] ", time, type);
+	va_list args;
+	va_start(args, fmt);
+	vprintf(fmt, args);
+	va_end(args);
+	printf("\n");
 }

@@ -1,14 +1,4 @@
-PFS0S := capsrv
+all:
+	$(MAKE) -C capsrv
 
-SUBFOLDERS := Atmosphere-libs $(PFS0S)
-
-TOPTARGETS := all clean
-
-$(TOPTARGETS): $(SUBFOLDERS)
-
-$(SUBFOLDERS):
-	$(MAKE) -C $@ $(MAKECMDGOALS)
-
-$(PFS0S): Atmosphere-libs
-
-.PHONY: $(TOPTARGETS) $(SUBFOLDERS)
+.PHONY: all
