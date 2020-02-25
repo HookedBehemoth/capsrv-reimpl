@@ -12,15 +12,18 @@ namespace ams::capsrv {
 
         constexpr const char *mountNames[] = {
             [StorageId::Nand] = "NA",
-            [StorageId::Sd] = "SD"};
+            [StorageId::Sd] = "SD",
+        };
 
         constexpr const char *mountPoints[] = {
             [StorageId::Nand] = "NA:/",
-            [StorageId::Sd] = "SD:/"};
+            [StorageId::Sd] = "SD:/",
+        };
 
         constexpr const char *fileExtensions[] = {
             [0] = ".jpg",
-            [1] = ".mp4"};
+            [1] = ".mp4",
+        };
 
         Result DecryptFileIdentifier(u64 *applicationId, bool *isExtra, const char *str, const char **next) {
             u64 in[2] = {0};

@@ -32,7 +32,7 @@ class AlbumAccessorService final : public sf::IServiceObject {
 		GetMinMaxAppletId = 18,
 		GetAlbumFileCountEx0 = 100,
 		GetAlbumFileListEx0 = 101,
-		//SaveEditedScreenShot                        = 202,
+		//SaveEditedScreenShot = 202,
 		GetLastOverlayScreenShotThumbnail = 301,
 		GetLastOverlayMovieThumbnail = 302,
 		GetAutoSavingStorage = 401,
@@ -63,7 +63,7 @@ class AlbumAccessorService final : public sf::IServiceObject {
 	virtual Result LoadAlbumFileThumbnail(sf::OutBuffer image, sf::Out<u64> out, const FileId &fileId);
 	virtual Result LoadAlbumScreenShotImage(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId);
 	virtual Result LoadAlbumScreenShotThumbnailImage(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId);
-	virtual Result GetAlbumEntryFromApplicationAlbumEntry(sf::Out<CapsAlbumEntry> out, const ApplicationEntry &appEntry, u64 appId);
+	virtual Result GetAlbumEntryFromApplicationAlbumEntry(sf::Out<Entry> out, const ApplicationEntry &appEntry, u64 appId);
 	virtual Result LoadAlbumScreenShotImageEx(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
 	virtual Result LoadAlbumScreenShotThumbnailImageEx(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
 	virtual Result LoadAlbumScreenShotImageEx0(sf::Out<CapsScreenShotAttribute> attrs, sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
@@ -86,7 +86,7 @@ class AlbumAccessorService final : public sf::IServiceObject {
 	virtual Result RefreshAlbumCache(StorageId storage);
 	virtual Result GetAlbumCache(sf::Out<CapsAlbumCache> cache, StorageId storage);
 	virtual Result GetAlbumCacheEx(sf::Out<CapsAlbumCache> cache, StorageId storage, const ContentType type);
-	virtual Result GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<CapsAlbumEntry> out, const sf::ClientAppletResourceUserId &aruid, const ApplicationEntry &appEntry);
+	virtual Result GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<Entry> out, const sf::ClientAppletResourceUserId &aruid, const ApplicationEntry &appEntry);
 	virtual Result SetInternalErrorConversionEnabled(const bool enabled);
 	virtual Result LoadMakerNoteInfoForDebug(sf::Out<u64> out, sf::OutBuffer unk0, sf::OutBuffer unk1, const FileId &fileId);
 	virtual Result OpenAccessorSession(sf::Out<std::shared_ptr<AccessorSession>> out, const sf::ClientAppletResourceUserId &aruid);
@@ -114,7 +114,7 @@ class AlbumAccessorService final : public sf::IServiceObject {
 		MAKE_SERVICE_COMMAND_META(GetMinMaxAppletId, hos::Version_600),
 		MAKE_SERVICE_COMMAND_META(GetAlbumFileCountEx0, hos::Version_500),
 		MAKE_SERVICE_COMMAND_META(GetAlbumFileListEx0, hos::Version_500),
-		//MAKE_SERVICE_COMMAND_META(SaveEditedScreenShot,                         hos::Version_100, hos::Version_200),
+		//MAKE_SERVICE_COMMAND_META(SaveEditedScreenShot, hos::Version_100, hos::Version_200),
 		MAKE_SERVICE_COMMAND_META(GetLastOverlayScreenShotThumbnail),
 		MAKE_SERVICE_COMMAND_META(GetLastOverlayMovieThumbnail, hos::Version_400),
 		MAKE_SERVICE_COMMAND_META(GetAutoSavingStorage),

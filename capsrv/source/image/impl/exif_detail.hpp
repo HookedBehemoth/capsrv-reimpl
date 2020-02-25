@@ -46,12 +46,14 @@ namespace ams::image::detail {
         doubleFloat = 12
     };
 
+    /* ImageFileDirectory */
     struct IfdHeader {
         u16 offset;
         u16 count;
         u16 size;
     };
 
+    /* Tag inside ImageFileDirectory */
     struct IfdTag {
         u16 marker;
         DataFormat format;
@@ -74,8 +76,8 @@ namespace ams::image::detail {
             {0x0110, asciiStrings, 0},    // Model
             {0x0112, unsignedShort, 1},   // Orientation
             {0x0131, asciiStrings, 0},    // Software
-            {0x0132, asciiStrings, 0x14}, // DateTime
-            {0x8769, unsignedLong, 1},    // Exif Tag
+            {0x0132, asciiStrings, 0x14}, // DateTime string
+            {0x8769, unsignedLong, 1},    // Offset to Exif Sub IFD
             {0x8825, unsignedLong, 1},    // GPS Tag
         };
         IfdHeader exifHeader;
@@ -85,8 +87,8 @@ namespace ams::image::detail {
             {0xa003, unsignedShort, 1},   // Image Height < N wrongly searches for signedShort
             {0xa420, asciiStrings, 0x21}, // Image Unique ID
         };
-        IfdHeader lastHeader;
-        IfdTag lastTags[4] = {
+        IfdHeader thumbnailHeader;
+        IfdTag thumbnailTags[4] = {
             {0x0103, unsignedShort, 1}, // Compression
             {0x0201, unsignedLong, 1},  // Jpeg IF Offset
             {0x0202, unsignedLong, 1},  // Jpeg IF Byte Count

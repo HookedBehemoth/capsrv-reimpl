@@ -14,14 +14,17 @@ namespace ams::capsrv::crypto {
 
     namespace {
 
+        /* Key source for screenshot key */
         constexpr u8 screenshot_kek_source[0x10] = {0x9b, 0xbf, 0xde, 0x01, 0xfa, 0x18, 0xbb, 0xee, 0x87, 0xa4, 0xac, 0xc5, 0x67, 0xac, 0xd4, 0x21};
         constexpr u8 screenshot_key_source[0x10] = {0x15, 0x0d, 0x26, 0xd1, 0x17, 0xee, 0x44, 0xff, 0x79, 0x67, 0x43, 0x8a, 0x20, 0x14, 0x63, 0x30};
         static u8 screenshot_kek[0x10] = {0};
 
+        /* Key source for movie key */
         constexpr u8 movie_kek_source[0x10] = {0x55, 0xb4, 0x30, 0xaf, 0x16, 0x8d, 0x9a, 0x66, 0x6a, 0x8f, 0xed, 0xe3, 0xa5, 0x52, 0x32, 0xea};
         constexpr u8 movie_key_source[0x10] = {0x71, 0x70, 0x7d, 0xed, 0x3e, 0x2f, 0x48, 0x03, 0x37, 0x2f, 0x42, 0x35, 0x12, 0x39, 0x2c, 0xfe};
         static u8 movie_kek[0x10] = {0};
 
+        /* Unofficial key source for decrypting official AES keys */
         constexpr u8 aes_kek_source[0x10] = {0xE2, 0x41, 0x1A, 0xA8, 0x2E, 0x55, 0xEB, 0x16, 0xF2, 0xF7, 0x82, 0xFB, 0x44, 0x10, 0xFE, 0xE5};
         constexpr u8 aes_key_source[0x10] = {0x8C, 0xFB, 0x07, 0x94, 0xC8, 0x1C, 0xD3, 0x88, 0x80, 0x71, 0x01, 0x98, 0xAC, 0xB9, 0x13, 0xB9};
 
@@ -39,13 +42,17 @@ namespace ams::capsrv::crypto {
     }
 
     Result Initialize() {
+        /* Generate MAC keys for signing and validating album files */
         R_TRY(splCryptoGenerateAesKek(screenshot_kek_source, 0, 0, screenshot_kek));
         R_TRY(splCryptoGenerateAesKek(movie_kek_source, 0, 0, movie_kek));
+
+        /* Generate random aes key that was used to encrypt official AES keys */
         u8 aes_kek[0x10] = {0};
         u8 aes_aes_key[0x10] = {0};
         R_TRY(splCryptoGenerateAesKek(aes_kek_source, 0, 0, aes_kek));
         R_TRY(splCryptoGenerateAesKey(aes_kek, aes_key_source, aes_aes_key));
 
+        /* Decrypt official AES keys */
         Aes128Context ctx;
         aes128ContextCreate(&ctx, aes_aes_key, 0);
         aes128DecryptBlock(&ctx, aes128::key, aes128::encrypted_key);
@@ -88,6 +95,13 @@ namespace ams::capsrv::crypto {
             aes256EncryptBlock(&ctx, out->data + 0x10, ((u8 *)src) + 0x10);
         }
 
+        void DecryptV0(Entry *out, const ApplicationEntry *src, const u8 v0Key[0x20]) {
+            Aes256Context ctx;
+            aes256ContextCreate(&ctx, v0Key, 0);
+            aes256DecryptBlock(&ctx, (u8 *)out, (u8 *)src);
+            aes256DecryptBlock(&ctx, (u8 *)out + 0x10, (u8 *)src + 0x10);
+        }
+
         Result EncryptV1(ApplicationEntry *out, const Entry *src, u64 version) {
             R_UNLESS(version == 1, 0x800ce);
             u64 tmp[4];
@@ -103,6 +117,30 @@ namespace ams::capsrv::crypto {
             out->v1.storage = src->fileId.storage;
             out->v1.content = src->fileId.type;
             out->v1.unk_x1f = 1;
+            return ResultSuccess();
+        }
+
+        Result DecryptV1(Entry *out, const ApplicationEntry *src, u64 applicationId) {
+            R_UNLESS(src->v1.unk_x1f == '\x01', 0x14ce);
+
+            u64 tmp[4];
+            ApplicationEntry tmpEntry = *src;
+            tmpEntry.v1.hash = applicationId;
+            Aes256Context ctx;
+            aes256ContextCreate(&ctx, key, 1);
+            aes256EncryptBlock(&ctx, tmp, ((u8 *)&tmpEntry));
+            aes256EncryptBlock(&ctx, tmp + 2, ((u8 *)&tmpEntry) + 0x10);
+
+            R_UNLESS(src->v1.hash == (tmp[0] ^ tmp[1] ^ tmp[2] ^ tmp[3]), 0x14ce);
+
+            out->size = src->v1.size;
+            out->fileId.applicationId = applicationId;
+            out->fileId.datetime = src->v1.datetime;
+            out->fileId.storage = StorageId(src->v1.storage);
+            out->fileId.type = ContentType(src->v1.content);
+            for (int i = 0; i < 6; i++)
+                out->fileId.pad[i] = 0;
+
             return ResultSuccess();
         }
 

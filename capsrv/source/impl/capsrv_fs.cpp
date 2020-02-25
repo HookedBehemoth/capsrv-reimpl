@@ -13,15 +13,18 @@ namespace ams::capsrv::impl {
 
     constexpr const char *mountNames[] = {
         [StorageId::Nand] = "NA",
-        [StorageId::Sd] = "SD"};
+        [StorageId::Sd] = "SD",
+    };
 
     constexpr const char *mountPoints[] = {
         [StorageId::Nand] = "NA:/",
-        [StorageId::Sd] = "SD:/"};
+        [StorageId::Sd] = "SD:/",
+    };
 
     constexpr const char *fileExtensions[] = {
         [0] = ".jpg",
-        [1] = ".mp4"};
+        [1] = ".mp4",
+    };
 
     namespace {
 

@@ -36,17 +36,22 @@ namespace ams::image {
         exifBinary->data = this->data;
         exifBinary->size = this->size;
 
+        /* Read Tiff header to determine byte order and main IFD offset. */
         u32 offset = 0;
         bool success = detail::ReadTiffHeader(&exifBinary->binaryIo, &offset, this->data, this->size);
         if (!success)
             return false;
+
+        /* Read the main IFD. */
         success = detail::ReadIfdHeader(&exifBinary->mainHeader, offset, exifBinary);
         if (!success)
             return false;
         success = detail::SearchIfdTags(exifBinary->mainTags, 7, &exifBinary->mainHeader, exifBinary);
         if (!success)
             return false;
-        u32 exifTagDataOffset = exifBinary->mainTags[5].data.offset; // Exif Tag
+
+        /* Get SubIFD offset. */
+        u32 exifTagDataOffset = exifBinary->mainTags[5].data.offset;
         if (exifTagDataOffset == 0) {
             exifBinary->exifTags[0].count = 0;
             exifBinary->exifTags[1].count = 0;
@@ -56,6 +61,7 @@ namespace ams::image {
             u32 exifOffset = exifBinary->binaryIo.getU32(exifBinary->data + exifTagDataOffset);
             if (exifBinary->size <= exifOffset)
                 return false;
+            /* Read the SubIFD. */
             success = detail::ReadIfdHeader(&exifBinary->exifHeader, exifOffset, exifBinary);
             if (!success)
                 return false;
@@ -63,16 +69,19 @@ namespace ams::image {
             if (!success)
                 return false;
         }
+
+        /* Get Thumbnail IFD offset. */
         u32 exifSize = exifBinary->mainHeader.size;
         if (exifSize == 0) {
-            exifBinary->lastTags[0].count = 0;
-            exifBinary->lastTags[1].count = 0;
-            exifBinary->lastTags[2].count = 0;
+            exifBinary->thumbnailTags[0].count = 0;
+            exifBinary->thumbnailTags[1].count = 0;
+            exifBinary->thumbnailTags[2].count = 0;
         } else {
-            success = detail::ReadIfdHeader(&exifBinary->lastHeader, exifSize, exifBinary);
+            /* Read thumbnail header at the end of the exif. */
+            success = detail::ReadIfdHeader(&exifBinary->thumbnailHeader, exifSize, exifBinary);
             if (!success)
                 return false;
-            success = detail::SearchIfdTags(exifBinary->lastTags, 3, &exifBinary->lastHeader, exifBinary);
+            success = detail::SearchIfdTags(exifBinary->thumbnailTags, 3, &exifBinary->thumbnailHeader, exifBinary);
             if (!success)
                 return false;
         }
@@ -84,8 +93,10 @@ namespace ams::image {
         if (this->exifBinary->mainTags[4].data.size != 0x14)
             return nullptr;
 
+        /* Get string offset. */
         const char *dateString = (const char *)this->exifBinary->data + this->exifBinary->mainTags[4].data.offset;
 
+        /* Verify string length and null-termination. */
         for (u32 i = 0; i < 0x13; i++)
             if (dateString[i] == '\0')
                 return nullptr;
@@ -102,8 +113,10 @@ namespace ams::image {
         if (makerSize == 0)
             return nullptr;
 
+        /* Get offset. */
         const char *makerString = (const char *)this->exifBinary->data + this->exifBinary->mainTags[0].data.offset;
 
+        /* Verify length and null-termination. */
         if (makerSize != 1) {
             for (u32 i = 0; i < makerSize - 1; i++) {
                 if (makerString[i] == '\0')
@@ -118,26 +131,27 @@ namespace ams::image {
     }
 
     const u8 *ExifExtractor::ExtractMakerNote(u32 *size) {
-        auto mnSize = this->exifBinary->exifTags[0].data.size;
+        auto makerNoteSize = this->exifBinary->exifTags[0].data.size;
 
-        if (mnSize == 0)
+        if (makerNoteSize == 0)
             return nullptr;
 
-        *size = mnSize;
+        *size = makerNoteSize;
         return this->exifBinary->data + this->exifBinary->exifTags[0].data.offset;
     }
 
     const u8 *ExifExtractor::ExtractThumbnail(u32 *size) {
-        if (this->exifBinary->lastTags[0].data.size != 2 || this->exifBinary->lastTags[1].data.size != 4 || this->exifBinary->lastTags[2].data.size != 4)
+        if (this->exifBinary->thumbnailTags[0].data.size != 2 || this->exifBinary->thumbnailTags[1].data.size != 4 || this->exifBinary->thumbnailTags[2].data.size != 4)
             return nullptr;
 
-        u16 compression = this->exifBinary->binaryIo.getU16(this->exifBinary->data + this->exifBinary->lastTags[0].data.offset);
+        u16 compression = this->exifBinary->binaryIo.getU16(this->exifBinary->data + this->exifBinary->thumbnailTags[0].data.offset);
 
-        if (compression != 6) // JPEG
+        /* Verify compression type. Type 6 is JPEG compression. */
+        if (compression != 6)
             return nullptr;
 
-        u32 jpegOffset = this->exifBinary->binaryIo.getU32(this->exifBinary->data + this->exifBinary->lastTags[1].data.offset);
-        u32 jpegSize = this->exifBinary->binaryIo.getU32(this->exifBinary->data + this->exifBinary->lastTags[2].data.offset);
+        u32 jpegOffset = this->exifBinary->binaryIo.getU32(this->exifBinary->data + this->exifBinary->thumbnailTags[1].data.offset);
+        u32 jpegSize = this->exifBinary->binaryIo.getU32(this->exifBinary->data + this->exifBinary->thumbnailTags[2].data.offset);
 
         u32 max = this->exifBinary->size;
         if (jpegOffset + jpegSize > max || jpegOffset > max || jpegSize > max)

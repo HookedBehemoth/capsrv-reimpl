@@ -167,31 +167,39 @@ int main(int argc, char **argv) {
         printf("failed to open %s\n", entries[0].fileId.AsString().c_str());
     }
 
-    /*FileId fileId = {0};
-	printf("0x%x generate fileId\n", control::GenerateCurrentAlbumFileId(&fileId, 0x1337, ContentType::Screenshot).GetValue());
-	printf("%s\n", fileId.AsString().c_str());
+    FileId fileId = {0};
+    printf("0x%x generate fileId\n", control::GenerateCurrentAlbumFileId(&fileId, 0x1337, ContentType::Screenshot).GetValue());
+    printf("%s\n", fileId.AsString().c_str());
 
-	printf("0x%x register aruid\n", control::RegisterAppletResourceUserId(0x420, 0x1337).GetValue());
-	printf("0x%x check appId registered\n", control::CheckApplicationIdRegistered(0x1337).GetValue());
-	u64 appId;
-	printf("0x%x get appId\n", control::GetApplicationIdFromAruid(&appId, 0x420).GetValue());
-	printf("%016lX\n", appId);
+    printf("0x%x register aruid\n", control::RegisterAppletResourceUserId(0x420, 0x1337).GetValue());
+    printf("0x%x check appId registered\n", control::CheckApplicationIdRegistered(0x1337).GetValue());
+    u64 appId;
+    printf("0x%x get appId\n", control::GetApplicationIdFromAruid(&appId, 0x420).GetValue());
+    printf("%016lX\n", appId);
 
-	Entry entry = {0x1337, fileId};
-	ApplicationEntry appEntry;
-	printf("0x%x generate appEntry\n", control::GenerateApplicationAlbumEntry(&appEntry, entry, 0x1337).GetValue());
-	for (u8 crtr : appEntry.data)
-		printf("%hhX", crtr);
-	printf("\n");
+    Entry entry = {0x1337, fileId};
+    ApplicationEntry appEntry;
+    printf("0x%x generate appEntry\n", control::GenerateApplicationAlbumEntry(&appEntry, entry, 0x1337).GetValue());
+    for (u8 crtr : appEntry.data)
+        printf("%hhX", crtr);
+    printf("\n");
 
-	printf("0x%x set shim version\n", control::SetShimLibraryVersion(1, 0x420).GetValue());
+    Entry tmpEntry0 {};
+    printf("0x%x get entry from appId\n", control::GetAlbumEntryFromApplicationAlbumEntry(&tmpEntry0, &appEntry, 0x1337).GetValue());
+    printf("%s\n", tmpEntry0.fileId.AsString().c_str());
 
-	printf("0x%x generate appEntry\n", control::GenerateApplicationAlbumEntry(&appEntry, entry, 0x1337).GetValue());
-	for (u8 crtr : appEntry.data)
-		printf("%hhX", crtr);
-	printf("\n");
+    printf("0x%x set shim version\n", control::SetShimLibraryVersion(1, 0x420).GetValue());
 
-	printf("0x%x unregister aruid\n", control::UnregisterAppletResourceUserId(0x420, 0x1337).GetValue());*/
+    printf("0x%x generate appEntry\n", control::GenerateApplicationAlbumEntry(&appEntry, entry, 0x1337).GetValue());
+    for (u8 crtr : appEntry.data)
+        printf("%hhX", crtr);
+    printf("\n");
+
+    Entry tmpEntry1 {};
+    printf("0x%x get entry from appId\n", control::GetAlbumEntryFromApplicationAlbumEntry(&tmpEntry1, &appEntry, 0x1337).GetValue());
+    printf("%s\n", tmpEntry1.fileId.AsString().c_str());
+
+    printf("0x%x unregister aruid\n", control::UnregisterAppletResourceUserId(0x420, 0x1337).GetValue());
 
     printf("0x%x unmount nand\n", impl::UnmountAlbum(StorageId::Nand).GetValue());
     printf("0x%x unmount sd\n", impl::UnmountAlbum(StorageId::Sd).GetValue());

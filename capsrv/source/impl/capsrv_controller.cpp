@@ -23,6 +23,26 @@ namespace ams::capsrv::control {
             u64 key[4];
         } resources[4];
 
+        #define FIND_RESOURCE(by, cmp)\
+        for (Resource &res : resources)\
+            if (res.used && res.by == cmp)
+
+        Result GetAlbumEntryFromApplicationAlbumEntryV0Impl(Entry *out, const ApplicationEntry *src, u64 appId, const u64 key[4]) {
+            Entry tmp;
+            crypto::aes256::DecryptV0(&tmp, src, (const u8 *)key);
+            R_UNLESS(tmp.fileId.applicationId == appId, 0x14ce);
+            *out = tmp;
+            return ResultSuccess();
+        }
+
+        Result GetAlbumEntryFromApplicationAlbumEntryV1Impl(Entry *out, const ApplicationEntry *src, u64 appId) {
+            Entry tmp;
+            R_TRY(crypto::aes256::DecryptV1(&tmp, src, appId));
+            R_TRY(tmp.fileId.Verify());
+            *out = tmp;
+            return ResultSuccess();
+        }
+
     }
 
     Result SetShimLibraryVersion(u64 version, u64 aruid) {
@@ -53,9 +73,7 @@ namespace ams::capsrv::control {
     }
 
     Result UnregisterAppletResourceUserId(u64 aruid, u64 appId) {
-        for (Resource &res : resources) {
-            if (!res.used || res.aruid != aruid)
-                continue;
+        FIND_RESOURCE(aruid, aruid) {
             res.used = false;
             res.aruid = 0;
             res.appId = 0;
@@ -69,20 +87,16 @@ namespace ams::capsrv::control {
     }
 
     Result GetApplicationIdFromAruid(u64 *appId, u64 aruid) {
-        for (Resource &res : resources) {
-            if (!res.used || res.aruid != aruid)
-                continue;
-            *appId = res.appId;
+        FIND_RESOURCE(aruid, aruid) {
+            *appId = res.aruid;
             return ResultSuccess();
         }
         return 0x66cce;
     }
 
-    Result CheckApplicationIdRegistered(u64 appId) {
-        for (Resource &res : resources) {
-            if (res.used && res.appId == appId)
-                return ResultSuccess();
-        }
+    Result CheckApplicationIdRegistered(u64 applicationId) {
+        FIND_RESOURCE(appId, applicationId)
+            return ResultSuccess();
         return 0x66cce;
     }
 
@@ -109,27 +123,40 @@ namespace ams::capsrv::control {
         return ResultSuccess();
     }
 
-    Result GenerateApplicationAlbumEntry(ApplicationEntry *appEntry, const Entry &entry, u64 appId) {
-        Result rc = ResultSuccess();
-        Resource *res = nullptr;
-        for (Resource &tmp : resources) {
-            if (tmp.used && tmp.appId == appId) {
-                res = &tmp;
-                break;
+    Result GenerateApplicationAlbumEntry(ApplicationEntry *appEntry, const Entry &entry, u64 applicationId) {
+        FIND_RESOURCE(appId, applicationId) {
+            if (res.version == 0) {
+                crypto::aes256::EncryptV0(appEntry, &entry, (u8 *)res.key);
+            } else {
+                ApplicationEntry tmp;
+                R_TRY(crypto::aes256::EncryptV1(&tmp, &entry, res.version));
+                *appEntry = tmp;
+            }
+            return ResultSuccess();
+        }
+        return 0x66cce;
+    }
+
+    Result GetAlbumEntryFromApplicationAlbumEntry(Entry *out, const ApplicationEntry *src, u64 applicationId) {
+        FIND_RESOURCE(appId, applicationId) {
+            if (res.version == 0) {
+                return GetAlbumEntryFromApplicationAlbumEntryV0Impl(out, src, res.appId, res.key);
+            } else {
+                return GetAlbumEntryFromApplicationAlbumEntryV1Impl(out, src, res.appId);
             }
         }
-        if (!res)
-            return 0x66cce;
+        return 0x66cce;
+    }
 
-        ApplicationEntry tmp;
-        if (res->version == 0) {
-            crypto::aes256::EncryptV0(&tmp, &entry, (u8 *)res->key);
-        } else {
-            rc = crypto::aes256::EncryptV1(&tmp, &entry, res->version);
+    Result GetAlbumEntryFromApplicationAlbumEntryAruid(Entry *out, const ApplicationEntry *src, u64 aruid) {
+        FIND_RESOURCE(aruid, aruid) {
+            if (res.version == 0) {
+                return GetAlbumEntryFromApplicationAlbumEntryV0Impl(out, src, res.appId, res.key);
+            } else {
+                return GetAlbumEntryFromApplicationAlbumEntryV1Impl(out, src, res.appId);
+            }
         }
-        if (rc.IsSuccess())
-            *appEntry = tmp;
-        return rc;
+        return 0x66cce;
     }
 
 }

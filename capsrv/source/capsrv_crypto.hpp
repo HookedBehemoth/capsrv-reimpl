@@ -20,7 +20,10 @@ namespace ams::capsrv::crypto {
     namespace aes256 {
 
         void EncryptV0(ApplicationEntry *out, const Entry *src, const u8 v0Key[0x20]);
+        void DecryptV0(Entry *out, const ApplicationEntry *src, const u8 v0Key[0x20]);
+
         Result EncryptV1(ApplicationEntry *out, const Entry *src, u64 version);
+        Result DecryptV1(Entry *out, const ApplicationEntry *src, u64 applicationId);
 
     }
 

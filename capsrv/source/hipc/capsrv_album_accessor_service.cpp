@@ -1,5 +1,6 @@
 #include "capsrv_album_accessor_service.hpp"
 
+#include "../impl/capsrv_controller.hpp"
 #include "../impl/capsrv_fs.hpp"
 #include "../impl/capsrv_image.hpp"
 #include "../impl/capsrv_overlay.hpp"
@@ -62,9 +63,9 @@ Result AlbumAccessorService::LoadAlbumScreenShotThumbnailImage(sf::Out<u64> widt
 	return impl::LoadAlbumScreenShotThumbnailImage(width.GetPointer(), height.GetPointer(), work.GetPointer(), work.GetSize(), image.GetPointer(), image.GetSize(), fileId);
 }
 
-Result AlbumAccessorService::GetAlbumEntryFromApplicationAlbumEntry(sf::Out<CapsAlbumEntry> out, const ApplicationEntry &appEntry, u64 appId) {
+Result AlbumAccessorService::GetAlbumEntryFromApplicationAlbumEntry(sf::Out<Entry> out, const ApplicationEntry &appEntry, u64 appId) {
 	WriteLogFile("Accessor", "GetAlbumEntryFromApplicationAlbumEntry: appEntry(#), appId(%016lx)", appId);
-	return ResultSuccess();
+	return control::GetAlbumEntryFromApplicationAlbumEntry(out.GetPointer(), &appEntry, appId);
 }
 
 Result AlbumAccessorService::LoadAlbumScreenShotImageEx(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
@@ -180,9 +181,9 @@ Result AlbumAccessorService::GetAlbumCacheEx(sf::Out<CapsAlbumCache> cache, Stor
 	return impl::GetAlbumCache(cache.GetPointer(), storage, type);
 }
 
-Result AlbumAccessorService::GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<CapsAlbumEntry> out, const sf::ClientAppletResourceUserId &aruid, const ApplicationEntry &appEntry) {
+Result AlbumAccessorService::GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<Entry> out, const sf::ClientAppletResourceUserId &aruid, const ApplicationEntry &appEntry) {
 	WriteLogFile("Accessor", "GetAlbumEntryFromApplicationAlbumEntryAruid: ApplicationEntry(#), aruid(%ld)", aruid.GetValue());
-	return ResultSuccess();
+	return control::GetAlbumEntryFromApplicationAlbumEntryAruid(out.GetPointer(), &appEntry, aruid.GetValue().value);
 }
 
 Result AlbumAccessorService::SetInternalErrorConversionEnabled(const bool enabled) {
