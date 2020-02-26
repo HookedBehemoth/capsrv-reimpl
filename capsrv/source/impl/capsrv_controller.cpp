@@ -30,7 +30,7 @@ namespace ams::capsrv::control {
         Result GetAlbumEntryFromApplicationAlbumEntryV0Impl(Entry *out, const ApplicationEntry *src, u64 appId, const u64 key[4]) {
             Entry tmp;
             crypto::aes256::DecryptV0(&tmp, src, (const u8 *)key);
-            R_UNLESS(tmp.fileId.applicationId == appId, 0x14ce);
+            R_UNLESS(tmp.fileId.applicationId == appId, capsrv::ResultInvalidApplicationId());
             *out = tmp;
             return ResultSuccess();
         }
@@ -49,13 +49,13 @@ namespace ams::capsrv::control {
         for (Resource &res : resources) {
             if (!res.used || res.aruid != aruid)
                 continue;
-            R_UNLESS(version == 1, 0x10ce);
+            R_UNLESS(version == 1, capsrv::ResultOutOfRange());
             R_UNLESS(res.version != version, ResultSuccess());
-            R_UNLESS(res.version == 0, 0xece);
+            R_UNLESS(res.version == 0, capsrv::ResultInvalidState());
             res.version = version;
             return ResultSuccess();
         }
-        return 0x66cce;
+        return capsrv::ResultApplicationNotRegistered();
     }
 
     Result RegisterAppletResourceUserId(u64 aruid, u64 appId) {
@@ -69,7 +69,7 @@ namespace ams::capsrv::control {
             randomGet(res.key, sizeof(res.key));
             return ResultSuccess();
         }
-        return 0x668ce;
+        return capsrv::ResultTooManyApplicationsRegistered();
     }
 
     Result UnregisterAppletResourceUserId(u64 aruid, u64 appId) {
@@ -88,16 +88,16 @@ namespace ams::capsrv::control {
 
     Result GetApplicationIdFromAruid(u64 *appId, u64 aruid) {
         FIND_RESOURCE(aruid, aruid) {
-            *appId = res.aruid;
+            *appId = res.appId;
             return ResultSuccess();
         }
-        return 0x66cce;
+        return capsrv::ResultApplicationNotRegistered();
     }
 
     Result CheckApplicationIdRegistered(u64 applicationId) {
         FIND_RESOURCE(appId, applicationId)
             return ResultSuccess();
-        return 0x66cce;
+        return capsrv::ResultApplicationNotRegistered();
     }
 
     Result GenerateCurrentAlbumFileId(FileId *fileId, u64 appId, ContentType type) {
@@ -134,7 +134,7 @@ namespace ams::capsrv::control {
             }
             return ResultSuccess();
         }
-        return 0x66cce;
+        return capsrv::ResultApplicationNotRegistered();
     }
 
     Result GetAlbumEntryFromApplicationAlbumEntry(Entry *out, const ApplicationEntry *src, u64 applicationId) {
@@ -145,7 +145,7 @@ namespace ams::capsrv::control {
                 return GetAlbumEntryFromApplicationAlbumEntryV1Impl(out, src, res.appId);
             }
         }
-        return 0x66cce;
+        return capsrv::ResultApplicationNotRegistered();
     }
 
     Result GetAlbumEntryFromApplicationAlbumEntryAruid(Entry *out, const ApplicationEntry *src, u64 aruid) {
@@ -156,7 +156,7 @@ namespace ams::capsrv::control {
                 return GetAlbumEntryFromApplicationAlbumEntryV1Impl(out, src, res.appId);
             }
         }
-        return 0x66cce;
+        return capsrv::ResultApplicationNotRegistered();
     }
 
 }

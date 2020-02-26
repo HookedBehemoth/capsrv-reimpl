@@ -12,6 +12,8 @@ namespace ams::capsrv::ovl {
             FileId fileId;
         } data[2];
 
+        os::Mutex g_mutex;
+
     }
 
     void Initialize() {
@@ -30,23 +32,23 @@ namespace ams::capsrv::ovl {
     }
 
     Result SetOverlayThumbnailData(const u8 *ptr, u64 size, const FileId &fileId, bool isMovie) {
-        if (size < BufferSize)
-            return 0x4ce;
-        // TODO: lock mutex
+        R_UNLESS(size >= BufferSize, capsrv::ResultInvalidArgument());
+
+        std::scoped_lock lk(g_mutex);
         data[(u8)isMovie].fileId = fileId;
         std::memcpy(data[(u8)isMovie].buffer, ptr, BufferSize);
-        // TODO: unlock mutex
+
         return ResultSuccess();
     }
 
     Result GetLastOverlayThumbnail(u8 *ptr, u64 size, FileId *fileId, u64 *outSize, bool isMovie) {
-        if (size < BufferSize)
-            return 0x3cce;
-        // TODO: lock mutex
+        R_UNLESS(size >= BufferSize, capsrv::ResultBufferInsufficient());
+        
+        std::scoped_lock lk(g_mutex);
         std::memcpy(ptr, data[(u8)isMovie].buffer, BufferSize);
         *outSize = 0x5100;
         *fileId = data[(u8)isMovie].fileId;
-        // TODO: unlock mutex
+
         return ResultSuccess();
     }
 

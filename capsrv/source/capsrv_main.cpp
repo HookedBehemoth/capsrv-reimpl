@@ -69,7 +69,27 @@ using namespace ams;
 //	setsysExit();
 //}
 
+#define RUNN(function) {\
+    u32 rc = function;\
+    if (R_FAILED(rc)) printf("0x%x %s\n", function, #function);\
+}
+
 using namespace ams::capsrv;
+
+#define RUN(function) {\
+    ams::Result rc = function;\
+    if (R_FAILED(rc)) printf("0x%x %s expected success\n", rc.GetValue(), #function);\
+}
+
+#define FAIL(function) {\
+    ams::Result rc = function;\
+    if (R_SUCCEEDED(rc)) printf("0x%x %s expected failure\n", rc.GetValue(), #function);\
+}
+
+#define TEST(function, var, expected) {\
+    RUN(function)\
+    if (var != expected) printf("FAILED %s: %s != %s\n", #function, #var, #expected);\
+}
 
 int main(int argc, char **argv) {
     socketInitializeDefault();
@@ -77,32 +97,31 @@ int main(int argc, char **argv) {
     setsysInitialize();
 
     config::Initialize();
-    config::print();
-    printf("0x%x spl\n", splCryptoInitialize());
-    printf("0x%x crypto\n", crypto::Initialize().GetValue());
+    //config::print();
+
+    RUNN(splCryptoInitialize());
+    RUN(crypto::Initialize());
 
     ovl::Initialize();
 
-    printf("0x%x mount nand\n", impl::MountAlbum(StorageId::Nand).GetValue());
-    printf("0x%x mount sd\n", impl::MountAlbum(StorageId::Sd).GetValue());
+    RUN(impl::MountAlbum(StorageId::Nand));
+    RUN(impl::MountAlbum(StorageId::Sd));
 
     u64 count;
-    printf("0x%x count nand\n", impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie).GetValue());
-    printf("%ld\n", count);
-    printf("0x%x count sd\n", impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie).GetValue());
-    printf("%ld\n", count);
+
+    TEST(impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot), count, 9);
+    TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot), count, 5);
+    TEST(impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_Movie), count, 0);
+    TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_Movie), count, 0);
+    TEST(impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie), count, 9);
+    TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie), count, 5);
 
     Entry entries[10] = {0};
-    printf("0x%x list nand\n", impl::GetAlbumFileList(entries, 2, &count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot).GetValue());
-    printf("%s\n", entries[0].AsString().c_str());
-    printf("%s\n", entries[1].AsString().c_str());
-    printf("%ld\n", count);
-    printf("0x%x list sd\n", impl::GetAlbumFileList(entries, 2, &count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot).GetValue());
-    printf("%s\n", entries[0].AsString().c_str());
-    printf("%s\n", entries[1].AsString().c_str());
-    printf("%ld\n", count);
 
-    FILE *f = fopen(entries[1].fileId.GetFilePath().c_str(), "rb");
+    TEST(impl::GetAlbumFileList(entries, 10, &count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot), count, 9);
+    TEST(impl::GetAlbumFileList(entries, 10, &count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot), count, 5);
+
+    /*FILE *f = fopen(entries[1].fileId.GetFilePath().c_str(), "rb");
     if (f) {
         printf("open succ\n");
         fseek(f, 0, SEEK_END);
@@ -165,48 +184,42 @@ int main(int argc, char **argv) {
         free(img);
     } else {
         printf("failed to open %s\n", entries[0].fileId.AsString().c_str());
-    }
+    }*/
 
     FileId fileId = {0};
-    printf("0x%x generate fileId\n", control::GenerateCurrentAlbumFileId(&fileId, 0x1337, ContentType::Screenshot).GetValue());
-    printf("%s\n", fileId.AsString().c_str());
+    /* Can't test exact equlity since datetime is... time. */
+    RUN(control::GenerateCurrentAlbumFileId(&fileId, 0x1337, ContentType::Screenshot));
+    RUN(control::GenerateCurrentAlbumFileId(&fileId, 0x1337, ContentType::Movie));
 
-    printf("0x%x register aruid\n", control::RegisterAppletResourceUserId(0x420, 0x1337).GetValue());
-    printf("0x%x check appId registered\n", control::CheckApplicationIdRegistered(0x1337).GetValue());
+    FAIL(control::CheckApplicationIdRegistered(0x1337));
+    RUN(control::RegisterAppletResourceUserId(0x420, 0x1337));
+    RUN(control::CheckApplicationIdRegistered(0x1337));
     u64 appId;
-    printf("0x%x get appId\n", control::GetApplicationIdFromAruid(&appId, 0x420).GetValue());
-    printf("%016lX\n", appId);
+    TEST(control::GetApplicationIdFromAruid(&appId, 0x420), appId, 0x1337);
 
     Entry entry = {0x1337, fileId};
+    Entry exp = entry;
     ApplicationEntry appEntry;
-    printf("0x%x generate appEntry\n", control::GenerateApplicationAlbumEntry(&appEntry, entry, 0x1337).GetValue());
-    for (u8 crtr : appEntry.data)
-        printf("%hhX", crtr);
-    printf("\n");
+    RUN(control::GenerateApplicationAlbumEntry(&appEntry, entry, 0x1337));
+    TEST(control::GetAlbumEntryFromApplicationAlbumEntry(&exp, &appEntry, 0x1337), exp, entry);
 
-    Entry tmpEntry0 {};
-    printf("0x%x get entry from appId\n", control::GetAlbumEntryFromApplicationAlbumEntry(&tmpEntry0, &appEntry, 0x1337).GetValue());
-    printf("%s\n", tmpEntry0.fileId.AsString().c_str());
+    FAIL(control::SetShimLibraryVersion(0, 0x420));
+    RUN(control::SetShimLibraryVersion(1, 0x420));
+    RUN(control::GenerateApplicationAlbumEntry(&appEntry, entry, 0x1337));
+    TEST(control::GetAlbumEntryFromApplicationAlbumEntry(&entry, &appEntry, 0x1337), entry, exp);
+    TEST(control::GetAlbumEntryFromApplicationAlbumEntryAruid(&entry, &appEntry, 0x420), entry, exp);
 
-    printf("0x%x set shim version\n", control::SetShimLibraryVersion(1, 0x420).GetValue());
+    RUN(control::UnregisterAppletResourceUserId(0x420, 0x1337));
 
-    printf("0x%x generate appEntry\n", control::GenerateApplicationAlbumEntry(&appEntry, entry, 0x1337).GetValue());
-    for (u8 crtr : appEntry.data)
-        printf("%hhX", crtr);
-    printf("\n");
-
-    Entry tmpEntry1 {};
-    printf("0x%x get entry from appId\n", control::GetAlbumEntryFromApplicationAlbumEntry(&tmpEntry1, &appEntry, 0x1337).GetValue());
-    printf("%s\n", tmpEntry1.fileId.AsString().c_str());
-
-    printf("0x%x unregister aruid\n", control::UnregisterAppletResourceUserId(0x420, 0x1337).GetValue());
-
-    printf("0x%x unmount nand\n", impl::UnmountAlbum(StorageId::Nand).GetValue());
-    printf("0x%x unmount sd\n", impl::UnmountAlbum(StorageId::Sd).GetValue());
+    RUN(impl::UnmountAlbum(StorageId::Nand));
+    RUN(impl::UnmountAlbum(StorageId::Sd));
 
     ovl::Exit();
     config::Exit();
 
+    printf("\n\nfinished\n\n\n");
+
+    setsysExit();
     splCryptoExit();
     close(sock);
     socketExit();

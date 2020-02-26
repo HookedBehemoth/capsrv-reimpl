@@ -86,7 +86,7 @@ namespace ams::image {
                 return false;
         }
         this->state = 2;
-        return 0;
+        return true;
     }
 
     const char *ExifExtractor::ExtractDateTime(u32 *size) {

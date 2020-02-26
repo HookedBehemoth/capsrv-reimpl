@@ -27,8 +27,8 @@ namespace ams::capsrv::config {
 
         // TODO: Debug mode implementation
         /*bool debug = settings::fwdbg::IsDebugModeEnabled();
-	debugMode = debug;
-	defaultDirectory = !debug;*/
+        debugMode = debug;
+        defaultDirectory = !debug;*/
         debugMode = false;
         defaultDirectory = true;
 

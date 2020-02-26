@@ -34,7 +34,7 @@ namespace ams::capsrv {
             u64 out[2];
             crypto::aes128::Decrypt(out, in);
 
-            R_UNLESS(out[1] <= 1, 0x16ce);
+            R_UNLESS(out[1] <= 1, capsrv::ResultInvalidUnknown());
             *isExtra = out[1] == 1;
             *applicationId = out[0];
             return ResultSuccess();
@@ -44,13 +44,13 @@ namespace ams::capsrv {
             for (u8 i = 0; i < 2; i++) {
                 if (strcmp(fileExtensions[i], str) != 0)
                     continue;
-                *type = static_cast<ContentType>(i + isExtra ? 2 : 0);
+                *type = static_cast<ContentType>(i + (isExtra ? 2 : 0));
                 return ResultSuccess();
             }
             return capsrv::ResultInvalidContentType();
         }
 
-    } // namespace
+    }
 
     std::string DateTime::AsString() const {
         char out[36];
@@ -198,7 +198,7 @@ namespace ams::capsrv {
         R_TRY(config::SupportsType(type));
         u64 max = config::GetMax(storage, type);
         u64 currentCount = this->position[storage].cache[type].count;
-        R_UNLESS(currentCount < max, 0xaf2ce);
+        R_UNLESS(currentCount < max, capsrv::ResultTooManyFiles());
         return ResultSuccess();
     }
 

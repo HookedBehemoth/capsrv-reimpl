@@ -3,6 +3,8 @@
 #include <string>
 #include <type_traits>
 
+#include "capsrv_results.hpp"
+
 namespace ams::capsrv {
 
     /* Storage IDs. */
@@ -49,6 +51,13 @@ namespace ams::capsrv {
         Result Verify() const;
 
         static Result FromString(FileId *fileId, StorageId storage, const char *str);
+        inline bool operator==(const FileId &f) {
+            //return (this->applicationId == f.applicationId) && (this->storage == f.storage) && (this->type == f.type);
+            return memcmp(this, &f, sizeof(FileId)) == 0;
+        }
+        inline bool operator!=(const FileId &f) {
+            return !this->operator==(f);
+        }
     };
     static_assert(sizeof(FileId) == sizeof(CapsAlbumFileId));
 
@@ -57,6 +66,12 @@ namespace ams::capsrv {
         FileId fileId;
 
         std::string AsString() const;
+        inline bool operator==(const Entry &f) {
+            return memcmp(this, &f, sizeof(FileId)) == 0;
+        }
+        inline bool operator!=(const Entry &f) {
+            return !this->operator==(f);
+        }
     };
     static_assert(sizeof(Entry) == sizeof(CapsAlbumEntry));
 
