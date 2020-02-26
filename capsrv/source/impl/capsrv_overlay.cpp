@@ -19,7 +19,8 @@ namespace ams::capsrv::ovl {
     void Initialize() {
         for (u8 i = 0; i < 2; i++) {
             data[i].buffer = (u8 *)malloc(BufferSize);
-            std::memset(data[i].buffer, 0xff, BufferSize);
+            if (data[i].buffer)
+                std::memset(data[i].buffer, 0xff, BufferSize);
         }
     }
 

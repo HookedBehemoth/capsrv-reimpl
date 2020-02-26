@@ -36,10 +36,14 @@ void WriteLogFile(const char *type, const char *fmt, ...) {
     int sec = timestruct->tm_sec;
     char time[9];
     sprintf(time, "%02d:%02d:%02d", hour, min, sec);
-    printf("[%s] [%s] ", time, type);
-    va_list args;
-    va_start(args, fmt);
-    vprintf(fmt, args);
-    va_end(args);
-    printf("\n");
+	FILE *pFile = fopen("sdmc:/log.txt", "a");
+	if (pFile) {
+		fprintf(pFile, "[%s] [%s] ", time, type);
+		va_list args;
+		va_start(args, fmt);
+		vfprintf(pFile, fmt, args);
+		va_end(args);
+		fprintf(pFile, "\n");
+		fclose(pFile);
+	}
 }

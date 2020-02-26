@@ -1,4 +1,13 @@
 all:
 	$(MAKE) -C capsrv
 
-.PHONY: all
+clean:
+	$(MAKE) -C capsrv clean
+
+sys:
+	$(MAKE) -C capsrv -f sys-Makefile
+
+sys-clean:
+	$(MAKE) -C capsrv -f sys-Makefile clean
+
+.PHONY: all clean

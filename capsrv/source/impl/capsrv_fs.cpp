@@ -9,6 +9,8 @@
 #include "../capsrv_config.hpp"
 #include "../capsrv_util.hpp"
 
+#include "../logger.hpp"
+
 namespace ams::capsrv::impl {
 
     constexpr const char *mountNames[] = {
@@ -125,7 +127,8 @@ namespace ams::capsrv::impl {
 
         // TODO: Neglect Extra Folder
         Result ProcessImageDirectory(StorageId storage, std::function<bool(const Entry &, ProcessObject *)> callback, ProcessObject *user) {
-            for (auto &e : std::filesystem::recursive_directory_iterator(mountPoints[storage])) {
+            std::error_code code;
+            for (auto &e : std::filesystem::recursive_directory_iterator(mountPoints[storage], code)) {
                 if (e.is_regular_file()) {
                     FileId fileId = {0};
                     Result rc = FileId::FromString(&fileId, storage, e.path().filename().c_str());
@@ -138,6 +141,7 @@ namespace ams::capsrv::impl {
                             break;
                 }
             }
+            WriteLogFile("fs", "code: %d: %s\n", code.value(), code.message().c_str());
             return ResultSuccess();
         }
 

@@ -4,94 +4,152 @@
 #include "impl/capsrv_controller.hpp"
 #include "impl/capsrv_fs.hpp"
 #include "impl/capsrv_overlay.hpp"
+#include "hipc/capsrv_album_accessor_service.hpp"
+#include "hipc/capsrv_album_application_service.hpp"
+#include "hipc/capsrv_album_control_service.hpp"
 
-//extern "C" {
-//extern u32 __start__;
-//
-//u32 __nx_applet_type = AppletType_Application;
-//
-//#define INNER_HEAP_SIZE 0x2000
-//size_t nx_inner_heap_size = INNER_HEAP_SIZE;
-//char nx_inner_heap[INNER_HEAP_SIZE];
-//
-//void __libnx_initheap(void);
-//void __appInit(void);
-//void __appExit(void);
-//void __libnx_init_time(void);
-//
-///* Exception handling. */
-//alignas(16) u8 __nx_exception_stack[0x1000];
-//u64 __nx_exception_stack_size = sizeof(__nx_exception_stack);
-//void __libnx_exception_handler(ThreadExceptionDump *ctx);
-//}
+extern "C" {
+extern u32 __start__;
 
-namespace ams::result {
+u32 __nx_applet_type = AppletType_None;
 
-    bool CallFatalOnResultAssertion = false;
+#define INNER_HEAP_SIZE 0x400000
+size_t nx_inner_heap_size = INNER_HEAP_SIZE;
+char nx_inner_heap[INNER_HEAP_SIZE];
+
+void __libnx_initheap(void);
+void __appInit(void);
+void __appExit(void);
+
+/* Exception handling. */
+alignas(16) u8 __nx_exception_stack[ams::os::MemoryPageSize];
+u64 __nx_exception_stack_size = sizeof(__nx_exception_stack);
+void __libnx_exception_handler(ThreadExceptionDump *ctx);
+}
+
+namespace ams {
+
+    ncm::ProgramId CurrentProgramId = ncm::ProgramId::CapSrv;
+
+    namespace result {
+
+        bool CallFatalOnResultAssertion = false;
+
+    }
 
 }
 
 using namespace ams;
 
-//void __libnx_initheap(void) {
-//	void *addr = nx_inner_heap;
-//	size_t size = nx_inner_heap_size;
-//
-//	/* Newlib */
-//	extern char *fake_heap_start;
-//	extern char *fake_heap_end;
-//
-//	fake_heap_start = (char *)addr;
-//	fake_heap_end = (char *)addr + size;
-//}
-//
-//void __appInit(void) {
-//	hosversionSet(MAKEHOSVERSION(9, 1, 0));
-//	//hos::SetVersionForLibnx();
-//
-//	//sm::DoWithSession([] {
-//	R_ASSERT(smInitialize());
-//	R_ASSERT(setsysInitialize());
-//	R_ASSERT(timeInitialize());
-//	__libnx_init_time();
-//	R_ASSERT(fsInitialize());
-//	R_ASSERT(capsdcInitialize());
-//	smExit();
-//	//});
-//}
-//
-//void __appExit(void) {
-//	/* Cleanup services. */
-//	capsdcExit();
-//	fsdevUnmountAll();
-//	fsExit();
-//	timeExit();
-//	setsysExit();
-//}
+void __libnx_initheap(void) {
+    void *addr = nx_inner_heap;
+    size_t size = nx_inner_heap_size;
 
-#define RUNN(function) {\
-    u32 rc = function;\
-    if (R_FAILED(rc)) printf("0x%x %s\n", function, #function);\
+    /* Newlib */
+    extern char *fake_heap_start;
+    extern char *fake_heap_end;
+
+    fake_heap_start = (char *)addr;
+    fake_heap_end = (char *)addr + size;
 }
 
-using namespace ams::capsrv;
+void __appInit(void) {
+    hos::SetVersionForLibnx();
 
-#define RUN(function) {\
-    ams::Result rc = function;\
-    if (R_FAILED(rc)) printf("0x%x %s expected success\n", rc.GetValue(), #function);\
+    sm::DoWithSession([] {
+        R_ASSERT(setsysInitialize());
+        R_ASSERT(splCryptoInitialize());
+        R_ASSERT(timeInitialize());
+        R_ASSERT(fsInitialize());
+        R_ASSERT(capsdcInitialize());
+    });
+
+    /* TODO: remove this for a better logging solution (TMA, LogManager?) */
+    fsdevMountSdmc();
 }
 
-#define FAIL(function) {\
-    ams::Result rc = function;\
-    if (R_SUCCEEDED(rc)) printf("0x%x %s expected failure\n", rc.GetValue(), #function);\
+void __appExit(void) {
+    /* Cleanup services. */
+    capsdcExit();
+    fsdevUnmountAll();
+    fsExit();
+    timeExit();
+    splCryptoExit();
+    setsysExit();
 }
 
-#define TEST(function, var, expected) {\
-    RUN(function)\
-    if (var != expected) printf("FAILED %s: %s != %s\n", #function, #var, #expected);\
+namespace {
+
+    /* caps:a, caps:c, caps:u. */
+    constexpr size_t NumServers = 3;
+    sf::hipc::ServerManager<NumServers> g_server_manager;
+
+    constexpr sm::ServiceName AlbumAccessorServiceName = sm::ServiceName::Encode("caps:a");
+    constexpr size_t AlbumAccessorMaxSessions = 0x10;
+
+    constexpr sm::ServiceName AlbumControlServiceName = sm::ServiceName::Encode("caps:c");
+    constexpr size_t AlbumControlMaxSessions = 0x10;
+
+    constexpr sm::ServiceName AlbumApplicationServiceName = sm::ServiceName::Encode("caps:u");
+    constexpr size_t AlbumApplicationMaxSessions = 0x10;
+
 }
 
 int main(int argc, char **argv) {
+    capsrv::config::Initialize();
+    capsrv::crypto::Initialize();
+    capsrv::ovl::Initialize();
+
+	capsrv::impl::MountAlbum(capsrv::StorageId::Nand);
+
+	/* Create services */
+	R_ASSERT(g_server_manager.RegisterServer<capsrv::AlbumAccessorService>(AlbumAccessorServiceName, AlbumAccessorMaxSessions));
+
+	R_ASSERT(g_server_manager.RegisterServer<capsrv::AlbumControlService>(AlbumControlServiceName, AlbumControlMaxSessions));
+
+	if (hos::GetVersion() >= hos::Version_500) {
+		R_ASSERT(g_server_manager.RegisterServer<capsrv::AlbumApplicationService>(AlbumApplicationServiceName, AlbumApplicationMaxSessions));
+	}
+
+	g_server_manager.LoopProcess();
+
+	capsrv::impl::UnmountAlbum(capsrv::StorageId::Nand);
+	capsrv::impl::UnmountAlbum(capsrv::StorageId::Sd);
+
+	return 0;
+}
+
+#define RUNN(function)                                \
+    {                                                 \
+        u32 rc = function;                            \
+        if (R_FAILED(rc))                             \
+            printf("0x%x %s\n", function, #function); \
+    }
+
+using namespace ams::capsrv;
+
+#define RUN(function)                                                       \
+    {                                                                       \
+        ams::Result rc = function;                                          \
+        if (R_FAILED(rc))                                                   \
+            printf("0x%x %s expected success\n", rc.GetValue(), #function); \
+    }
+
+#define FAIL(function)                                                      \
+    {                                                                       \
+        ams::Result rc = function;                                          \
+        if (R_SUCCEEDED(rc))                                                \
+            printf("0x%x %s expected failure\n", rc.GetValue(), #function); \
+    }
+
+#define TEST(function, var, expected)                                    \
+    {                                                                    \
+        RUN(function)                                                    \
+        if (var != expected)                                             \
+            printf("FAILED %s: %s != %s\n", #function, #var, #expected); \
+    }
+
+int test(int argc, char **argv) {
     socketInitializeDefault();
     int sock = nxlinkStdio();
     setsysInitialize();
@@ -186,8 +244,8 @@ int main(int argc, char **argv) {
         printf("failed to open %s\n", entries[0].fileId.AsString().c_str());
     }*/
 
-    FileId fileId = {0};
     /* Can't test exact equlity since datetime is... time. */
+    FileId fileId = {0};
     RUN(control::GenerateCurrentAlbumFileId(&fileId, 0x1337, ContentType::Screenshot));
     RUN(control::GenerateCurrentAlbumFileId(&fileId, 0x1337, ContentType::Movie));
 
