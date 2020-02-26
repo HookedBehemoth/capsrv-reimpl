@@ -1,8 +1,6 @@
 #pragma once
 #include "../capsrv_types.hpp"
 
-using LoadAlbumScreenShotImageOutput = CapsLoadAlbumScreenShotImageOutput;
-
 namespace ams::capsrv::impl {
 
     Result LoadAlbumFile(void *ptr, u64 size, u64 *outSize, const FileId &fileId);
@@ -19,5 +17,8 @@ namespace ams::capsrv::impl {
 
     Result LoadAlbumScreenShotImageEx1(LoadAlbumScreenShotImageOutput *out, void *work, u64 workSize, void *img, u64 imgSize, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
     Result LoadAlbumScreenShotThumbnailImageEx1(LoadAlbumScreenShotImageOutput *out, void *work, u64 workSize, void *img, u64 imgSize, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
+
+    Result LoadAlbumScreenShotImageByAruid(LoadAlbumScreenShotImageOutputForApplication *out, void *work, u64 workSize, void *img, u64 imgSize, u64 aruid, const CapsApplicationAlbumFileEntry &appFileEntry, const CapsScreenShotDecodeOption &opts);
+    Result LoadAlbumScreenShotThumbnailImageByAruid(LoadAlbumScreenShotImageOutputForApplication *out, void *work, u64 workSize, void *img, u64 imgSize, u64 aruid, const CapsApplicationAlbumFileEntry &appFileEntry, const CapsScreenShotDecodeOption &opts);
 
 }

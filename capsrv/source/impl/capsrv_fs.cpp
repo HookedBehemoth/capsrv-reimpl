@@ -50,16 +50,12 @@ namespace ams::capsrv::impl {
             return false;
         }
 
-        Result GetAutoSavingStorageImpl(StorageId *out) {
-            SetSysPrimaryAlbumStorage tmp;
-            Result rc = setsysGetPrimaryAlbumStorage(&tmp);
+        Result GetAlbumCacheImpl(CapsAlbumCache *out, StorageId storage, ContentType type) {
+            R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
+            R_UNLESS(config::SupportsType(type), capsrv::ResultInvalidContentType());
 
-            if (R_FAILED(rc))
-                std::abort();
+            *out = g_storage.cache[storage][type];
 
-            StorageId storage = StorageId(tmp);
-            R_UNLESS(MountAlbum(storage).IsSuccess(), capsrv::ResultFailedToMountImageDirectory());
-            *out = storage;
             return ResultSuccess();
         }
 
@@ -86,6 +82,51 @@ namespace ams::capsrv::impl {
         Result UnmountImageDirectory(StorageId storage) {
             // TODO: Unmount Host PC when TMA is a thing.
             return fsdevUnmountDevice(mountNames[storage]);
+        }
+
+        Result IsAlbumMountedImpl(bool *out, StorageId storage) {
+            R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
+            *out = g_mountStatus[storage];
+            return ResultSuccess();
+        }
+
+        Result MountAlbumImpl(StorageId storage) {
+            R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
+            R_UNLESS(!g_mountStatus[storage], ResultSuccess());
+
+            const char *customDirectory = config::GetCustomDirectoryPath();
+            if (storage == StorageId::Sd && customDirectory) {
+                return MountCustomImageDirectory(customDirectory);
+            }
+            Result rc = MountImageDirectory(storage);
+
+            if (rc.IsSuccess())
+                g_mountStatus[storage] = true;
+            return rc;
+        }
+
+        Result UnmountAlbumImpl(StorageId storage) {
+            R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
+            R_UNLESS(g_mountStatus[storage % 2], ResultSuccess());
+
+            Result rc = UnmountImageDirectory(storage);
+
+            if (rc.IsSuccess())
+                g_mountStatus[storage] = false;
+            return rc;
+        }
+
+        Result GetAutoSavingStorageImpl(StorageId *out) {
+            SetSysPrimaryAlbumStorage tmp;
+            Result rc = setsysGetPrimaryAlbumStorage(&tmp);
+
+            if (R_FAILED(rc))
+                std::abort();
+
+            StorageId storage = StorageId(tmp);
+            R_UNLESS(MountAlbumImpl(storage).IsSuccess(), capsrv::ResultFailedToMountImageDirectory());
+            *out = storage;
+            return ResultSuccess();
         }
 
         struct ProcessObject {};
@@ -125,6 +166,16 @@ namespace ams::capsrv::impl {
             return true;
         }
 
+        struct CacheObject : ProcessObject {
+            CapsAlbumCache cache[4];
+        };
+
+        bool cb_cache(const Entry &entry, ProcessObject *ptr) {
+            CacheObject *user = (CacheObject *)ptr;
+            user->cache[entry.fileId.type].count++;
+            return true;
+        }
+
         // TODO: Neglect Extra Folder
         Result ProcessImageDirectory(StorageId storage, std::function<bool(const Entry &, ProcessObject *)> callback, ProcessObject *user) {
             std::error_code code;
@@ -149,7 +200,7 @@ namespace ams::capsrv::impl {
             R_UNLESS(!IsReserved(fileId, readReserve), capsrv::ResultFileReserved());
             R_UNLESS(!IsReserved(fileId, writeReserve), capsrv::ResultFileReserved());
             R_TRY(fileId.Verify());
-            R_TRY(MountAlbum(fileId.storage));
+            R_TRY(MountAlbumImpl(fileId.storage));
             std::filesystem::remove(fileId.GetFilePath());
             g_storage.Decrement(fileId.storage, fileId.type);
             return ResultSuccess();
@@ -160,53 +211,11 @@ namespace ams::capsrv::impl {
             R_UNLESS(!IsReserved(fileId, writeReserve), capsrv::ResultFileTooBig());
             R_TRY(fileId.Verify());
             R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
-            R_TRY(MountAlbum(fileId.storage));
-            R_TRY(MountAlbum(storage));
+            R_TRY(MountAlbumImpl(fileId.storage));
+            R_TRY(MountAlbumImpl(storage));
             R_UNLESS(storage != fileId.storage, capsrv::ResultInvalidStorageId());
             //FileId newFileId = fileId;
             //newFileId.storage = storage;
-            return ResultSuccess();
-        }
-
-        Result IsAlbumMountedImpl(bool *out, StorageId storage) {
-            R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
-            std::scoped_lock lk(g_mutex);
-            *out = g_mountStatus[storage];
-            return ResultSuccess();
-        }
-
-        Result MountAlbumImpl(StorageId storage) {
-            R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
-            R_UNLESS(!g_mountStatus[storage], ResultSuccess());
-
-            const char *customDirectory = config::GetCustomDirectoryPath();
-            if (storage == StorageId::Sd && customDirectory) {
-                return MountCustomImageDirectory(customDirectory);
-            }
-            Result rc = MountImageDirectory(storage);
-
-            if (rc.IsSuccess())
-                g_mountStatus[storage] = true;
-            return rc;
-        }
-
-        Result UnmountAlbumImpl(StorageId storage) {
-            R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
-            R_UNLESS(g_mountStatus[storage % 2], ResultSuccess());
-
-            Result rc = UnmountImageDirectory(storage);
-
-            if (rc.IsSuccess())
-                g_mountStatus[storage] = false;
-            return rc;
-        }
-
-        Result GetAlbumCacheImpl(CapsAlbumCache *out, StorageId storage, ContentType type) {
-            R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
-            R_UNLESS(config::SupportsType(type), capsrv::ResultInvalidContentType());
-
-            *out = g_storage.position[storage].cache[type];
-
             return ResultSuccess();
         }
 
@@ -214,7 +223,7 @@ namespace ams::capsrv::impl {
             R_UNLESS(!IsReserved(fileId, readReserve), capsrv::ResultFileReserved());
             R_UNLESS(!IsReserved(fileId, writeReserve), capsrv::ResultFileReserved());
             R_TRY(fileId.Verify());
-            R_TRY(MountAlbum(fileId.storage));
+            R_TRY(MountAlbumImpl(fileId.storage));
             R_TRY(g_storage.CanSave(fileId.storage, fileId.type));
             FILE *f = fopen(fileId.GetFilePath().c_str(), "wb");
             fwrite(buffer, sizeof(u8), size, f);
@@ -287,6 +296,21 @@ namespace ams::capsrv::impl {
     Result UnmountAlbum(StorageId storage) {
         std::scoped_lock lk(g_mutex);
         return UnmountAlbumImpl(storage);
+    }
+
+    Result RefreshAlbumCache(StorageId storage) {
+        R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
+        CacheObject cacheObject {};
+        {
+            std::scoped_lock lk(g_mutex);
+            R_TRY(MountAlbumImpl(storage));
+            R_TRY(ProcessImageDirectory(storage, cb_cache, &cacheObject));
+        }
+        g_storage.Set(storage, ContentType::Screenshot, cacheObject.cache[ContentType::Screenshot]);
+        g_storage.Set(storage, ContentType::Movie, cacheObject.cache[ContentType::Movie]);
+        g_storage.Set(storage, ContentType::ExtraScreenshot, cacheObject.cache[ContentType::ExtraScreenshot]);
+        g_storage.Set(storage, ContentType::ExtraMovie, cacheObject.cache[ContentType::ExtraMovie]);
+        return ResultSuccess();
     }
 
     Result GetAlbumCache(CapsAlbumCache *out, StorageId storage, ContentType type) {

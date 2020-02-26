@@ -101,14 +101,11 @@ namespace ams::capsrv {
         u64 height;
     };
 
-    struct Storage {
-        CapsAlbumCache cache[4];
-    };
-
     struct ContentStorage {
-        Storage position[2] = {0};
+        CapsAlbumCache cache[2][4] = {0};
 
         Result CanSave(StorageId storage, ContentType type) const;
+        void Set(StorageId storage, ContentType type, CapsAlbumCache cache);
         void Increment(StorageId storage, ContentType type);
         void Decrement(StorageId storage, ContentType type);
     };

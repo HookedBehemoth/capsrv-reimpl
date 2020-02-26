@@ -1,5 +1,7 @@
 #include "capsrv_album_application_service.hpp"
 
+#include "../impl/capsrv_controller.hpp"
+#include "../impl/capsrv_image.hpp"
 #include "../logger.hpp"
 
 namespace ams::capsrv {
@@ -31,12 +33,12 @@ namespace ams::capsrv {
 
     Result AlbumApplicationService::LoadAlbumScreenShotImageByAruid(sf::Out<LoadAlbumScreenShotImageOutputForApplication> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const sf::ClientAppletResourceUserId &aruid, const CapsApplicationAlbumFileEntry &entry, const CapsScreenShotDecodeOption &opts) {
         WriteLogFile("Application", "LoadAlbumScreenShotImageByAruid: workSize(%ld), imageSize(%ld), aruid(%ld), appEntry(#), opts(#)", work.GetSize(), image.GetSize(), aruid.GetValue());
-        return ResultSuccess();
+        return impl::LoadAlbumScreenShotImageByAruid(out.GetPointer(), work.GetPointer(), work.GetSize(), image.GetPointer(), image.GetSize(), aruid.GetValue().value, entry, opts);
     }
 
     Result AlbumApplicationService::LoadAlbumScreenShotThumbnailImageByAruid(sf::Out<LoadAlbumScreenShotImageOutputForApplication> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const sf::ClientAppletResourceUserId &aruid, const CapsApplicationAlbumFileEntry &entry, const CapsScreenShotDecodeOption &opts) {
         WriteLogFile("Application", "LoadAlbumScreenShotThumbnailImageByAruid: workSize(%ld), imageSize(%ld), aruid(%ld), appEntry(#), opts(#)", work.GetSize(), image.GetSize(), aruid.GetValue());
-        return ResultSuccess();
+        return impl::LoadAlbumScreenShotThumbnailImageByAruid(out.GetPointer(), work.GetPointer(), work.GetSize(), image.GetPointer(), image.GetSize(), aruid.GetValue().value, entry, opts);
     }
 
     Result AlbumApplicationService::PrecheckToCreateContentsByAruid(ContentType type, u64 unk, const sf::ClientAppletResourceUserId &aruid) {

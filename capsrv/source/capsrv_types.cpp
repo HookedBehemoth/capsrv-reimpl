@@ -197,19 +197,24 @@ namespace ams::capsrv {
         R_TRY(config::StorageValid(storage));
         R_TRY(config::SupportsType(type));
         u64 max = config::GetMax(storage, type);
-        u64 currentCount = this->position[storage].cache[type].count;
+        u64 currentCount = this->cache[storage][type].count;
         R_UNLESS(currentCount < max, capsrv::ResultTooManyFiles());
         return ResultSuccess();
     }
 
+    void ContentStorage::Set(StorageId storage, ContentType type, CapsAlbumCache cache) {
+        if (storage < 2 && type < 4)
+            this->cache[storage][type] = cache;
+    }
+
     void ContentStorage::Increment(StorageId storage, ContentType type) {
         if (storage < 2 && type < 4)
-            this->position[storage].cache[type].count++;
+            this->cache[storage][type].count++;
     }
 
     void ContentStorage::Decrement(StorageId storage, ContentType type) {
         if (storage < 2 && type < 4)
-            this->position[storage].cache[type].count--;
+            this->cache[storage][type].count--;
     }
 
 }
