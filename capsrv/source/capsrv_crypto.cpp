@@ -123,6 +123,7 @@ namespace ams::capsrv::crypto {
         Result DecryptV1(Entry *out, const ApplicationEntry *src, u64 applicationId) {
             R_UNLESS(src->v1.unk_x1f == '\x01', capsrv::ResultInvalidApplicationId());
 
+            /* Mimic valid Entry. */
             u64 tmp[4];
             ApplicationEntry tmpEntry = *src;
             tmpEntry.v1.hash = applicationId;
@@ -131,6 +132,7 @@ namespace ams::capsrv::crypto {
             aes256EncryptBlock(&ctx, tmp, ((u8 *)&tmpEntry));
             aes256EncryptBlock(&ctx, tmp + 2, ((u8 *)&tmpEntry) + 0x10);
 
+            /* Verify that hashs match. */
             R_UNLESS(src->v1.hash == (tmp[0] ^ tmp[1] ^ tmp[2] ^ tmp[3]), capsrv::ResultInvalidApplicationId());
 
             out->size = src->v1.size;

@@ -1,8 +1,7 @@
 #include "capsrv_album_accessor_service.hpp"
 
 #include "../impl/capsrv_controller.hpp"
-#include "../impl/capsrv_fs.hpp"
-#include "../impl/capsrv_image.hpp"
+#include "../impl/capsrv_manager.hpp"
 #include "../impl/capsrv_overlay.hpp"
 #include "../logger.hpp"
 

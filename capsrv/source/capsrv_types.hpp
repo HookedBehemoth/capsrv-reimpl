@@ -102,7 +102,7 @@ namespace ams::capsrv {
     };
 
     struct ContentStorage {
-        CapsAlbumCache cache[2][4] = {0};
+        CapsAlbumCache cache[2][4] {};
 
         Result CanSave(StorageId storage, ContentType type) const;
         void Set(StorageId storage, ContentType type, CapsAlbumCache cache);

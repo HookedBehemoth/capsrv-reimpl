@@ -1,12 +1,12 @@
 #include "capsrv_config.hpp"
 #include "capsrv_crypto.hpp"
-#include "image/exif_extractor.hpp"
-#include "impl/capsrv_controller.hpp"
-#include "impl/capsrv_fs.hpp"
-#include "impl/capsrv_overlay.hpp"
 #include "hipc/capsrv_album_accessor_service.hpp"
 #include "hipc/capsrv_album_application_service.hpp"
 #include "hipc/capsrv_album_control_service.hpp"
+#include "image/exif_extractor.hpp"
+#include "impl/capsrv_controller.hpp"
+#include "impl/capsrv_manager.hpp"
+#include "impl/capsrv_overlay.hpp"
 
 extern "C" {
 extern u32 __start__;
@@ -100,23 +100,23 @@ int main(int argc, char **argv) {
     capsrv::crypto::Initialize();
     capsrv::ovl::Initialize();
 
-	capsrv::impl::MountAlbum(capsrv::StorageId::Nand);
+    capsrv::impl::MountAlbum(capsrv::StorageId::Nand);
 
-	/* Create services */
-	R_ASSERT(g_server_manager.RegisterServer<capsrv::AlbumAccessorService>(AlbumAccessorServiceName, AlbumAccessorMaxSessions));
+    /* Create services */
+    R_ASSERT(g_server_manager.RegisterServer<capsrv::AlbumAccessorService>(AlbumAccessorServiceName, AlbumAccessorMaxSessions));
 
-	R_ASSERT(g_server_manager.RegisterServer<capsrv::AlbumControlService>(AlbumControlServiceName, AlbumControlMaxSessions));
+    R_ASSERT(g_server_manager.RegisterServer<capsrv::AlbumControlService>(AlbumControlServiceName, AlbumControlMaxSessions));
 
-	if (hos::GetVersion() >= hos::Version_500) {
-		R_ASSERT(g_server_manager.RegisterServer<capsrv::AlbumApplicationService>(AlbumApplicationServiceName, AlbumApplicationMaxSessions));
-	}
+    if (hos::GetVersion() >= hos::Version_500) {
+        R_ASSERT(g_server_manager.RegisterServer<capsrv::AlbumApplicationService>(AlbumApplicationServiceName, AlbumApplicationMaxSessions));
+    }
 
-	g_server_manager.LoopProcess();
+    g_server_manager.LoopProcess();
 
-	capsrv::impl::UnmountAlbum(capsrv::StorageId::Nand);
-	capsrv::impl::UnmountAlbum(capsrv::StorageId::Sd);
+    capsrv::impl::UnmountAlbum(capsrv::StorageId::Nand);
+    capsrv::impl::UnmountAlbum(capsrv::StorageId::Sd);
 
-	return 0;
+    return 0;
 }
 
 #define RUNN(function)                                \

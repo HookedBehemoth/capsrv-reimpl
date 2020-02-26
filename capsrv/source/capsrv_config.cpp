@@ -1,6 +1,6 @@
 #include "capsrv_config.hpp"
 
-#include "impl/capsrv_fs.hpp"
+#include "impl/capsrv_manager.hpp"
 
 namespace ams::capsrv::config {
 

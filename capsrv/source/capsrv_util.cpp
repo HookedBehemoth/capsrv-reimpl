@@ -2,8 +2,6 @@
 
 #include <switch.h>
 
-#include <ctime>
-
 namespace ams::capsrv::util {
 
     Result TimestampToCalendarTime(DateTime *datetime, u64 timestamp) {

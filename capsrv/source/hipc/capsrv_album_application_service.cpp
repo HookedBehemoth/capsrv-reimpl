@@ -1,7 +1,7 @@
 #include "capsrv_album_application_service.hpp"
 
 #include "../impl/capsrv_controller.hpp"
-#include "../impl/capsrv_image.hpp"
+#include "../impl/capsrv_manager.hpp"
 #include "../logger.hpp"
 
 namespace ams::capsrv {
