@@ -90,8 +90,8 @@ namespace ams::image::detail {
         IfdHeader thumbnailHeader;
         IfdTag thumbnailTags[4] = {
             {0x0103, unsignedShort, 1}, // Compression
-            {0x0201, unsignedLong, 1},  // Jpeg IF Offset
-            {0x0202, unsignedLong, 1},  // Jpeg IF Byte Count
+            {0x0201, unsignedLong, 1},  // JPEG IF Offset
+            {0x0202, unsignedLong, 1},  // JPEG IF Byte Count
         };
     };
 

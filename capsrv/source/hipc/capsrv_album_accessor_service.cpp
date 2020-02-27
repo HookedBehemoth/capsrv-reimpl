@@ -126,7 +126,7 @@ namespace ams::capsrv {
     }
 
     Result AlbumAccessorService::GetLastOverlayMovieThumbnail(sf::OutBuffer buffer, sf::Out<FileId> out, sf::Out<u64> size) {
-        WriteLogFile("Accessor", "GetLastOverlayScreenShotThumbnail: bufferSize(%ld)", buffer.GetSize());
+        WriteLogFile("Accessor", "GetLastOverlayMovieThumbnail: bufferSize(%ld)", buffer.GetSize());
         return ovl::GetLastOverlayThumbnail(buffer.GetPointer(), buffer.GetSize(), out.GetPointer(), size.GetPointer(), true);
     }
 
