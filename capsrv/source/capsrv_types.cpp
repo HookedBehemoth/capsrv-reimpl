@@ -98,8 +98,8 @@ namespace ams::capsrv {
             aes[0] = __bswap64(aes[0]);
             aes[1] = __bswap64(aes[1]);
             // TODO: std::fmt
-            char buf[0x38]{};
-            int size = std::snprintf(buf, 0x38, "Extra/%02lX%02lX/%04hd/%02hhd/%02hhd/",
+            char buf[0x39]{};
+            int size = std::snprintf(buf, 0x39, "/Extra/%02lX%02lX/%04hd/%02hhd/%02hhd/",
                                      aes[0],
                                      aes[1],
                                      this->datetime.year,
@@ -108,7 +108,7 @@ namespace ams::capsrv {
             return std::string(buf, size);
         } else {
             char buf[0x10]{};
-            int size = std::snprintf(buf, 0x10, "%04hd/%02hhd/%02hhd/",
+            int size = std::snprintf(buf, 0x10, "/%04hd/%02hhd/%02hhd/",
                                      this->datetime.year,
                                      this->datetime.month,
                                      this->datetime.day);
@@ -125,7 +125,7 @@ namespace ams::capsrv {
         aes[1] = __bswap64(aes[1]);
 
         char buf[0x36]{};
-        const char *fmt = isExtra ? "%04d%02d%02d%02d%02d%02d%02d-%lX%lXX%s" : "%04d%02d%02d%02d%02d%02d%02d-%lX%lX%s";
+        const char *fmt = isExtra ? "%04d%02d%02d%02d%02d%02d%02d-%016lX%016lXX%s" : "%04d%02d%02d%02d%02d%02d%02d-%016lX%016lX%s";
         int size = std::snprintf(buf, 0x36, fmt,
                                  this->datetime.year,
                                  this->datetime.month,

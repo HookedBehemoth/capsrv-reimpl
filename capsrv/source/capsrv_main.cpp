@@ -19,6 +19,7 @@ namespace ams {
 }
 
 #ifdef SYSTEM_MODULE
+
 #include "hipc/capsrv_album_accessor_service.hpp"
 #include "hipc/capsrv_album_application_service.hpp"
 #include "hipc/capsrv_album_control_service.hpp"
@@ -122,7 +123,7 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-#else
+#elif APPLET_TEST
 
 extern "C" {
 void __appInit(void);
@@ -191,8 +192,6 @@ using namespace ams::capsrv;
 int main(int argc, char **argv) {
     int sock = nxlinkStdio();
 
-    WriteLogFile("test", "fmt %s", "drei");
-
     config::Initialize();
     //config::print();
 
@@ -216,6 +215,36 @@ int main(int argc, char **argv) {
 
     TEST(impl::GetAlbumFileList(entries, 10, &count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot), count, 9);
     TEST(impl::GetAlbumFileList(entries, 10, &count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot), count, 5);
+
+    Entry &ent = entries[0];
+    printf("%s\n", ent.AsString().c_str());
+
+    u64 size = ent.size;
+    u8 *buffer = (u8 *)malloc(size);
+    u64 readSize = 0;
+    RUN(impl::LoadAlbumFile(buffer, size, &readSize, ent.fileId));
+    printf("%ld\n", readSize);
+    for (int i = 0; i < 0x10; i++)
+        printf("%02X", buffer[i]);
+    printf("\n");
+
+    RUN(impl::LoadAlbumFileThumbnail(buffer, size, &readSize, ent.fileId));
+    printf("%ld\n", readSize);
+    for (int i = 0; i < 0x10; i++)
+        printf("%02X", buffer[i]);
+    printf("\n");
+
+    u64 thumbSize = 320*180*4;
+    u8 *img = (u8 *)malloc(thumbSize);
+    u64 width = 0, height = 0;
+    RUN(impl::LoadAlbumScreenShotThumbnailImage(&width, &height, buffer, readSize, img, thumbSize, ent.fileId));
+    printf("%ld:%ld\n", width, height);
+    for (int i = 0; i < 0x10; i++)
+        printf("%02X", buffer[i]);
+    printf("\n");
+    for (int i = 0; i < 0x10; i++)
+        printf("%02X", img[i]);
+    printf("\n");
 
     /* Can't test exact equlity since datetime is... time. */
     FileId fileId = {0};
@@ -254,4 +283,6 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+#else
+    static_assert(false, "undefined state");
 #endif

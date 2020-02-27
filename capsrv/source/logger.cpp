@@ -51,5 +51,14 @@ void WriteLogFile(const char *type, const char *fmt, ...) {
         fprintf(pFile, "\n");
         fclose(pFile);
     }
+#elif APPLET_TEST
+    printf("[%s] ", type);
+    va_list args;
+    va_start(args, fmt);
+    vprintf(fmt, args);
+    va_end(args);
+    printf("\n");
+#else
+    static_assert(false, "undefined state");
 #endif
 }

@@ -2,7 +2,6 @@
 
 #include <machine/endian.h>
 
-#include <filesystem>
 #include <map>
 #include <string>
 
@@ -293,20 +292,6 @@ namespace ams::capsrv::impl {
                     }
                 }
             }
-            /*std::error_code code;
-            for (auto &e : std::filesystem::recursive_directory_iterator(mountPoints[storage], code)) {
-                if (e.is_regular_file()) {
-                    FileId fileId = {0};
-                    Result rc = FileId::FromString(&fileId, storage, e.path().filename().c_str());
-                    Entry entry = {
-                        .size = e.file_size(),
-                        .fileId = fileId,
-                    };
-                    if (rc.IsSuccess())
-                        if (!callback(entry, user))
-                            break;
-                }
-            }*/
             return ResultSuccess();
         }
 
@@ -358,7 +343,8 @@ namespace ams::capsrv::impl {
         Result IHateNamingStuff(u64 *out_size, void *jpeg, u64 jpeg_size, const FileId &fileId) {
             FsFile file;
             const std::string path = fileId.GetFilePath();
-            R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], path.c_str(), path.size(), FsOpenMode_Write, &file));
+            WriteLogFile("img", "path %s", path.c_str());
+            R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], path.c_str(), path.size(), FsOpenMode_Read, &file));
             ON_SCOPE_EXIT { fsFileClose(&file); };
 
             s64 size;
@@ -366,7 +352,7 @@ namespace ams::capsrv::impl {
 
             R_UNLESS(size > 0, 0x30ce);
             R_UNLESS(size <= maxFileSize[fileId.storage][0], 0x2ece);
-            R_UNLESS((u64)size > jpeg_size, capsrv::ResultInvalidArgument());
+            R_UNLESS((u64)size <= jpeg_size, capsrv::ResultInvalidArgument());
 
             R_TRY(fsFileRead(&file, 0, jpeg, size, 0, out_size));
 
@@ -412,10 +398,16 @@ namespace ams::capsrv::impl {
             u64 jpegSize = 0;
             /* Load JPEG image. */
             Result rc = LoadImage(out_attr, buf_0, buf_1, &jpegSize, work, work_size, fileId);
-            WriteLogFile("img", "0x%x LoadImage: %d, %d", rc, jpegSize, work_size);
+
+            char buf[0x11]{};
+            for (int i = 0; i < 0x10; i++)
+                sprintf(buf+i, "%02X", ((u8*)work)[i]);
+            WriteLogFile("img", "0x%x LoadImage: %d, %d, work: %s", rc, jpegSize, work_size, buf);
+            
             if (R_SUCCEEDED(rc)) {
                 /* Convert JPEG image. */
                 rc = capsdcDecodeJpeg(1280, 720, &opts, work, jpegSize, img, img_size);
+                WriteLogFile("img", "0x%x jpegdec", rc);
                 if (R_SUCCEEDED(rc)) {
                     dims->width = 1280;
                     dims->height = 720;
@@ -438,7 +430,8 @@ namespace ams::capsrv::impl {
         Result IHateNamingStuffThumbnail(u64 *out_size, void *thumb, u64 thumb_size, const FileId &fileId) {
             FsFile file;
             const std::string path = fileId.GetFilePath();
-            R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], path.c_str(), path.size(), FsOpenMode_Write, &file));
+            WriteLogFile("img", "path %s", path.c_str());
+            R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], path.c_str(), path.size(), FsOpenMode_Read, &file));
             ON_SCOPE_EXIT { fsFileClose(&file); };
 
             s64 size;
@@ -468,7 +461,7 @@ namespace ams::capsrv::impl {
             R_UNLESS(temp_nail, 0x3cce);
             R_UNLESS(temp_size <= thumb_size, 0x30ce);
 
-            *out_size = thumb_size;
+            *out_size = temp_size;
             std::memcpy(thumb, temp_nail, temp_size);
 
             return ResultSuccess();
@@ -512,10 +505,16 @@ namespace ams::capsrv::impl {
             u64 jpegSize = 0;
             /* Load JPEG thumbnail. */
             Result rc = LoadThumbnail(out_attr, buf_0, buf_1, &jpegSize, work, work_size, fileId);
-            WriteLogFile("img", "0x%x LoadThumbnail: %d, %d", rc, jpegSize, work_size);
+
+            char buf[0x11]{};
+            for (int i = 0; i < 0x10; i++)
+                sprintf(buf+i, "%02X", ((u8*)work)[i]);
+            WriteLogFile("img", "0x%x LoadThumbnail: %d, %d, work: %s", rc, jpegSize, work_size, buf);
+            
             if (R_SUCCEEDED(rc)) {
                 /* Convert JPEG thumbnail. */
-                rc = capsdcDecodeJpeg(320, 180, &opts, work, work_size, img, img_size);
+                rc = capsdcDecodeJpeg(320, 180, &opts, work, jpegSize, img, img_size);
+                WriteLogFile("img", "0x%x jpegdec", rc);
                 if (R_SUCCEEDED(rc)) {
                     dims->width = 320;
                     dims->height = 180;
@@ -638,7 +637,7 @@ namespace ams::capsrv::impl {
         return LoadThumbnail(nullptr, nullptr, nullptr, outSize, ptr, size, fileId);
     }
 
-    Result LoadAlbumScreenShotImage(u64 *width, u64 *height, void *work, u64 work_size, void *img, u64 img_size, const FileId &fileId) {
+    Result LoadAlbumScreenShotImage(u64 *width, u64 *height, void *img, u64 img_size, void *work, u64 work_size, const FileId &fileId) {
         Result rc{};
         Dimensions dims{};
         {
@@ -655,7 +654,7 @@ namespace ams::capsrv::impl {
         return rc;
     }
 
-    Result LoadAlbumScreenShotThumbnailImage(u64 *width, u64 *height, void *work, u64 work_size, void *img, u64 img_size, const FileId &fileId) {
+    Result LoadAlbumScreenShotThumbnailImage(u64 *width, u64 *height, void *img, u64 img_size, void *work, u64 work_size, const FileId &fileId) {
         Result rc{};
         Dimensions dims{};
         {
@@ -672,7 +671,7 @@ namespace ams::capsrv::impl {
         return rc;
     }
 
-    Result LoadAlbumScreenShotImageEx(u64 *width, u64 *height, void *work, u64 work_size, void *img, u64 img_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
+    Result LoadAlbumScreenShotImageEx(u64 *width, u64 *height, void *img, u64 img_size, void *work, u64 work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
         Result rc{};
         Dimensions dims{};
         {
@@ -688,7 +687,7 @@ namespace ams::capsrv::impl {
         std::memset(work, 0, work_size);
         return rc;
     }
-    Result LoadAlbumScreenShotThumbnailImageEx(u64 *width, u64 *height, void *work, u64 work_size, void *img, u64 img_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
+    Result LoadAlbumScreenShotThumbnailImageEx(u64 *width, u64 *height, void *img, u64 img_size, void *work, u64 work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
         Result rc{};
         Dimensions dims{};
         {
@@ -705,7 +704,7 @@ namespace ams::capsrv::impl {
         return rc;
     }
 
-    Result LoadAlbumScreenShotImageEx0(CapsScreenShotAttribute *out_attr, u64 *width, u64 *height, void *work, u64 work_size, void *img, u64 img_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
+    Result LoadAlbumScreenShotImageEx0(CapsScreenShotAttribute *out_attr, u64 *width, u64 *height, void *img, u64 img_size, void *work, u64 work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
         Result rc{};
         Dimensions dims{};
         CapsScreenShotAttribute attr{};
@@ -724,7 +723,7 @@ namespace ams::capsrv::impl {
         std::memset(work, 0, work_size);
         return rc;
     }
-    Result LoadAlbumScreenShotThumbnailImageEx0(CapsScreenShotAttribute *out_attr, u64 *width, u64 *height, void *work, u64 work_size, void *img, u64 img_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
+    Result LoadAlbumScreenShotThumbnailImageEx0(CapsScreenShotAttribute *out_attr, u64 *width, u64 *height, void *img, u64 img_size, void *work, u64 work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
         Result rc{};
         Dimensions dims{};
         CapsScreenShotAttribute attr{};
@@ -744,7 +743,7 @@ namespace ams::capsrv::impl {
         return rc;
     }
 
-    Result LoadAlbumScreenShotImageEx1(LoadAlbumScreenShotImageOutput *out, void *work, u64 work_size, void *img, u64 img_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
+    Result LoadAlbumScreenShotImageEx1(LoadAlbumScreenShotImageOutput *out, void *img, u64 img_size, void *work, u64 work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
         Result rc{};
         Dimensions dims{};
         CapsScreenShotAttribute attr{};
@@ -760,7 +759,7 @@ namespace ams::capsrv::impl {
         std::memset(work, 0, work_size);
         return rc;
     }
-    Result LoadAlbumScreenShotThumbnailImageEx1(LoadAlbumScreenShotImageOutput *out, void *work, u64 work_size, void *img, u64 img_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
+    Result LoadAlbumScreenShotThumbnailImageEx1(LoadAlbumScreenShotImageOutput *out, void *img, u64 img_size, void *work, u64 work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
         Result rc{};
         Dimensions dims{};
         CapsScreenShotAttribute attr{};
@@ -777,7 +776,7 @@ namespace ams::capsrv::impl {
         return rc;
     }
 
-    Result LoadAlbumScreenShotImageByAruid(LoadAlbumScreenShotImageOutputForApplication *out, void *work, u64 work_size, void *img, u64 img_size, u64 aruid, const CapsApplicationAlbumFileEntry &appFileEntry, const CapsScreenShotDecodeOption &opts) {
+    Result LoadAlbumScreenShotImageByAruid(LoadAlbumScreenShotImageOutputForApplication *out, void *img, u64 img_size, void *work, u64 work_size, u64 aruid, const CapsApplicationAlbumFileEntry &appFileEntry, const CapsScreenShotDecodeOption &opts) {
         Result rc{};
         Dimensions dims{};
         CapsScreenShotAttribute attr{};
@@ -811,7 +810,7 @@ namespace ams::capsrv::impl {
         }
         return rc;
     }
-    Result LoadAlbumScreenShotThumbnailImageByAruid(LoadAlbumScreenShotImageOutputForApplication *out, void *work, u64 work_size, void *img, u64 img_size, u64 aruid, const CapsApplicationAlbumFileEntry &appFileEntry, const CapsScreenShotDecodeOption &opts) {
+    Result LoadAlbumScreenShotThumbnailImageByAruid(LoadAlbumScreenShotImageOutputForApplication *out, void *img, u64 img_size, void *work, u64 work_size, u64 aruid, const CapsApplicationAlbumFileEntry &appFileEntry, const CapsScreenShotDecodeOption &opts) {
         Result rc{};
         Dimensions dims{};
         CapsScreenShotAttribute attr{};
