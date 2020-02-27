@@ -10,16 +10,6 @@ namespace ams::capsrv {
 
     namespace {
 
-        constexpr const char *mountNames[] = {
-            [StorageId::Nand] = "NA",
-            [StorageId::Sd] = "SD",
-        };
-
-        constexpr const char *mountPoints[] = {
-            [StorageId::Nand] = "NA:/",
-            [StorageId::Sd] = "SD:/",
-        };
-
         constexpr const char *fileExtensions[] = {
             [0] = ".jpg",
             [1] = ".mp4",
@@ -108,9 +98,8 @@ namespace ams::capsrv {
             aes[0] = __bswap64(aes[0]);
             aes[1] = __bswap64(aes[1]);
             // TODO: std::fmt
-            char buf[0x38];
-            int size = std::snprintf(buf, 0x38, "%sExtra/%02lX%02lX/%04hd/%02hhd/%02hhd/",
-                                     mountPoints[this->storage],
+            char buf[0x38]{};
+            int size = std::snprintf(buf, 0x38, "Extra/%02lX%02lX/%04hd/%02hhd/%02hhd/",
                                      aes[0],
                                      aes[1],
                                      this->datetime.year,
@@ -118,9 +107,8 @@ namespace ams::capsrv {
                                      this->datetime.day);
             return std::string(buf, size);
         } else {
-            char buf[0x10];
-            int size = std::snprintf(buf, 0x10, "%s%04hd/%02hhd/%02hhd/",
-                                     mountPoints[this->storage],
+            char buf[0x10]{};
+            int size = std::snprintf(buf, 0x10, "%04hd/%02hhd/%02hhd/",
                                      this->datetime.year,
                                      this->datetime.month,
                                      this->datetime.day);
@@ -136,7 +124,7 @@ namespace ams::capsrv {
         aes[0] = __bswap64(aes[0]);
         aes[1] = __bswap64(aes[1]);
 
-        char buf[0x36];
+        char buf[0x36]{};
         const char *fmt = isExtra ? "%04d%02d%02d%02d%02d%02d%02d-%lX%lXX%s" : "%04d%02d%02d%02d%02d%02d%02d-%lX%lX%s";
         int size = std::snprintf(buf, 0x36, fmt,
                                  this->datetime.year,

@@ -1,12 +1,27 @@
 #include "capsrv_config.hpp"
 #include "capsrv_crypto.hpp"
-#include "hipc/capsrv_album_accessor_service.hpp"
-#include "hipc/capsrv_album_application_service.hpp"
-#include "hipc/capsrv_album_control_service.hpp"
 #include "image/exif_extractor.hpp"
 #include "impl/capsrv_controller.hpp"
 #include "impl/capsrv_manager.hpp"
 #include "impl/capsrv_overlay.hpp"
+#include "logger.hpp"
+
+namespace ams {
+
+    ncm::ProgramId CurrentProgramId = ncm::ProgramId::CapSrv;
+
+    namespace result {
+
+        bool CallFatalOnResultAssertion = false;
+
+    }
+
+}
+
+#ifdef SYSTEM_MODULE
+#include "hipc/capsrv_album_accessor_service.hpp"
+#include "hipc/capsrv_album_application_service.hpp"
+#include "hipc/capsrv_album_control_service.hpp"
 
 extern "C" {
 extern u32 __start__;
@@ -25,18 +40,6 @@ void __appExit(void);
 alignas(16) u8 __nx_exception_stack[ams::os::MemoryPageSize];
 u64 __nx_exception_stack_size = sizeof(__nx_exception_stack);
 void __libnx_exception_handler(ThreadExceptionDump *ctx);
-}
-
-namespace ams {
-
-    ncm::ProgramId CurrentProgramId = ncm::ProgramId::CapSrv;
-
-    namespace result {
-
-        bool CallFatalOnResultAssertion = false;
-
-    }
-
 }
 
 using namespace ams;
@@ -69,9 +72,9 @@ void __appInit(void) {
 }
 
 void __appExit(void) {
+    fsdevUnmountAll();
     /* Cleanup services. */
     capsdcExit();
-    fsdevUnmountAll();
     fsExit();
     timeExit();
     splCryptoExit();
@@ -119,6 +122,42 @@ int main(int argc, char **argv) {
     return 0;
 }
 
+#else
+
+extern "C" {
+void __appInit(void);
+void __appExit(void);
+}
+
+void __appInit(void) {
+    ams::sm::DoWithSession([] {
+        R_ASSERT(setsysInitialize());
+
+        SetSysFirmwareVersion fw;
+        R_ASSERT(setsysGetFirmwareVersion(&fw));
+        hosversionSet(MAKEHOSVERSION(fw.major, fw.minor, fw.micro));
+
+        R_ASSERT(appletInitialize());
+        R_ASSERT(timeInitialize());
+        R_ASSERT(fsInitialize());
+        R_ASSERT(splCryptoInitialize());
+        R_ASSERT(capsdcInitialize());
+
+        R_ASSERT(socketInitializeDefault());
+    });
+}
+
+void __appExit(void) {
+    socketExit();
+    /* Cleanup services. */
+    capsdcExit();
+    splCryptoExit();
+    fsExit();
+    timeExit();
+    appletExit();
+    setsysExit();
+}
+
 #define RUNN(function)                                \
     {                                                 \
         u32 rc = function;                            \
@@ -149,15 +188,14 @@ using namespace ams::capsrv;
             printf("FAILED %s: %s != %s\n", #function, #var, #expected); \
     }
 
-int test(int argc, char **argv) {
-    socketInitializeDefault();
+int main(int argc, char **argv) {
     int sock = nxlinkStdio();
-    setsysInitialize();
+
+    WriteLogFile("test", "fmt %s", "drei");
 
     config::Initialize();
     //config::print();
 
-    RUNN(splCryptoInitialize());
     RUN(crypto::Initialize());
 
     ovl::Initialize();
@@ -178,71 +216,6 @@ int test(int argc, char **argv) {
 
     TEST(impl::GetAlbumFileList(entries, 10, &count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot), count, 9);
     TEST(impl::GetAlbumFileList(entries, 10, &count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot), count, 5);
-
-    /*FILE *f = fopen(entries[1].fileId.GetFilePath().c_str(), "rb");
-    if (f) {
-        printf("open succ\n");
-        fseek(f, 0, SEEK_END);
-        auto fsize = ftell(f);
-        printf("size: %ld\n", fsize);
-        fseek(f, 0, SEEK_SET);
-        u8 *img = (u8 *)malloc(fsize);
-        fread(img, 1, fsize, f);
-        fclose(f);
-        printf("closed\n");
-
-        auto bin = ams::image::detail::ExifBinary();
-        auto exif = ams::image::ExifExtractor(&bin);
-
-        exif.SetExifData(img + 0xc, fsize - 0xc);
-        printf("0x%x\n", exif.Analyse());
-
-        u32 size = 0;
-        const char *dateStr = exif.ExtractDateTime(&size);
-        if (dateStr) {
-            printf("%s\n", dateStr);
-            printf("size: %d\n", size);
-        } else {
-            printf("failed\n");
-        }
-
-        const char *makerStr = exif.ExtractMaker(&size);
-        if (makerStr) {
-            printf("%s\n", makerStr);
-            printf("size: %d\n", size);
-        } else {
-            printf("failed\n");
-        }
-
-        auto makernote = exif.ExtractMakerNote(&size);
-        if (makernote) {
-            for (u32 i = 0; i < 0x1f; i++)
-                printf("%02X", makernote[i]);
-            printf("\nsize: 0x%x\n", size);
-        } else {
-            printf("failed\n");
-        }
-
-        auto thumbnail = exif.ExtractThumbnail(&size);
-        if (thumbnail) {
-            for (u32 i = 0; i < 0x1f; i++)
-                printf("%02X", thumbnail[i]);
-            printf("\nsize: 0x%x\n", size);
-        } else {
-            printf("failed\n");
-        }
-
-        ams::image::ExifOrientation orientation;
-        bool success = exif.ExtractOrientation(&orientation);
-        if (success)
-            printf("orientation: %d\n", static_cast<u16>(orientation));
-        else
-            printf("failed\n");
-
-        free(img);
-    } else {
-        printf("failed to open %s\n", entries[0].fileId.AsString().c_str());
-    }*/
 
     /* Can't test exact equlity since datetime is... time. */
     FileId fileId = {0};
@@ -277,9 +250,8 @@ int test(int argc, char **argv) {
 
     printf("\n\nfinished\n\n\n");
 
-    setsysExit();
-    splCryptoExit();
     close(sock);
-    socketExit();
+
     return 0;
 }
+#endif

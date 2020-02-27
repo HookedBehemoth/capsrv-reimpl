@@ -5,30 +5,15 @@
 #include <filesystem>
 #include <map>
 #include <string>
-#include "../logger.hpp"
 
 #include "../capsrv_config.hpp"
 #include "../image/exif_extractor.hpp"
+#include "../logger.hpp"
 #include "capsrv_controller.hpp"
 
 namespace ams::capsrv::impl {
 
-    constexpr const char *mountNames[2] = {
-        [StorageId::Nand] = "NA",
-        [StorageId::Sd] = "SD",
-    };
-
-    constexpr const char *mountPoints[2] = {
-        [StorageId::Nand] = "NA:/",
-        [StorageId::Sd] = "SD:/",
-    };
-
-    constexpr const char *fileExtensions[2] = {
-        [0] = ".jpg",
-        [1] = ".mp4",
-    };
-
-    constexpr u64 maxFileSize[2][2] = {
+    constexpr s64 maxFileSize[2][2] = {
         [StorageId::Nand] = {
             [ContentType::Screenshot] = 0x7D000,
             [ContentType::Movie] = 0x80000000,
@@ -42,6 +27,7 @@ namespace ams::capsrv::impl {
     namespace {
 
         ContentStorage g_storage;
+        FsFileSystem g_fsFs[2]{};
         bool g_mountStatus[2] = {false, false};
         struct ReserveItem {
             bool used;
@@ -71,14 +57,8 @@ namespace ams::capsrv::impl {
         }
 
         Result MountImageDirectory(StorageId storage) {
-            FsFileSystem imgDirFs;
-            R_TRY(fsOpenImageDirectoryFileSystem(&imgDirFs, FsImageDirectoryId(storage)));
-
-            if (fsdevMountDevice(mountNames[storage], imgDirFs) == -1) {
-                fsFsClose(&imgDirFs);
-                std::abort();
-            }
-
+            R_TRY(fsOpenImageDirectoryFileSystem(&g_fsFs[storage], FsImageDirectoryId(storage)));
+            g_mountStatus[storage] = true;
             return ResultSuccess();
         }
 
@@ -92,7 +72,10 @@ namespace ams::capsrv::impl {
 
         Result UnmountImageDirectory(StorageId storage) {
             // TODO: Unmount Host PC when TMA is a thing.
-            return fsdevUnmountDevice(mountNames[storage]);
+            fsFsClose(&g_fsFs[storage]);
+
+            g_mountStatus[storage] = false;
+            return ResultSuccess();
         }
 
         Result IsAlbumMountedImpl(bool *out, StorageId storage) {
@@ -109,22 +92,14 @@ namespace ams::capsrv::impl {
             if (storage == StorageId::Sd && customDirectory) {
                 return MountCustomImageDirectory(customDirectory);
             }
-            Result rc = MountImageDirectory(storage);
-
-            if (rc.IsSuccess())
-                g_mountStatus[storage] = true;
-            return rc;
+            return MountImageDirectory(storage);
         }
 
         Result UnmountAlbumImpl(StorageId storage) {
             R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
             R_UNLESS(g_mountStatus[storage % 2], ResultSuccess());
 
-            Result rc = UnmountImageDirectory(storage);
-
-            if (rc.IsSuccess())
-                g_mountStatus[storage] = false;
-            return rc;
+            return UnmountImageDirectory(storage);
         }
 
         Result GetAutoSavingStorageImpl(StorageId *out) {
@@ -187,9 +162,138 @@ namespace ams::capsrv::impl {
             return true;
         }
 
-        // TODO: Neglect Extra Folder
+        Result _fsFsOpenCommon(FsFileSystem *fs, const char *path, size_t path_size, u32 flags, Service *out, u32 cmd_id) {
+            return serviceDispatchIn(&fs->s, cmd_id, flags,
+                                     .buffer_attrs = {SfBufferAttr_HipcPointer | SfBufferAttr_In},
+                                     .buffers = {{path, path_size}},
+                                     .out_num_objects = 1,
+                                     .out_objects = out, );
+        }
+
+        Result fsFsOpenFileSmoll(FsFileSystem *fs, const char *path, size_t path_size, u32 mode, FsFile *out) {
+            return _fsFsOpenCommon(fs, path, path_size, mode, &out->s, 8);
+        }
+
+        Result fsFsOpenDirectorySmoll(FsFileSystem *fs, const char *path, size_t path_size, u32 mode, FsDir *out) {
+            return _fsFsOpenCommon(fs, path, path_size, mode, &out->s, 9);
+        }
+
         Result ProcessImageDirectory(StorageId storage, std::function<bool(const Entry &, ProcessObject *)> callback, ProcessObject *user) {
-            std::error_code code;
+            char tmp_path[0x10] = "/";
+            /* Open root directory. Only read directories. */
+            FsDir rootDir;
+            R_TRY(fsFsOpenDirectorySmoll(&g_fsFs[storage], tmp_path, 0x10, FsDirOpenMode_ReadDirs, &rootDir));
+            /* Close directory on scope exit. */
+            ON_SCOPE_EXIT { fsDirClose(&rootDir); };
+
+            /* Count directory entries. */
+            s64 count;
+            R_TRY(fsDirGetEntryCount(&rootDir, &count));
+
+            /* Read directory entries. */
+            s64 readCount;
+            FsDirectoryEntry yearEntries[count];
+            R_TRY(fsDirRead(&rootDir, &readCount, count, yearEntries));
+
+            for (auto &yearEntry : yearEntries) {
+                /* Redundant? */
+                if (yearEntry.type != FsDirEntryType_Dir)
+                    continue;
+                /* Only read directories with 'valid' year names. */
+                int year = atoi(yearEntry.name);
+                if (year < 2000 || 10000 < year)
+                    continue;
+
+                /* Copy trailing null terminator. */
+                for (int i = 0; i < 5; i++)
+                    tmp_path[i + 1] = yearEntry.name[i];
+
+                /* Open year directory. Only read directories. */
+                FsDir yearDir;
+                R_TRY(fsFsOpenDirectorySmoll(&g_fsFs[storage], tmp_path, 0x10, FsDirOpenMode_ReadDirs, &yearDir));
+                /* Close directory on scope exit. */
+                ON_SCOPE_EXIT { fsDirClose(&yearDir); };
+
+                /* Count directory entries. */
+                R_TRY(fsDirGetEntryCount(&yearDir, &count));
+
+                /* Read directory entries. */
+                FsDirectoryEntry monthEntries[count];
+                R_TRY(fsDirRead(&yearDir, &readCount, count, monthEntries));
+
+                for (auto &monthEntry : monthEntries) {
+                    /* Redundant? */
+                    if (monthEntry.type != FsDirEntryType_Dir)
+                        continue;
+                    /* Only read directories with 'valid' month names. */
+                    int month = atoi(monthEntry.name);
+                    if (month < 1 || 12 < month)
+                        continue;
+
+                    /* Copy trailing null terminator. */
+                    tmp_path[5] = '/';
+                    for (int i = 0; i < 3; i++)
+                        tmp_path[i + 6] = monthEntry.name[i];
+
+                    /* Open month directory. Only read directories. */
+                    FsDir monthDir;
+                    R_TRY(fsFsOpenDirectorySmoll(&g_fsFs[storage], tmp_path, 0x10, FsDirOpenMode_ReadDirs, &monthDir));
+                    /* Close directory on scope exit. */
+                    ON_SCOPE_EXIT { fsDirClose(&monthDir); };
+
+                    /* Count directory entries. */
+                    R_TRY(fsDirGetEntryCount(&monthDir, &count));
+
+                    /* Read directory entries. */
+                    FsDirectoryEntry dayEntries[count];
+                    R_TRY(fsDirRead(&monthDir, &readCount, count, dayEntries));
+
+                    for (auto &dayEntry : dayEntries) {
+                        /* Redundant? */
+                        if (dayEntry.type != FsDirEntryType_Dir)
+                            continue;
+                        /* Only read directories with 'valid' day names. */
+                        int day = atoi(dayEntry.name);
+                        if (day < 1 || 31 < day)
+                            continue;
+
+                        tmp_path[8] = '/';
+                        /* Copy trailing null terminator. */
+                        for (int i = 0; i < 3; i++)
+                            tmp_path[i + 9] = dayEntry.name[i];
+
+                        /* Open day directory. Only read files. */
+                        FsDir dayDir;
+                        R_TRY(fsFsOpenDirectorySmoll(&g_fsFs[storage], tmp_path, 0x10, FsDirOpenMode_ReadFiles, &dayDir));
+                        /* Close directory on scope exit. */
+                        ON_SCOPE_EXIT { fsDirClose(&dayDir); };
+
+                        /* Count directory entries. */
+                        R_TRY(fsDirGetEntryCount(&dayDir, &count));
+
+                        /* Read directory entries. */
+                        FsDirectoryEntry fileEntries[count];
+                        R_TRY(fsDirRead(&dayDir, &readCount, count, fileEntries));
+
+                        for (auto &fileEntry : fileEntries) {
+                            /* Redundant? */
+                            if (fileEntry.type != FsDirEntryType_File)
+                                continue;
+
+                            FileId fileId{};
+                            Result rc = FileId::FromString(&fileId, storage, fileEntry.name);
+                            Entry entry = {
+                                .size = (u64)fileEntry.file_size,
+                                .fileId = fileId,
+                            };
+                            if (R_SUCCEEDED(rc)) {
+                                R_UNLESS(callback(entry, user), ResultSuccess());
+                            }
+                        }
+                    }
+                }
+            }
+            /*std::error_code code;
             for (auto &e : std::filesystem::recursive_directory_iterator(mountPoints[storage], code)) {
                 if (e.is_regular_file()) {
                     FileId fileId = {0};
@@ -202,7 +306,7 @@ namespace ams::capsrv::impl {
                         if (!callback(entry, user))
                             break;
                 }
-            }
+            }*/
             return ResultSuccess();
         }
 
@@ -211,7 +315,8 @@ namespace ams::capsrv::impl {
             R_UNLESS(!IsReserved(fileId, writeReserve), capsrv::ResultFileReserved());
             R_TRY(fileId.Verify());
             R_TRY(MountAlbumImpl(fileId.storage));
-            std::filesystem::remove(fileId.GetFilePath());
+            const char *path = fileId.GetFilePath().c_str();
+            R_TRY(fsFsDeleteFile(&g_fsFs[fileId.storage], path));
             g_storage.Decrement(fileId.storage, fileId.type);
             return ResultSuccess();
         }
@@ -235,42 +340,47 @@ namespace ams::capsrv::impl {
             R_TRY(fileId.Verify());
             R_TRY(MountAlbumImpl(fileId.storage));
             R_TRY(g_storage.CanSave(fileId.storage, fileId.type));
-            FILE *f = fopen(fileId.GetFilePath().c_str(), "wb");
-            fwrite(buffer, sizeof(u8), size, f);
-            fclose(f);
+
+            /* TODO: Ensure path. */
+            FsFile file;
+            const std::string path = fileId.GetFilePath();
+            R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], path.c_str(), path.size(), FsOpenMode_Write, &file));
+            ON_SCOPE_EXIT { fsFileClose(&file); };
+
+            R_TRY(fsFileSetSize(&file, size));
+            R_TRY(fsFileWrite(&file, 0, buffer, size, FsWriteOption_Flush));
+
             g_storage.Increment(fileId.storage, fileId.type);
             return ResultSuccess();
         }
 
         /* Do it better... */
         Result IHateNamingStuff(u64 *out_size, void *jpeg, u64 jpeg_size, const FileId &fileId) {
-            const char* path = fileId.GetFilePath().c_str();
-            FILE *f = fopen(path, "rb");
-            WriteLogFile("img", "errno: %s: %s", strerror(errno), path);
-            R_UNLESS(f, 0xE02);
+            FsFile file;
+            const std::string path = fileId.GetFilePath();
+            R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], path.c_str(), path.size(), FsOpenMode_Write, &file));
+            ON_SCOPE_EXIT { fsFileClose(&file); };
 
-            SCOPE_GUARD { fclose(f); };
+            s64 size;
+            R_TRY(fsFileGetSize(&file, &size));
 
-            int seek0 = fseek(f, 0, SEEK_END);
-            WriteLogFile("img", "errno: %s", strerror(errno));
-            u64 file_size = ftell(f);
-            WriteLogFile("img", "errno: %s", strerror(errno));
-            int seek1 = fseek(f, 0, SEEK_SET);
-            WriteLogFile("img", "errno: %s", strerror(errno));
-            R_UNLESS(file_size > 0, 0x30ce);
-            WriteLogFile("img", "size: %ld, seek0: %d, seek1: %d", file_size, seek0, seek1);
-            R_UNLESS(file_size <= maxFileSize[fileId.storage][0], 0x2ece);
-            R_UNLESS(file_size == fread(jpeg, sizeof(char), file_size, f), capsrv::ResultInvalidArgument());
+            R_UNLESS(size > 0, 0x30ce);
+            R_UNLESS(size <= maxFileSize[fileId.storage][0], 0x2ece);
+            R_UNLESS((u64)size > jpeg_size, capsrv::ResultInvalidArgument());
 
-            *out_size = file_size;
+            R_TRY(fsFileRead(&file, 0, jpeg, size, 0, out_size));
+
             return ResultSuccess();
         }
 
         /* Load file. */
         Result LoadImage(CapsScreenShotAttribute *out_attr, void *buf_0, void *buf_1, u64 *out_size, void *work, u64 work_size, const FileId &fileId) {
-            if (out_attr) *out_attr = {0};
-            if (buf_0) memset(buf_0, 0, 0x400);
-            if (buf_1) memset(buf_1, 0, 0x404);
+            if (out_attr)
+                *out_attr = {0};
+            if (buf_0)
+                memset(buf_0, 0, 0x400);
+            if (buf_1)
+                memset(buf_1, 0, 0x404);
 
             std::memset(work, 0, work_size);
 
@@ -287,9 +397,12 @@ namespace ams::capsrv::impl {
             if (R_SUCCEEDED(rc))
                 return rc;
 
-            if (out_attr) *out_attr = {0};
-            if (buf_0) memset(buf_0, 0, 0x400);
-            if (buf_1) memset(buf_1, 0, 0x404);
+            if (out_attr)
+                *out_attr = {0};
+            if (buf_0)
+                memset(buf_0, 0, 0x400);
+            if (buf_1)
+                memset(buf_1, 0, 0x404);
 
             return rc;
         }
@@ -306,48 +419,49 @@ namespace ams::capsrv::impl {
                 if (R_SUCCEEDED(rc)) {
                     dims->width = 1280;
                     dims->height = 720;
-                    if (out_attr) *out_attr = attr;
+                    if (out_attr)
+                        *out_attr = attr;
                     return rc;
                 }
             }
-            if (out_attr) *out_attr = {0};
-            if (buf_0) memset(buf_0, 0, 0x400);
-            if (buf_1) memset(buf_1, 0, 0x404);
+            if (out_attr)
+                *out_attr = {0};
+            if (buf_0)
+                memset(buf_0, 0, 0x400);
+            if (buf_1)
+                memset(buf_1, 0, 0x404);
 
             return rc;
         }
 
         /* Do it better... */
         Result IHateNamingStuffThumbnail(u64 *out_size, void *thumb, u64 thumb_size, const FileId &fileId) {
-            const char* path = fileId.GetFilePath().c_str();
-            FILE *f = fopen(path, "rb");
-            WriteLogFile("img", "errno: %s: %s", strerror(errno), path);
-            R_UNLESS(f, 0xE02);
+            FsFile file;
+            const std::string path = fileId.GetFilePath();
+            R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], path.c_str(), path.size(), FsOpenMode_Write, &file));
+            ON_SCOPE_EXIT { fsFileClose(&file); };
 
-            SCOPE_GUARD { fclose(f); };
+            s64 size;
+            R_TRY(fsFileGetSize(&file, &size));
 
-            int seek0 = fseek(f, 0, SEEK_END);
-            WriteLogFile("img", "errno: %s", strerror(errno));
-            u64 file_size = ftell(f);
-            WriteLogFile("img", "errno: %s", strerror(errno));
-            int seek1 = fseek(f, 0, SEEK_SET);
-            WriteLogFile("img", "errno: %s", strerror(errno));
-            R_UNLESS(file_size > 0, 0x30ce);
-            WriteLogFile("img", "size: %ld, seek0: %d, seek1: %d", file_size, seek0, seek1);
-            R_UNLESS(file_size <= maxFileSize[fileId.storage][0], 0x2ece);
-            u8 *jpg = (u8*)malloc(file_size);
-            R_UNLESS(jpg, capsrv::ResultOutOfMemory());
-            R_UNLESS(file_size == fread(jpg, sizeof(char), file_size, f), capsrv::ResultInvalidArgument());
+            R_UNLESS(size > 0, 0x30ce);
+            R_UNLESS(size <= maxFileSize[fileId.storage][0], 0x2ece);
 
-            R_UNLESS(file_size < 0xc, 0xa2ece);
+            u8 *jpeg = (u8 *)malloc(size);
+            R_UNLESS(jpeg, capsrv::ResultOutOfMemory());
 
-            SCOPE_GUARD { free(jpg); };
+            ON_SCOPE_EXIT { free(jpeg); };
+
+            u64 read_size;
+            R_TRY(fsFileRead(&file, 0, jpeg, size, 0, &read_size));
+
+            R_UNLESS(read_size > 0xc, 0xa2ece);
 
             auto bin = ams::image::detail::ExifBinary();
             auto exif = ams::image::ExifExtractor(&bin);
 
-            exif.SetExifData(jpg + 0xc, file_size - 0xc);
-            printf("0x%x\n", exif.Analyse());
+            exif.SetExifData(jpeg + 0xc, read_size - 0xc);
+            R_UNLESS(exif.Analyse(), 0xa2fce); /* TODO fix */
 
             u32 temp_size = 0;
             const u8 *temp_nail = exif.ExtractThumbnail(&temp_size);
@@ -361,9 +475,12 @@ namespace ams::capsrv::impl {
         }
 
         Result LoadThumbnail(CapsScreenShotAttribute *out_attr, void *buf_0, void *buf_1, u64 *out_size, void *work, u64 work_size, const FileId &fileId) {
-            if (out_attr) *out_attr = {0};
-            if (buf_0) memset(buf_0, 0, 0x400);
-            if (buf_1) memset(buf_1, 0, 0x404);
+            if (out_attr)
+                *out_attr = {0};
+            if (buf_0)
+                memset(buf_0, 0, 0x400);
+            if (buf_1)
+                memset(buf_1, 0, 0x404);
 
             std::memset(work, 0, work_size);
 
@@ -380,9 +497,12 @@ namespace ams::capsrv::impl {
             if (R_SUCCEEDED(rc))
                 return rc;
 
-            if (out_attr) *out_attr = {0};
-            if (buf_0) memset(buf_0, 0, 0x400);
-            if (buf_1) memset(buf_1, 0, 0x404);
+            if (out_attr)
+                *out_attr = {0};
+            if (buf_0)
+                memset(buf_0, 0, 0x400);
+            if (buf_1)
+                memset(buf_1, 0, 0x404);
 
             return rc;
         }
@@ -399,13 +519,17 @@ namespace ams::capsrv::impl {
                 if (R_SUCCEEDED(rc)) {
                     dims->width = 320;
                     dims->height = 180;
-                    if (out_attr) *out_attr = attr;
+                    if (out_attr)
+                        *out_attr = attr;
                     return rc;
                 }
             }
-            if (out_attr) *out_attr = {0};
-            if (buf_0) memset(buf_0, 0, 0x400);
-            if (buf_1) memset(buf_1, 0, 0x404);
+            if (out_attr)
+                *out_attr = {0};
+            if (buf_0)
+                memset(buf_0, 0, 0x400);
+            if (buf_1)
+                memset(buf_1, 0, 0x404);
 
             return rc;
         }
@@ -522,8 +646,10 @@ namespace ams::capsrv::impl {
             rc = LoadScreenShotImage(&dims, nullptr, nullptr, nullptr, img, img_size, work, work_size, fileId);
         }
         if (R_SUCCEEDED(rc)) {
-            if (width) *width = dims.width;
-            if (height) *height = dims.height;
+            if (width)
+                *width = dims.width;
+            if (height)
+                *height = dims.height;
         }
         std::memset(work, 0, work_size);
         return rc;
@@ -537,8 +663,10 @@ namespace ams::capsrv::impl {
             rc = LoadScreenShotThumbnail(&dims, nullptr, nullptr, nullptr, img, img_size, work, work_size, fileId);
         }
         if (R_SUCCEEDED(rc)) {
-            if (width) *width = dims.width;
-            if (height) *height = dims.height;
+            if (width)
+                *width = dims.width;
+            if (height)
+                *height = dims.height;
         }
         std::memset(work, 0, work_size);
         return rc;
@@ -552,8 +680,10 @@ namespace ams::capsrv::impl {
             rc = LoadScreenShotImage(&dims, nullptr, nullptr, nullptr, img, img_size, work, work_size, fileId, opts);
         }
         if (R_SUCCEEDED(rc)) {
-            if (width) *width = dims.width;
-            if (height) *height = dims.height;
+            if (width)
+                *width = dims.width;
+            if (height)
+                *height = dims.height;
         }
         std::memset(work, 0, work_size);
         return rc;
@@ -566,8 +696,10 @@ namespace ams::capsrv::impl {
             rc = LoadScreenShotThumbnail(&dims, nullptr, nullptr, nullptr, img, img_size, work, work_size, fileId, opts);
         }
         if (R_SUCCEEDED(rc)) {
-            if (width) *width = dims.width;
-            if (height) *height = dims.height;
+            if (width)
+                *width = dims.width;
+            if (height)
+                *height = dims.height;
         }
         std::memset(work, 0, work_size);
         return rc;
@@ -582,9 +714,12 @@ namespace ams::capsrv::impl {
             rc = LoadScreenShotImage(&dims, &attr, nullptr, nullptr, img, img_size, work, work_size, fileId, opts);
         }
         if (R_SUCCEEDED(rc)) {
-            if (width) *width = dims.width;
-            if (height) *height = dims.height;
-            if (out_attr) *out_attr = attr;
+            if (width)
+                *width = dims.width;
+            if (height)
+                *height = dims.height;
+            if (out_attr)
+                *out_attr = attr;
         }
         std::memset(work, 0, work_size);
         return rc;
@@ -598,9 +733,12 @@ namespace ams::capsrv::impl {
             rc = LoadScreenShotThumbnail(&dims, &attr, nullptr, nullptr, img, img_size, work, work_size, fileId, opts);
         }
         if (R_SUCCEEDED(rc)) {
-            if (width) *width = dims.width;
-            if (height) *height = dims.height;
-            if (out_attr) *out_attr = attr;
+            if (width)
+                *width = dims.width;
+            if (height)
+                *height = dims.height;
+            if (out_attr)
+                *out_attr = attr;
         }
         std::memset(work, 0, work_size);
         return rc;

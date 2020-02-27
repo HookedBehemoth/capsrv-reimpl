@@ -23,27 +23,33 @@
  */
 #include <stdlib.h>
 #include <string.h>
+#include <switch.h>
 #include <time.h>
 
 #include <cstdarg>
 #include <cstdio>
 
+#include "capsrv_types.hpp"
+#include "capsrv_util.hpp"
+
 void WriteLogFile(const char *type, const char *fmt, ...) {
-    time_t lTime = time(NULL);
-    struct tm *timestruct = localtime((const time_t *)&lTime);
-    int hour = timestruct->tm_hour;
-    int min = timestruct->tm_min;
-    int sec = timestruct->tm_sec;
-    char time[9];
-    sprintf(time, "%02d:%02d:%02d", hour, min, sec);
-	FILE *pFile = fopen("sdmc:/log.txt", "a");
-	if (pFile) {
-		fprintf(pFile, "[%s] [%s] ", time, type);
-		va_list args;
-		va_start(args, fmt);
-		vfprintf(pFile, fmt, args);
-		va_end(args);
-		fprintf(pFile, "\n");
-		fclose(pFile);
-	}
+#ifdef SYSTEM_MODULE
+    u64 timestamp;
+    timeGetCurrentTime(TimeType_Default, &timestamp);
+    ams::capsrv::DateTime datetime;
+    ams::capsrv::util::TimestampToCalendarTime(&datetime, timestamp);
+    int hour = datetime.hour;
+    int min = datetime.minute;
+    int sec = datetime.second;
+    FILE *pFile = fopen("sdmc:/log.txt", "a");
+    if (pFile) {
+        fprintf(pFile, "[%02d:%02d:%02d] [%s] ", hour, min, sec, type);
+        va_list args;
+        va_start(args, fmt);
+        vfprintf(pFile, fmt, args);
+        va_end(args);
+        fprintf(pFile, "\n");
+        fclose(pFile);
+    }
+#endif
 }
