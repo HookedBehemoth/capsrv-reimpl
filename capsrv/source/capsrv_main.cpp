@@ -275,7 +275,6 @@ int main(int argc, char **argv) {
     RUN(impl::UnmountAlbum(StorageId::Nand));
     RUN(impl::UnmountAlbum(StorageId::Sd));
 
-    ovl::Exit();
     config::Exit();
 
     printf("\n\nfinished\n\n\n");

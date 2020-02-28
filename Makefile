@@ -1,12 +1,16 @@
 all: nro
 
 nro:
+	rm capsrv/build/capsrv_main.*
+	rm capsrv/build/logger.*
 	$(MAKE) -C capsrv
 
 clean: sys-clean
 	$(MAKE) -C capsrv clean
 
 sys:
+	rm capsrv/build/capsrv_main.*
+	rm capsrv/build/logger.*
 	$(MAKE) -C capsrv -f sys-Makefile
 	rm -rf dist
 	mkdir dist
