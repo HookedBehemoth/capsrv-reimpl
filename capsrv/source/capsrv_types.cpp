@@ -10,6 +10,14 @@ namespace ams::capsrv {
 
     namespace {
 
+#define DATE_FORMAT "%04d%02d%02d%02d%02d%02d%02d"
+#define CYPHER_FORMAT "%016lX%016lX"
+#define FILENAME_FORMAT DATE_FORMAT "-" CYPHER_FORMAT
+#define DATE_PATH_FORMAT "/%04hd/%02hhd/%02hhd/"
+
+#define NORMAL_PATH_LENGTH 0x42
+#define EXTRA_PATH_LENGTH 0x69
+
         constexpr const char *fileExtensions[] = {
             [0] = ".jpg",
             [1] = ".mp4",
@@ -17,7 +25,7 @@ namespace ams::capsrv {
 
         Result DecryptFileIdentifier(u64 *applicationId, bool *isExtra, const char *str, const char **next) {
             u64 in[2] = {0};
-            sscanf(str, "%16lX%16lX", &in[0], &in[1]);
+            sscanf(str, CYPHER_FORMAT, &in[0], &in[1]);
             *next = str + 0x20;
             in[0] = __bswap64(in[0]);
             in[1] = __bswap64(in[1]);
@@ -90,8 +98,7 @@ namespace ams::capsrv {
     }
 
     std::string FileId::GetFolderPath() const {
-        bool isExtra = this->type > 1;
-        if (isExtra) {
+        if (this->IsExtra()) {
             const u64 in[2] = {this->applicationId, 0};
             u64 aes[2] = {0};
             crypto::aes128::Encrypt(aes, in);
@@ -99,7 +106,7 @@ namespace ams::capsrv {
             aes[1] = __bswap64(aes[1]);
             // TODO: std::fmt
             char buf[0x39]{};
-            int size = std::snprintf(buf, 0x39, "/Extra/%02lX%02lX/%04hd/%02hhd/%02hhd/",
+            int size = std::snprintf(buf, 0x39, "/Extra/" CYPHER_FORMAT DATE_PATH_FORMAT,
                                      aes[0],
                                      aes[1],
                                      this->datetime.year,
@@ -108,7 +115,7 @@ namespace ams::capsrv {
             return std::string(buf, size);
         } else {
             char buf[0x10]{};
-            int size = std::snprintf(buf, 0x10, "/%04hd/%02hhd/%02hhd/",
+            int size = std::snprintf(buf, 0x10, DATE_PATH_FORMAT,
                                      this->datetime.year,
                                      this->datetime.month,
                                      this->datetime.day);
@@ -117,7 +124,7 @@ namespace ams::capsrv {
     }
 
     std::string FileId::GetFileName() const {
-        bool isExtra = (u8)this->type > 1;
+        bool isExtra = this->IsExtra();
         const u64 in[2] = {this->applicationId, isExtra};
         u64 aes[2] = {0};
         crypto::aes128::Encrypt(aes, in);
@@ -125,7 +132,7 @@ namespace ams::capsrv {
         aes[1] = __bswap64(aes[1]);
 
         char buf[0x36]{};
-        const char *fmt = isExtra ? "%04d%02d%02d%02d%02d%02d%02d-%016lX%016lXX%s" : "%04d%02d%02d%02d%02d%02d%02d-%016lX%016lX%s";
+        const char *fmt = isExtra ? FILENAME_FORMAT "X%s" : FILENAME_FORMAT "%s";
         int size = std::snprintf(buf, 0x36, fmt,
                                  this->datetime.year,
                                  this->datetime.month,
@@ -182,8 +189,8 @@ namespace ams::capsrv {
     }
 
     Result ContentStorage::CanSave(StorageId storage, ContentType type) const {
-        R_TRY(config::StorageValid(storage));
-        R_TRY(config::SupportsType(type));
+        R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
+        R_UNLESS(config::SupportsType(type), capsrv::ResultInvalidContentType());
         u64 max = config::GetMax(storage, type);
         u64 currentCount = this->cache[storage][type].count;
         R_UNLESS(currentCount < max, capsrv::ResultTooManyFiles());

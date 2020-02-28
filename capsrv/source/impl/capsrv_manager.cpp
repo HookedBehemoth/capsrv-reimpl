@@ -38,7 +38,7 @@ namespace ams::capsrv::impl {
 
         os::Mutex g_mutex;
 
-        #define WORK_MEMORY_SIZE 0x51000
+#define WORK_MEMORY_SIZE 0x51000
         u8 g_workMemory[WORK_MEMORY_SIZE];
 
         bool IsReserved(const FileId &fileId, const Reserve &reserve) {
@@ -309,7 +309,6 @@ namespace ams::capsrv::impl {
             return ResultSuccess();
         }
 
-        // TODO: Copy
         Result CopyAlbumFileImpl(StorageId storage, const FileId &fileId) {
             R_UNLESS(!IsReserved(fileId, writeReserve), capsrv::ResultFileTooBig());
             R_TRY(fileId.Verify());
@@ -317,8 +316,38 @@ namespace ams::capsrv::impl {
             R_TRY(MountAlbumImpl(fileId.storage));
             R_TRY(MountAlbumImpl(storage));
             R_UNLESS(storage != fileId.storage, capsrv::ResultInvalidStorageId());
-            //FileId newFileId = fileId;
-            //newFileId.storage = storage;
+
+            /* TODO: Ensure directory. */
+
+            std::string path = fileId.GetFilePath();
+            const char *cPath = path.c_str();
+
+            FsFile srcFile;
+            R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], cPath, path.size(), FsOpenMode_Read, &srcFile));
+            ON_SCOPE_EXIT { fsFileClose(&srcFile); };
+
+            s64 size;
+            R_TRY(fsFileGetSize(&srcFile, &size));
+
+            R_TRY(fsFsCreateFile(&g_fsFs[storage], cPath, size, 0));
+            auto file_failure_guard = SCOPE_GUARD { fsFsDeleteFile(&g_fsFs[storage], cPath); };
+
+            FsFile dstFile;
+            R_TRY(fsFsOpenFileSmoll(&g_fsFs[storage], cPath, path.size(), FsOpenMode_Write, &dstFile));
+            ON_SCOPE_EXIT { fsFileClose(&dstFile); };
+
+            s64 offset = 0;
+            u64 readSize;
+            while (offset < size) {
+                R_TRY(fsFileRead(&srcFile, offset, g_workMemory, WORK_MEMORY_SIZE, FsReadOption_None, &readSize));
+                R_TRY(fsFileWrite(&dstFile, offset, g_workMemory, readSize, FsWriteOption_None));
+                offset += readSize;
+            }
+
+            fsFileFlush(&dstFile);
+
+            file_failure_guard.Cancel();
+            g_storage.Increment(storage, fileId.type);
             return ResultSuccess();
         }
 
@@ -329,14 +358,20 @@ namespace ams::capsrv::impl {
             R_TRY(MountAlbumImpl(fileId.storage));
             R_TRY(g_storage.CanSave(fileId.storage, fileId.type));
 
-            /* TODO: Ensure path. */
-            FsFile file;
-            const std::string path = fileId.GetFilePath();
-            R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], path.c_str(), path.size(), FsOpenMode_Write, &file));
-            ON_SCOPE_EXIT { fsFileClose(&file); };
+            /* TODO: Fix Exif. */
 
-            R_TRY(fsFileSetSize(&file, size));
-            R_TRY(fsFileWrite(&file, 0, buffer, size, FsWriteOption_Flush));
+            const std::string path = fileId.GetFilePath();
+
+            /* TODO: Ensure directory. */
+
+            R_TRY(fsFsCreateFile(&g_fsFs[fileId.storage], path.c_str(), size, 0));
+
+            FsFile dstFile;
+            R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], path.c_str(), path.size(), FsOpenMode_Write, &dstFile));
+            ON_SCOPE_EXIT { fsFileClose(&dstFile); };
+
+            R_TRY(fsFileSetSize(&dstFile, size));
+            R_TRY(fsFileWrite(&dstFile, 0, buffer, size, FsWriteOption_Flush));
 
             g_storage.Increment(fileId.storage, fileId.type);
             return ResultSuccess();
@@ -368,9 +403,9 @@ namespace ams::capsrv::impl {
             if (out_attr)
                 *out_attr = {0};
             if (buf_0)
-                memset(buf_0, 0, 0x400);
+                std::memset(buf_0, 0, 0x400);
             if (buf_1)
-                memset(buf_1, 0, 0x404);
+                std::memset(buf_1, 0, 0x404);
 
             std::memset(work, 0, work_size);
 
@@ -390,9 +425,9 @@ namespace ams::capsrv::impl {
             if (out_attr)
                 *out_attr = {0};
             if (buf_0)
-                memset(buf_0, 0, 0x400);
+                std::memset(buf_0, 0, 0x400);
             if (buf_1)
-                memset(buf_1, 0, 0x404);
+                std::memset(buf_1, 0, 0x404);
 
             return rc;
         }
@@ -416,9 +451,9 @@ namespace ams::capsrv::impl {
             if (out_attr)
                 *out_attr = {0};
             if (buf_0)
-                memset(buf_0, 0, 0x400);
+                std::memset(buf_0, 0, 0x400);
             if (buf_1)
-                memset(buf_1, 0, 0x404);
+                std::memset(buf_1, 0, 0x404);
 
             return rc;
         }
@@ -470,9 +505,9 @@ namespace ams::capsrv::impl {
             if (out_attr)
                 *out_attr = {0};
             if (buf_0)
-                memset(buf_0, 0, 0x400);
+                std::memset(buf_0, 0, 0x400);
             if (buf_1)
-                memset(buf_1, 0, 0x404);
+                std::memset(buf_1, 0, 0x404);
 
             std::memset(work, 0, work_size);
 
@@ -492,9 +527,9 @@ namespace ams::capsrv::impl {
             if (out_attr)
                 *out_attr = {0};
             if (buf_0)
-                memset(buf_0, 0, 0x400);
+                std::memset(buf_0, 0, 0x400);
             if (buf_1)
-                memset(buf_1, 0, 0x404);
+                std::memset(buf_1, 0, 0x404);
 
             return rc;
         }
@@ -518,9 +553,9 @@ namespace ams::capsrv::impl {
             if (out_attr)
                 *out_attr = {0};
             if (buf_0)
-                memset(buf_0, 0, 0x400);
+                std::memset(buf_0, 0, 0x400);
             if (buf_1)
-                memset(buf_1, 0, 0x404);
+                std::memset(buf_1, 0, 0x404);
 
             return rc;
         }

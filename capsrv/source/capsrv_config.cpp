@@ -7,7 +7,7 @@ namespace ams::capsrv::config {
     namespace {
 
         bool defaultDirectory = true;
-        bool debugMode = false;
+        //bool debugMode = false;
         bool screenshotSupport = true;
         bool movieSupport = false;
         bool verifyScreenShotFiledata = true;

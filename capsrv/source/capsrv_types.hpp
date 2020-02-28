@@ -48,6 +48,13 @@ namespace ams::capsrv {
         std::string GetFileName() const;
         std::string GetFilePath() const;
 
+        inline bool IsExtra() const {
+            return (u8)this->type > 1;
+        }
+        inline bool IsNormal() const {
+            return !IsExtra();
+        }
+
         Result Verify() const;
 
         static Result FromString(FileId *fileId, StorageId storage, const char *str);
@@ -102,7 +109,7 @@ namespace ams::capsrv {
     };
 
     struct ContentStorage {
-        CapsAlbumCache cache[2][4] {};
+        CapsAlbumCache cache[2][4]{};
 
         Result CanSave(StorageId storage, ContentType type) const;
         void Set(StorageId storage, ContentType type, CapsAlbumCache cache);
