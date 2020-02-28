@@ -38,12 +38,17 @@ namespace ams::capsrv {
     R_DEFINE_ERROR_RESULT(FileTooBig,                       23);
     R_DEFINE_ERROR_RESULT(InvalidFileData,                  24);
 
+    R_DEFINE_ERROR_RESULT(InvalidThumbnail,                 26);
+
     R_DEFINE_ERROR_RESULT(BufferInsufficient,               30);
 
     R_DEFINE_ERROR_RESULT(FileReserved,                     94);
 
     R_DEFINE_ERROR_RESULT(TooManyApplicationsRegistered,    820);
     R_DEFINE_ERROR_RESULT(ApplicationNotRegistered,         822);
+
+    R_DEFINE_ERROR_RESULT(InvalidJFIF,                      1302);
+    R_DEFINE_ERROR_RESULT(InvalidEXIF,                      1303);
 
     R_DEFINE_ERROR_RESULT(TooManyFiles,                     1401);
 

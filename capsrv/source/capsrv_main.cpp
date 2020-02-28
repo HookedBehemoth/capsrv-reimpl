@@ -29,7 +29,7 @@ extern u32 __start__;
 
 u32 __nx_applet_type = AppletType_None;
 
-#define INNER_HEAP_SIZE 0x400000
+#define INNER_HEAP_SIZE 0x80000
 size_t nx_inner_heap_size = INNER_HEAP_SIZE;
 char nx_inner_heap[INNER_HEAP_SIZE];
 
@@ -69,11 +69,15 @@ void __appInit(void) {
     });
 
     /* TODO: remove this for a better logging solution (TMA, LogManager?) */
+#ifdef __DEBUG__
     fsdevMountSdmc();
+#endif /* __DEBUG__ */
 }
 
 void __appExit(void) {
+#ifdef __DEBUG__
     fsdevUnmountAll();
+#endif /* __DEBUG__ */
     /* Cleanup services. */
     capsdcExit();
     fsExit();
@@ -101,7 +105,7 @@ namespace {
 
 int main(int argc, char **argv) {
     capsrv::config::Initialize();
-    capsrv::crypto::Initialize();
+    R_ASSERT(capsrv::crypto::Initialize());
     capsrv::ovl::Initialize();
 
     capsrv::impl::MountAlbum(capsrv::StorageId::Nand);
@@ -193,10 +197,7 @@ int main(int argc, char **argv) {
     int sock = nxlinkStdio();
 
     config::Initialize();
-    //config::print();
-
-    RUN(crypto::Initialize());
-
+    R_ASSERT(crypto::Initialize());
     ovl::Initialize();
 
     RUN(impl::MountAlbum(StorageId::Nand));
@@ -237,7 +238,7 @@ int main(int argc, char **argv) {
     u64 thumbSize = 320*180*4;
     u8 *img = (u8 *)malloc(thumbSize);
     u64 width = 0, height = 0;
-    RUN(impl::LoadAlbumScreenShotThumbnailImage(&width, &height, buffer, readSize, img, thumbSize, ent.fileId));
+    RUN(impl::LoadAlbumScreenShotThumbnailImage(&width, &height, img, thumbSize, buffer, readSize, ent.fileId));
     printf("%ld:%ld\n", width, height);
     for (int i = 0; i < 0x10; i++)
         printf("%02X", buffer[i]);

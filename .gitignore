@@ -6,3 +6,4 @@ capsrv/capsrv.nro
 capsrv/capsrv.elf
 capsrv/build/
 .vscode/
+dist

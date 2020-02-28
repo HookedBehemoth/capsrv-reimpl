@@ -33,6 +33,7 @@
 #include "capsrv_util.hpp"
 
 void WriteLogFile(const char *type, const char *fmt, ...) {
+#ifdef __DEBUG__
 #ifdef SYSTEM_MODULE
     u64 timestamp;
     timeGetCurrentTime(TimeType_Default, &timestamp);
@@ -43,7 +44,7 @@ void WriteLogFile(const char *type, const char *fmt, ...) {
     int sec = datetime.second;
     FILE *pFile = fopen("sdmc:/log.txt", "a");
     if (pFile) {
-        fprintf(pFile, "[%02d:%02d:%02d] [%s] ", hour, min, sec, type);
+        fprintf(pFile, "[%02d:%02d:%02d]_[%s] ", hour, min, sec, type);
         va_list args;
         va_start(args, fmt);
         vfprintf(pFile, fmt, args);
@@ -61,4 +62,5 @@ void WriteLogFile(const char *type, const char *fmt, ...) {
 #else
     static_assert(false, "undefined state");
 #endif
+#endif /* __DEBUG__ */
 }

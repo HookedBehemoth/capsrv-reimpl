@@ -5,32 +5,27 @@
 namespace ams::capsrv::config {
 
     namespace {
+
         bool defaultDirectory = true;
         bool debugMode = false;
-        bool screenshotSupport = false;
+        bool screenshotSupport = true;
         bool movieSupport = false;
         bool verifyScreenShotFiledata = true;
         bool verifyMovieFileSignature = true;
         bool verifyMovieFileHash = true;
-        u64 nandScreenshotMax = 0;
-        u64 nandMovieMax = 0;
-        u64 sdScreenshotMax = 0;
-        u64 sdMovieMax = 0;
+        u64 nandScreenshotMax = 1000;
+        u64 nandMovieMax = 100;
+        u64 sdScreenshotMax = 10000;
+        u64 sdMovieMax = 1000;
         char *directoryPath = nullptr;
-    } // namespace
+
+    }
 
     void Initialize() {
-        nandScreenshotMax = 1000;
-        nandMovieMax = 100;
-        sdScreenshotMax = 10000;
-        sdMovieMax = 1000;
 
-        // TODO: Debug mode implementation
-        /*bool debug = settings::fwdbg::IsDebugModeEnabled();
-        debugMode = debug;
-        defaultDirectory = !debug;*/
-        debugMode = false;
-        defaultDirectory = true;
+        /* TODO: Debug mode implementation with TMA. */
+        //debugMode = settings::fwdbg::IsDebugModeEnabled();
+        //defaultDirectory = !debugMode;
 
         settings::fwdbg::GetSettingsItemValue(&verifyScreenShotFiledata, 1, "capsrv", "enable_album_screenshot_filedata_verification");
 
@@ -110,34 +105,6 @@ namespace ams::capsrv::config {
         if (defaultDirectory)
             return nullptr;
         return directoryPath;
-    }
-
-    void print() {
-        printf(R"(defaultDirectory: %d,
-debugMode: %d,
-screenshotSupport: %d,
-movieSupport: %d,
-verifyScreenShotFiledata: %d,
-verifyMovieFileSignature: %d,
-verifyMovieFileHash: %d,
-nandScreenshotMax: %ld,
-nandMovieMax: %ld,
-sdScreenshotMax: %ld,
-sdMovieMax: %ld,
-directoryPath: %s
-)",
-               defaultDirectory,
-               debugMode,
-               screenshotSupport,
-               movieSupport,
-               verifyScreenShotFiledata,
-               verifyMovieFileSignature,
-               verifyMovieFileHash,
-               nandScreenshotMax,
-               nandMovieMax,
-               sdScreenshotMax,
-               sdMovieMax,
-               directoryPath);
     }
 
 }

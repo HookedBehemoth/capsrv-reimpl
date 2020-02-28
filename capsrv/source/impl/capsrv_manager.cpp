@@ -38,6 +38,9 @@ namespace ams::capsrv::impl {
 
         os::Mutex g_mutex;
 
+        #define WORK_MEMORY_SIZE 0x51000
+        u8 g_workMemory[WORK_MEMORY_SIZE];
+
         bool IsReserved(const FileId &fileId, const Reserve &reserve) {
             for (const auto &item : reserve.items) {
                 if (item.used && std::memcmp(&item.fileId, &fileId, sizeof(FileId)) == 0)
@@ -343,18 +346,19 @@ namespace ams::capsrv::impl {
         Result IHateNamingStuff(u64 *out_size, void *jpeg, u64 jpeg_size, const FileId &fileId) {
             FsFile file;
             const std::string path = fileId.GetFilePath();
-            WriteLogFile("img", "path %s", path.c_str());
             R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], path.c_str(), path.size(), FsOpenMode_Read, &file));
             ON_SCOPE_EXIT { fsFileClose(&file); };
 
             s64 size;
             R_TRY(fsFileGetSize(&file, &size));
 
-            R_UNLESS(size > 0, 0x30ce);
-            R_UNLESS(size <= maxFileSize[fileId.storage][0], 0x2ece);
+            R_UNLESS(size > 0, capsrv::ResultInvalidFileData());
+            R_UNLESS(size <= maxFileSize[fileId.storage][0], capsrv::ResultFileTooBig());
             R_UNLESS((u64)size <= jpeg_size, capsrv::ResultInvalidArgument());
 
             R_TRY(fsFileRead(&file, 0, jpeg, size, 0, out_size));
+
+            R_UNLESS((u64)size == *out_size, capsrv::ResultInvalidArgument());
 
             return ResultSuccess();
         }
@@ -398,16 +402,9 @@ namespace ams::capsrv::impl {
             u64 jpegSize = 0;
             /* Load JPEG image. */
             Result rc = LoadImage(out_attr, buf_0, buf_1, &jpegSize, work, work_size, fileId);
-
-            char buf[0x11]{};
-            for (int i = 0; i < 0x10; i++)
-                sprintf(buf+i, "%02X", ((u8*)work)[i]);
-            WriteLogFile("img", "0x%x LoadImage: %d, %d, work: %s", rc, jpegSize, work_size, buf);
-            
             if (R_SUCCEEDED(rc)) {
                 /* Convert JPEG image. */
                 rc = capsdcDecodeJpeg(1280, 720, &opts, work, jpegSize, img, img_size);
-                WriteLogFile("img", "0x%x jpegdec", rc);
                 if (R_SUCCEEDED(rc)) {
                     dims->width = 1280;
                     dims->height = 720;
@@ -430,36 +427,38 @@ namespace ams::capsrv::impl {
         Result IHateNamingStuffThumbnail(u64 *out_size, void *thumb, u64 thumb_size, const FileId &fileId) {
             FsFile file;
             const std::string path = fileId.GetFilePath();
-            WriteLogFile("img", "path %s", path.c_str());
             R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], path.c_str(), path.size(), FsOpenMode_Read, &file));
             ON_SCOPE_EXIT { fsFileClose(&file); };
 
             s64 size;
             R_TRY(fsFileGetSize(&file, &size));
 
-            R_UNLESS(size > 0, 0x30ce);
-            R_UNLESS(size <= maxFileSize[fileId.storage][0], 0x2ece);
+            R_UNLESS(size > 0, capsrv::ResultInvalidFileData());
+            R_UNLESS(size <= maxFileSize[fileId.storage][0], capsrv::ResultFileTooBig());
 
-            u8 *jpeg = (u8 *)malloc(size);
-            R_UNLESS(jpeg, capsrv::ResultOutOfMemory());
+            if (size > 0x11000)
+                size = 0x11000;
 
-            ON_SCOPE_EXIT { free(jpeg); };
+            R_UNLESS(size <= WORK_MEMORY_SIZE, capsrv::ResultOutOfMemory());
 
             u64 read_size;
-            R_TRY(fsFileRead(&file, 0, jpeg, size, 0, &read_size));
+            R_TRY(fsFileRead(&file, 0, g_workMemory, size, 0, &read_size));
 
-            R_UNLESS(read_size > 0xc, 0xa2ece);
+            R_UNLESS((u64)size == read_size, capsrv::ResultInvalidArgument());
+
+            /* TODO: Actually check JFIF header and only pass exif size. */
+            R_UNLESS(read_size > 0xc, capsrv::ResultInvalidJFIF());
 
             auto bin = ams::image::detail::ExifBinary();
             auto exif = ams::image::ExifExtractor(&bin);
 
-            exif.SetExifData(jpeg + 0xc, read_size - 0xc);
-            R_UNLESS(exif.Analyse(), 0xa2fce); /* TODO fix */
+            exif.SetExifData(g_workMemory + 0xc, read_size - 0xc);
+            R_UNLESS(exif.Analyse(), capsrv::ResultInvalidEXIF());
 
             u32 temp_size = 0;
             const u8 *temp_nail = exif.ExtractThumbnail(&temp_size);
-            R_UNLESS(temp_nail, 0x3cce);
-            R_UNLESS(temp_size <= thumb_size, 0x30ce);
+            R_UNLESS(temp_nail, capsrv::ResultBufferInsufficient());
+            R_UNLESS(temp_size <= thumb_size, capsrv::ResultInvalidFileData());
 
             *out_size = temp_size;
             std::memcpy(thumb, temp_nail, temp_size);
@@ -505,16 +504,9 @@ namespace ams::capsrv::impl {
             u64 jpegSize = 0;
             /* Load JPEG thumbnail. */
             Result rc = LoadThumbnail(out_attr, buf_0, buf_1, &jpegSize, work, work_size, fileId);
-
-            char buf[0x11]{};
-            for (int i = 0; i < 0x10; i++)
-                sprintf(buf+i, "%02X", ((u8*)work)[i]);
-            WriteLogFile("img", "0x%x LoadThumbnail: %d, %d, work: %s", rc, jpegSize, work_size, buf);
-            
             if (R_SUCCEEDED(rc)) {
                 /* Convert JPEG thumbnail. */
                 rc = capsdcDecodeJpeg(320, 180, &opts, work, jpegSize, img, img_size);
-                WriteLogFile("img", "0x%x jpegdec", rc);
                 if (R_SUCCEEDED(rc)) {
                     dims->width = 320;
                     dims->height = 180;

@@ -6,8 +6,10 @@ namespace ams::capsrv::ovl {
 
     namespace {
 
+        bool initialized;
+
         struct {
-            u8 *buffer = nullptr;
+            u8 buffer[BufferSize];
             u64 size = 0;
             FileId fileId;
         } data[2];
@@ -17,19 +19,9 @@ namespace ams::capsrv::ovl {
     }
 
     void Initialize() {
-        for (u8 i = 0; i < 2; i++) {
-            data[i].buffer = (u8 *)malloc(BufferSize);
-            if (data[i].buffer)
-                std::memset(data[i].buffer, 0xff, BufferSize);
-        }
-    }
-
-    void Exit() {
-        for (u8 i = 0; i < 2; i++) {
-            if (data[i].buffer)
-                free(data[i].buffer);
-            data[i].buffer = nullptr;
-        }
+        std::memset(data[0].buffer, 0xff, BufferSize);
+        std::memset(data[1].buffer, 0xff, BufferSize);
+        initialized = true;
     }
 
     Result SetOverlayThumbnailData(const u8 *ptr, u64 size, const FileId &fileId, bool isMovie) {
