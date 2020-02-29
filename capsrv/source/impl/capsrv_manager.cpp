@@ -303,7 +303,11 @@ namespace ams::capsrv::impl {
             R_UNLESS(!IsReserved(fileId, writeReserve), capsrv::ResultFileReserved());
             R_TRY(fileId.Verify());
             R_TRY(MountAlbumImpl(fileId.storage));
-            const char *path = fileId.GetFilePath().c_str();
+
+            u64 path_length = fileId.GetPathLength();
+            char path[path_length];
+            fileId.GetFilePath(path, path_length);
+
             R_TRY(fsFsDeleteFile(&g_fsFs[fileId.storage], path));
             g_storage.Decrement(fileId.storage, fileId.type);
             return ResultSuccess();
@@ -319,21 +323,22 @@ namespace ams::capsrv::impl {
 
             /* TODO: Ensure directory. */
 
-            std::string path = fileId.GetFilePath();
-            const char *cPath = path.c_str();
+            u64 path_length = fileId.GetPathLength();
+            char path[path_length];
+            fileId.GetFilePath(path, path_length);
 
             FsFile srcFile;
-            R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], cPath, path.size(), FsOpenMode_Read, &srcFile));
+            R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], path, path_length, FsOpenMode_Read, &srcFile));
             ON_SCOPE_EXIT { fsFileClose(&srcFile); };
 
             s64 size;
             R_TRY(fsFileGetSize(&srcFile, &size));
 
-            R_TRY(fsFsCreateFile(&g_fsFs[storage], cPath, size, 0));
-            auto file_failure_guard = SCOPE_GUARD { fsFsDeleteFile(&g_fsFs[storage], cPath); };
+            R_TRY(fsFsCreateFile(&g_fsFs[storage], path, size, 0));
+            auto file_failure_guard = SCOPE_GUARD { fsFsDeleteFile(&g_fsFs[storage], path); };
 
             FsFile dstFile;
-            R_TRY(fsFsOpenFileSmoll(&g_fsFs[storage], cPath, path.size(), FsOpenMode_Write, &dstFile));
+            R_TRY(fsFsOpenFileSmoll(&g_fsFs[storage], path, path_length, FsOpenMode_Write, &dstFile));
             ON_SCOPE_EXIT { fsFileClose(&dstFile); };
 
             s64 offset = 0;
@@ -360,14 +365,16 @@ namespace ams::capsrv::impl {
 
             /* TODO: Fix Exif. */
 
-            const std::string path = fileId.GetFilePath();
+            u64 path_length = fileId.GetPathLength();
+            char path[path_length];
+            fileId.GetFilePath(path, path_length);
 
             /* TODO: Ensure directory. */
 
-            R_TRY(fsFsCreateFile(&g_fsFs[fileId.storage], path.c_str(), size, 0));
+            R_TRY(fsFsCreateFile(&g_fsFs[fileId.storage], path, size, 0));
 
             FsFile dstFile;
-            R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], path.c_str(), path.size(), FsOpenMode_Write, &dstFile));
+            R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], path, path_length, FsOpenMode_Write, &dstFile));
             ON_SCOPE_EXIT { fsFileClose(&dstFile); };
 
             R_TRY(fsFileSetSize(&dstFile, size));
@@ -380,8 +387,12 @@ namespace ams::capsrv::impl {
         /* Do it better... */
         Result IHateNamingStuff(u64 *out_size, void *jpeg, u64 jpeg_size, const FileId &fileId) {
             FsFile file;
-            const std::string path = fileId.GetFilePath();
-            R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], path.c_str(), path.size(), FsOpenMode_Read, &file));
+
+            u64 path_length = fileId.GetPathLength();
+            char path[path_length];
+            fileId.GetFilePath(path, path_length);
+
+            R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], path, path_length, FsOpenMode_Read, &file));
             ON_SCOPE_EXIT { fsFileClose(&file); };
 
             s64 size;
@@ -461,8 +472,12 @@ namespace ams::capsrv::impl {
         /* Do it better... */
         Result IHateNamingStuffThumbnail(u64 *out_size, void *thumb, u64 thumb_size, const FileId &fileId) {
             FsFile file;
-            const std::string path = fileId.GetFilePath();
-            R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], path.c_str(), path.size(), FsOpenMode_Read, &file));
+
+            u64 path_length = fileId.GetPathLength();
+            char path[path_length];
+            fileId.GetFilePath(path, path_length);
+
+            R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], path, path_length, FsOpenMode_Read, &file));
             ON_SCOPE_EXIT { fsFileClose(&file); };
 
             s64 size;

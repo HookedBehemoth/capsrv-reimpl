@@ -104,9 +104,11 @@ DEPENDS	:=	$(OFILES:.o=.d)
 #---------------------------------------------------------------------------------
 # main targets
 #---------------------------------------------------------------------------------
-all	:	$(OUTPUT).nsp
+all	:	$(OUTPUT).nsp $(OUTPUT).nso
 
 $(OUTPUT).nsp	:	$(OUTPUT).elf
+
+$(OUTPUT).nso	:	$(OUTPUT).elf
 
 $(OUTPUT).elf	:	$(OFILES)
 

@@ -18,17 +18,17 @@ namespace ams::capsrv {
     }
 
     Result AlbumAccessorService::LoadAlbumFile(sf::OutBuffer image, sf::Out<u64> out, const FileId &fileId) {
-        WriteLogFile("Accessor", "LoadAlbumFile: fileId(%s), bufferSize(%ld)", fileId.AsString().c_str(), image.GetSize());
+        WriteLogFile("Accessor", "LoadAlbumFile: fileId(%s), bufferSize(%ld)", fileId.AsString(), image.GetSize());
         return impl::LoadAlbumFile(image.GetPointer(), image.GetSize(), out.GetPointer(), fileId);
     }
 
     Result AlbumAccessorService::DeleteAlbumFile(const FileId &fileId) {
-        WriteLogFile("Accessor", "DeleteAlbumFile: fileId(%s)", fileId.AsString().c_str());
+        WriteLogFile("Accessor", "DeleteAlbumFile: fileId(%s)", fileId.AsString());
         return impl::DeleteAlbumFile(fileId);
     }
 
     Result AlbumAccessorService::StorageCopyAlbumFile(StorageId storage, const FileId &fileId) {
-        WriteLogFile("Accessor", "StorageCopyAlbumFile: fileId(%s), storage(%hhd)", fileId.AsString().c_str(), storage);
+        WriteLogFile("Accessor", "StorageCopyAlbumFile: fileId(%s), storage(%hhd)", fileId.AsString(), storage);
         return impl::CopyAlbumFile(storage, fileId);
     }
 
@@ -43,22 +43,22 @@ namespace ams::capsrv {
     }
 
     Result AlbumAccessorService::GetAlbumFileSize(sf::Out<u64> out, const FileId &fileId) {
-        WriteLogFile("Accessor", "GetAlbumFileSize: fileId(%s)", fileId.AsString().c_str());
+        WriteLogFile("Accessor", "GetAlbumFileSize: fileId(%s)", fileId.AsString());
         return ResultSuccess();
     }
 
     Result AlbumAccessorService::LoadAlbumFileThumbnail(sf::OutBuffer image, sf::Out<u64> out, const FileId &fileId) {
-        WriteLogFile("Accessor", "LoadAlbumFileThumbnail: imgSize(%ld), fileId(%s)", image.GetSize(), fileId.AsString().c_str());
+        WriteLogFile("Accessor", "LoadAlbumFileThumbnail: imgSize(%ld), fileId(%s)", image.GetSize(), fileId.AsString());
         return impl::LoadAlbumFileThumbnail(image.GetPointer(), image.GetSize(), out.GetPointer(), fileId);
     }
 
     Result AlbumAccessorService::LoadAlbumScreenShotImage(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId) {
-        WriteLogFile("Accessor", "LoadAlbumScreenShotImage: workSize(%ld), imgSize(%ld), fileId(%s)", work.GetSize(), image.GetSize(), fileId.AsString().c_str());
+        WriteLogFile("Accessor", "LoadAlbumScreenShotImage: workSize(%ld), imgSize(%ld), fileId(%s)", work.GetSize(), image.GetSize(), fileId.AsString());
         return impl::LoadAlbumScreenShotImage(width.GetPointer(), height.GetPointer(), work.GetPointer(), work.GetSize(), image.GetPointer(), image.GetSize(), fileId);
     }
 
     Result AlbumAccessorService::LoadAlbumScreenShotThumbnailImage(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId) {
-        WriteLogFile("Accessor", "LoadAlbumScreenShotThumbnailImage: workSize(%ld), imgSize(%ld), fileId(%s)", work.GetSize(), image.GetSize(), fileId.AsString().c_str());
+        WriteLogFile("Accessor", "LoadAlbumScreenShotThumbnailImage: workSize(%ld), imgSize(%ld), fileId(%s)", work.GetSize(), image.GetSize(), fileId.AsString());
         return impl::LoadAlbumScreenShotThumbnailImage(width.GetPointer(), height.GetPointer(), work.GetPointer(), work.GetSize(), image.GetPointer(), image.GetSize(), fileId);
     }
 
@@ -68,17 +68,17 @@ namespace ams::capsrv {
     }
 
     Result AlbumAccessorService::LoadAlbumScreenShotImageEx(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
-        WriteLogFile("Accessor", "LoadAlbumScreenShotImageEx: workSize(%ld), imgSize(%ld), fileId(%s), opts()", work.GetSize(), image.GetSize(), fileId.AsString().c_str());
+        WriteLogFile("Accessor", "LoadAlbumScreenShotImageEx: workSize(%ld), imgSize(%ld), fileId(%s), opts()", work.GetSize(), image.GetSize(), fileId.AsString());
         return impl::LoadAlbumScreenShotImageEx(width.GetPointer(), height.GetPointer(), work.GetPointer(), work.GetSize(), image.GetPointer(), image.GetSize(), fileId, opts);
     }
 
     Result AlbumAccessorService::LoadAlbumScreenShotThumbnailImageEx(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
-        WriteLogFile("Accessor", "LoadAlbumScreenShotThumbnailImageEx: workSize(%ld), imgSize(%ld), fileId(%s), opts()", work.GetSize(), image.GetSize(), fileId.AsString().c_str());
+        WriteLogFile("Accessor", "LoadAlbumScreenShotThumbnailImageEx: workSize(%ld), imgSize(%ld), fileId(%s), opts()", work.GetSize(), image.GetSize(), fileId.AsString());
         return impl::LoadAlbumScreenShotThumbnailImageEx(width.GetPointer(), height.GetPointer(), work.GetPointer(), work.GetSize(), image.GetPointer(), image.GetSize(), fileId, opts);
     }
 
     Result AlbumAccessorService::LoadAlbumScreenShotImageEx0(sf::Out<CapsScreenShotAttribute> attrs, sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
-        WriteLogFile("Accessor", "LoadAlbumScreenShotImageEx0: workSize(%ld), imgSize(%ld), fileId(%s), opts()", work.GetSize(), image.GetSize(), fileId.AsString().c_str());
+        WriteLogFile("Accessor", "LoadAlbumScreenShotImageEx0: workSize(%ld), imgSize(%ld), fileId(%s), opts()", work.GetSize(), image.GetSize(), fileId.AsString());
         return impl::LoadAlbumScreenShotImageEx0(attrs.GetPointer(), width.GetPointer(), height.GetPointer(), work.GetPointer(), work.GetSize(), image.GetPointer(), image.GetSize(), fileId, opts);
     }
 
@@ -141,17 +141,17 @@ namespace ams::capsrv {
     }
 
     Result AlbumAccessorService::LoadAlbumScreenShotThumbnailImageEx0(sf::Out<CapsScreenShotAttribute> attrs, sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
-        WriteLogFile("Accessor", "LoadAlbumScreenShotImageEx0: workSize(%ld), imgSize(%ld), fileId(%s), opts()", work.GetSize(), image.GetSize(), fileId.AsString().c_str());
+        WriteLogFile("Accessor", "LoadAlbumScreenShotImageEx0: workSize(%ld), imgSize(%ld), fileId(%s), opts()", work.GetSize(), image.GetSize(), fileId.AsString());
         return impl::LoadAlbumScreenShotThumbnailImageEx0(attrs.GetPointer(), width.GetPointer(), height.GetPointer(), work.GetPointer(), work.GetSize(), image.GetPointer(), image.GetSize(), fileId, opts);
     }
 
     Result AlbumAccessorService::LoadAlbumScreenShotImageEx1(sf::Out<LoadAlbumScreenShotImageOutput> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
-        WriteLogFile("Accessor", "LoadAlbumScreenShotImageEx0: workSize(%ld), imgSize(%ld), fileId(%s), opts()", work.GetSize(), image.GetSize(), fileId.AsString().c_str());
+        WriteLogFile("Accessor", "LoadAlbumScreenShotImageEx0: workSize(%ld), imgSize(%ld), fileId(%s), opts()", work.GetSize(), image.GetSize(), fileId.AsString());
         return impl::LoadAlbumScreenShotImageEx1(out.GetPointer(), work.GetPointer(), work.GetSize(), image.GetPointer(), image.GetSize(), fileId, opts);
     }
 
     Result AlbumAccessorService::LoadAlbumScreenShotThumbnailImageEx1(sf::Out<LoadAlbumScreenShotImageOutput> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
-        WriteLogFile("Accessor", "LoadAlbumScreenShotImageEx0: workSize(%ld), imgSize(%ld), fileId(%s), opts()", work.GetSize(), image.GetSize(), fileId.AsString().c_str());
+        WriteLogFile("Accessor", "LoadAlbumScreenShotImageEx0: workSize(%ld), imgSize(%ld), fileId(%s), opts()", work.GetSize(), image.GetSize(), fileId.AsString());
         return impl::LoadAlbumScreenShotThumbnailImageEx1(out.GetPointer(), work.GetPointer(), work.GetSize(), image.GetPointer(), image.GetSize(), fileId, opts);
     }
 
@@ -191,7 +191,7 @@ namespace ams::capsrv {
     }
 
     Result AlbumAccessorService::LoadMakerNoteInfoForDebug(sf::Out<u64> out, sf::OutBuffer unk0, sf::OutBuffer unk1, const FileId &fileId) {
-        WriteLogFile("Accessor", "LoadMakerNoteInfoForDebug: bufferSize(%ld), bufferSize(%ld), fileId(%s)", unk0.GetSize(), unk1.GetSize(), fileId.AsString().c_str());
+        WriteLogFile("Accessor", "LoadMakerNoteInfoForDebug: bufferSize(%ld), bufferSize(%ld), fileId(%s)", unk0.GetSize(), unk1.GetSize(), fileId.AsString());
         return ResultSuccess();
     }
 

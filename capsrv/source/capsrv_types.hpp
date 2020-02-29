@@ -5,6 +5,9 @@
 
 #include "capsrv_results.hpp"
 
+#define NORMAL_PATH_LENGTH 0x42
+#define EXTRA_PATH_LENGTH 0x69
+
 namespace ams::capsrv {
 
     /* Storage IDs. */
@@ -30,7 +33,7 @@ namespace ams::capsrv {
         u8 second;
         u8 id;
 
-        std::string AsString() const;
+        const char* AsString() const;
 
         static Result FromString(DateTime *date, const char *str, const char **next);
     };
@@ -43,10 +46,14 @@ namespace ams::capsrv {
         ContentType type;
         u8 pad[0x6];
 
-        std::string AsString() const;
-        std::string GetFolderPath() const;
-        std::string GetFileName() const;
-        std::string GetFilePath() const;
+        const char *AsString() const;
+        u64 GetFolderPath(char *buffer, u64 max_length) const;
+        u64 GetFileName(char *buffer, u64 max_length) const;
+        u64 GetFilePath(char *buffer, u64 max_length) const;
+
+        inline u64 GetPathLength() const {
+            return this->IsExtra() ? EXTRA_PATH_LENGTH : NORMAL_PATH_LENGTH;
+        }
 
         inline bool IsExtra() const {
             return (u8)this->type > 1;
@@ -72,7 +79,7 @@ namespace ams::capsrv {
         u64 size;
         FileId fileId;
 
-        std::string AsString() const;
+        const char *AsString() const;
         inline bool operator==(const Entry &f) {
             return memcmp(this, &f, sizeof(FileId)) == 0;
         }

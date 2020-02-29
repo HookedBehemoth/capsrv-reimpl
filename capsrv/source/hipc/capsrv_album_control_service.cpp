@@ -55,27 +55,27 @@ namespace ams::capsrv {
     }
 
     Result AlbumControlService::GenerateApplicationAlbumEntry(sf::Out<ApplicationEntry> out, const Entry &entry, u64 appId) {
-        WriteLogFile("Control", "GenerateApplicationAlbumEntry: applicationId(%lx), fileId(%s)", appId, entry.AsString().c_str());
+        WriteLogFile("Control", "GenerateApplicationAlbumEntry: applicationId(%lx), fileId(%s)", appId, entry.AsString());
         return control::GenerateApplicationAlbumEntry(out.GetPointer(), entry, appId);
     }
 
     Result AlbumControlService::SaveAlbumScreenShotFile(sf::InBuffer buffer, const FileId &fileId) {
-        WriteLogFile("Control", "SaveAlbumScreenShotFile: bufferSize(%ld), fileId(%s)", buffer.GetSize(), fileId.AsString().c_str());
+        WriteLogFile("Control", "SaveAlbumScreenShotFile: bufferSize(%ld), fileId(%s)", buffer.GetSize(), fileId.AsString());
         return impl::SaveAlbumScreenShotFile(buffer.GetPointer(), buffer.GetSize(), fileId);
     }
 
     Result AlbumControlService::SaveAlbumScreenShotFileEx(sf::InNonSecureBuffer buffer, const FileId &fileId, u64 unk0, u64 unk1, u64 unk2) {
-        WriteLogFile("Control", "SaveAlbumScreenShotFileEx: bufferSize(%ld), fileId(%s), %ld:%ld:%ld", buffer.GetSize(), fileId.AsString().c_str(), unk0, unk1, unk2);
+        WriteLogFile("Control", "SaveAlbumScreenShotFileEx: bufferSize(%ld), fileId(%s), %ld:%ld:%ld", buffer.GetSize(), fileId.AsString(), unk0, unk1, unk2);
         return impl::SaveAlbumScreenShotFile(buffer.GetPointer(), buffer.GetSize(), fileId);
     }
 
     Result AlbumControlService::SetOverlayScreenShotThumbnailData(sf::InNonSecureBuffer buffer, const FileId &fileId) {
-        WriteLogFile("Control", "SetOverlayScreenShotThumbnailData: bufferSize(%ld), fileId(%s)", buffer.GetSize(), fileId.AsString().c_str());
+        WriteLogFile("Control", "SetOverlayScreenShotThumbnailData: bufferSize(%ld), fileId(%s)", buffer.GetSize(), fileId.AsString());
         return ovl::SetOverlayThumbnailData(buffer.GetPointer(), buffer.GetSize(), fileId, false);
     }
 
     Result AlbumControlService::SetOverlayMovieThumbnailData(sf::InNonSecureBuffer buffer, const FileId &fileId) {
-        WriteLogFile("Control", "SetOverlayMovieThumbnailData: bufferSize(%ld), fileId(%s)", buffer.GetSize(), fileId.AsString().c_str());
+        WriteLogFile("Control", "SetOverlayMovieThumbnailData: bufferSize(%ld), fileId(%s)", buffer.GetSize(), fileId.AsString());
         return ovl::SetOverlayThumbnailData(buffer.GetPointer(), buffer.GetSize(), fileId, true);
     }
 

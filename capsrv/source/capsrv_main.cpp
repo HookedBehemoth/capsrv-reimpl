@@ -218,7 +218,13 @@ int main(int argc, char **argv) {
     TEST(impl::GetAlbumFileList(entries, 10, &count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot), count, 5);
 
     Entry &ent = entries[0];
-    printf("%s\n", ent.AsString().c_str());
+    printf("%s\n", ent.AsString());
+
+    u64 path_length = ent.fileId.GetPathLength();
+    char path[path_length];
+    ent.fileId.GetFilePath(path, path_length);
+
+    printf("%s\n", path);
 
     u64 size = ent.size;
     u8 *buffer = (u8 *)malloc(size);

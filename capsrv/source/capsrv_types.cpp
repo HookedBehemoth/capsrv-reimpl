@@ -6,17 +6,14 @@
 #include "capsrv_crypto.hpp"
 #include "capsrv_util.hpp"
 
-namespace ams::capsrv {
-
-    namespace {
-
 #define DATE_FORMAT "%04d%02d%02d%02d%02d%02d%02d"
 #define CYPHER_FORMAT "%016lX%016lX"
 #define FILENAME_FORMAT DATE_FORMAT "-" CYPHER_FORMAT
 #define DATE_PATH_FORMAT "/%04hd/%02hhd/%02hhd/"
 
-#define NORMAL_PATH_LENGTH 0x42
-#define EXTRA_PATH_LENGTH 0x69
+namespace ams::capsrv {
+
+    namespace {
 
         constexpr const char *fileExtensions[] = {
             [0] = ".jpg",
@@ -50,17 +47,17 @@ namespace ams::capsrv {
 
     }
 
-    std::string DateTime::AsString() const {
-        char out[36];
-        int size = snprintf(out, 36, "[%04d:%02d:%02d %02d:%02d:%02d %02d]",
-                            this->year,
-                            this->month,
-                            this->day,
-                            this->hour,
-                            this->minute,
-                            this->second,
-                            this->id);
-        return std::string(out, size);
+    const char *DateTime::AsString() const {
+        static char date_buffer[32];
+        snprintf(date_buffer, 32, "[%04d:%02d:%02d %02d:%02d:%02d %02d]",
+                 this->year,
+                 this->month,
+                 this->day,
+                 this->hour,
+                 this->minute,
+                 this->second,
+                 this->id);
+        return date_buffer;
     }
 
     Result DateTime::FromString(DateTime *date, const char *str, const char **next) {
@@ -88,42 +85,35 @@ namespace ams::capsrv {
         return ResultSuccess();
     }
 
-    std::string FileId::AsString() const {
-        char out[60];
-        int size = snprintf(out, 60, "%016lx, %s, %hhd, %hhd",
-                            this->applicationId,
-                            this->datetime.AsString().c_str(),
-                            this->storage, this->type);
-        return std::string(out, size);
+    const char *FileId::AsString() const {
+        static char string_buffer[25];
+        snprintf(string_buffer, 25, "[%016lx, %hhd, %hhd]", this->applicationId, this->storage, this->type);
+        return string_buffer;
     }
 
-    std::string FileId::GetFolderPath() const {
+    u64 FileId::GetFolderPath(char *buffer, u64 max_length) const {
         if (this->IsExtra()) {
             const u64 in[2] = {this->applicationId, 0};
             u64 aes[2] = {0};
             crypto::aes128::Encrypt(aes, in);
             aes[0] = __bswap64(aes[0]);
             aes[1] = __bswap64(aes[1]);
-            // TODO: std::fmt
-            char buf[0x39]{};
-            int size = std::snprintf(buf, 0x39, "/Extra/" CYPHER_FORMAT DATE_PATH_FORMAT,
-                                     aes[0],
-                                     aes[1],
-                                     this->datetime.year,
-                                     this->datetime.month,
-                                     this->datetime.day);
-            return std::string(buf, size);
+
+            return std::snprintf(buffer, max_length, "/Extra/" CYPHER_FORMAT DATE_PATH_FORMAT,
+                                 aes[0],
+                                 aes[1],
+                                 this->datetime.year,
+                                 this->datetime.month,
+                                 this->datetime.day);
         } else {
-            char buf[0x10]{};
-            int size = std::snprintf(buf, 0x10, DATE_PATH_FORMAT,
-                                     this->datetime.year,
-                                     this->datetime.month,
-                                     this->datetime.day);
-            return std::string(buf, size);
+            return std::snprintf(buffer, max_length, DATE_PATH_FORMAT,
+                                 this->datetime.year,
+                                 this->datetime.month,
+                                 this->datetime.day);
         }
     }
 
-    std::string FileId::GetFileName() const {
+    u64 FileId::GetFileName(char *buffer, u64 max_length) const {
         bool isExtra = this->IsExtra();
         const u64 in[2] = {this->applicationId, isExtra};
         u64 aes[2] = {0};
@@ -131,23 +121,23 @@ namespace ams::capsrv {
         aes[0] = __bswap64(aes[0]);
         aes[1] = __bswap64(aes[1]);
 
-        char buf[0x36]{};
         const char *fmt = isExtra ? FILENAME_FORMAT "X%s" : FILENAME_FORMAT "%s";
-        int size = std::snprintf(buf, 0x36, fmt,
-                                 this->datetime.year,
-                                 this->datetime.month,
-                                 this->datetime.day,
-                                 this->datetime.hour,
-                                 this->datetime.minute,
-                                 this->datetime.second,
-                                 this->datetime.id,
-                                 aes[0], aes[1],
-                                 fileExtensions[this->type % 2]);
-        return std::string(buf, size);
+        return std::snprintf(buffer, max_length, fmt,
+                             this->datetime.year,
+                             this->datetime.month,
+                             this->datetime.day,
+                             this->datetime.hour,
+                             this->datetime.minute,
+                             this->datetime.second,
+                             this->datetime.id,
+                             aes[0], aes[1],
+                             fileExtensions[this->type % 2]);
     }
 
-    std::string FileId::GetFilePath() const {
-        return this->GetFolderPath() + this->GetFileName();
+    u64 FileId::GetFilePath(char *buffer, u64 max_length) const {
+        u64 folder_path_length = this->GetFolderPath(buffer, max_length);
+        u64 file_name_length = this->GetFileName(buffer + folder_path_length, max_length - folder_path_length);
+        return folder_path_length + file_name_length;
     }
 
     Result FileId::Verify() const {
@@ -182,10 +172,8 @@ namespace ams::capsrv {
         return ResultSuccess();
     }
 
-    std::string Entry::AsString() const {
-        char out[120];
-        int size = snprintf(out, 120, "[%ld, %s]", this->size, this->fileId.AsString().c_str());
-        return std::string(out, size);
+    const char *Entry::AsString() const {
+        return this->fileId.AsString();
     }
 
     Result ContentStorage::CanSave(StorageId storage, ContentType type) const {
