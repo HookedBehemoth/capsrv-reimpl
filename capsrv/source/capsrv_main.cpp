@@ -28,8 +28,9 @@ extern "C" {
 extern u32 __start__;
 
 u32 __nx_applet_type = AppletType_None;
+TimeServiceType __nx_time_service_type = TimeServiceType_User;
 
-#define INNER_HEAP_SIZE 0x80000
+#define INNER_HEAP_SIZE 0x8000
 size_t nx_inner_heap_size = INNER_HEAP_SIZE;
 char nx_inner_heap[INNER_HEAP_SIZE];
 

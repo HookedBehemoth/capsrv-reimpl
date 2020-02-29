@@ -2,7 +2,7 @@
 # pull in common stratosphere sysmodule configuration
 #---------------------------------------------------------------------------------
 
-export DEFINES	:=	-DSYSTEM_MODULE -D__DEBUG__
+export DEFINES	:=	-DSYSTEM_MODULE
 
 include $(dir $(abspath $(lastword $(MAKEFILE_LIST))))/../Atmosphere-libs/config/templates/stratosphere.mk
 
