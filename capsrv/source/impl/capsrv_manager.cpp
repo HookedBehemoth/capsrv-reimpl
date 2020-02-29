@@ -10,6 +10,8 @@
 #include "../logger.hpp"
 #include "capsrv_controller.hpp"
 
+#define WORK_MEMORY_SIZE 0x51000
+
 namespace ams::capsrv::impl {
 
     constexpr s64 maxFileSize[2][2] = {
@@ -37,8 +39,6 @@ namespace ams::capsrv::impl {
         } readReserve, writeReserve;
 
         os::Mutex g_mutex;
-
-#define WORK_MEMORY_SIZE 0x51000
         u8 g_workMemory[WORK_MEMORY_SIZE];
 
         bool IsReserved(const FileId &fileId, const Reserve &reserve) {
@@ -68,12 +68,11 @@ namespace ams::capsrv::impl {
             if (nullptr)
                 return fs::ResultNullptrArgument();
 
-            // TODO: Mount Host PC when TMA is a thing.
+            /* TODO: Mount Host PC when TMA is a thing. */
             return fs::ResultHostFileSystemCorrupted();
         }
 
         Result UnmountImageDirectory(StorageId storage) {
-            // TODO: Unmount Host PC when TMA is a thing.
             fsFsClose(&g_fsFs[storage]);
 
             g_mountStatus[storage] = false;
@@ -100,7 +99,7 @@ namespace ams::capsrv::impl {
         Result UnmountAlbumImpl(StorageId storage) {
             R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
             R_UNLESS(g_mountStatus[storage % 2], ResultSuccess());
-
+            /* TODO: Close movie stream. */
             return UnmountImageDirectory(storage);
         }
 
@@ -117,14 +116,12 @@ namespace ams::capsrv::impl {
             return ResultSuccess();
         }
 
-        struct ProcessObject {};
-
-        struct CountObject : ProcessObject {
+        struct CountObject {
             u64 count;
             u8 flags;
         };
 
-        bool cb_count(const Entry &entry, ProcessObject *ptr) {
+        bool cb_count(const Entry &entry, void *ptr) {
             CountObject *user = (CountObject *)ptr;
             if ((user->flags & BIT(0) && (entry.fileId.type % 2 == ContentType::Screenshot)) ||
                 (user->flags & BIT(1) && (entry.fileId.type % 2 == ContentType::Movie))) {
@@ -133,14 +130,14 @@ namespace ams::capsrv::impl {
             return true;
         }
 
-        struct ListObject : ProcessObject {
+        struct ListObject {
             Entry *entries;
             u64 size;
             u64 count;
             u8 flags;
         };
 
-        bool cb_list(const Entry &entry, ProcessObject *ptr) {
+        bool cb_list(const Entry &entry, void *ptr) {
             ListObject *user = (ListObject *)ptr;
             if (user->size == user->count)
                 return false;
@@ -154,13 +151,18 @@ namespace ams::capsrv::impl {
             return true;
         }
 
-        struct CacheObject : ProcessObject {
+        struct CacheObject {
             CapsAlbumCache cache[4];
         };
 
-        bool cb_cache(const Entry &entry, ProcessObject *ptr) {
+        bool cb_cache(const Entry &entry, void *ptr) {
             CacheObject *user = (CacheObject *)ptr;
             user->cache[entry.fileId.type].count++;
+            return true;
+        }
+
+        bool cb_required_size(const Entry &entry, void *ptr) {
+            *(s64 *)ptr += entry.size;
             return true;
         }
 
@@ -180,7 +182,8 @@ namespace ams::capsrv::impl {
             return _fsFsOpenCommon(fs, path, path_size, mode, &out->s, 9);
         }
 
-        Result ProcessImageDirectory(StorageId storage, std::function<bool(const Entry &, ProcessObject *)> callback, ProcessObject *user) {
+        /* TODO: Extra contents. */
+        Result ProcessImageDirectory(StorageId storage, std::function<bool(const Entry &, void *)> callback, void *user) {
             char tmp_path[0x10] = "/";
             /* Open root directory. Only read directories. */
             FsDir rootDir;
@@ -285,7 +288,7 @@ namespace ams::capsrv::impl {
                             FileId fileId{};
                             Result rc = FileId::FromString(&fileId, storage, fileEntry.name);
                             Entry entry = {
-                                .size = (u64)fileEntry.file_size,
+                                .size = fileEntry.file_size,
                                 .fileId = fileId,
                             };
                             if (R_SUCCEEDED(rc)) {
@@ -356,6 +359,29 @@ namespace ams::capsrv::impl {
             return ResultSuccess();
         }
 
+        Result GetAlbumFileSizeImpl(u64 *out, const FileId &fileId) {
+            R_UNLESS(!IsReserved(fileId, writeReserve), capsrv::ResultFileTooBig());
+            R_TRY(fileId.Verify());
+            R_UNLESS(config::StorageValid(fileId.storage), capsrv::ResultInvalidStorageId());
+            R_TRY(MountAlbumImpl(fileId.storage));
+
+            u64 path_length = fileId.GetPathLength();
+            char path[path_length];
+            fileId.GetFilePath(path, path_length);
+
+            FsFile file;
+            R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], path, path_length, FsOpenMode_Read, &file));
+            ON_SCOPE_EXIT { fsFileClose(&file); };
+
+            s64 size;
+            R_TRY(fsFileGetSize(&file, &size));
+
+            R_UNLESS(maxFileSize[fileId.storage][fileId.type] >= size, capsrv::ResultFileTooBig());
+
+            *out = static_cast<u64>(size);
+            return ResultSuccess();
+        }
+
         Result SaveAlbumScreenShotFileImpl(const u8 *buffer, u64 size, const FileId &fileId) {
             R_UNLESS(!IsReserved(fileId, readReserve), capsrv::ResultFileReserved());
             R_UNLESS(!IsReserved(fileId, writeReserve), capsrv::ResultFileReserved());
@@ -400,11 +426,11 @@ namespace ams::capsrv::impl {
 
             R_UNLESS(size > 0, capsrv::ResultInvalidFileData());
             R_UNLESS(size <= maxFileSize[fileId.storage][0], capsrv::ResultFileTooBig());
-            R_UNLESS((u64)size <= jpeg_size, capsrv::ResultInvalidArgument());
+            R_UNLESS(static_cast<u64>(size) <= jpeg_size, capsrv::ResultInvalidArgument());
 
             R_TRY(fsFileRead(&file, 0, jpeg, size, 0, out_size));
 
-            R_UNLESS((u64)size == *out_size, capsrv::ResultInvalidArgument());
+            R_UNLESS(static_cast<u64>(size) == *out_size, capsrv::ResultInvalidArgument());
 
             return ResultSuccess();
         }
@@ -494,7 +520,7 @@ namespace ams::capsrv::impl {
             u64 read_size;
             R_TRY(fsFileRead(&file, 0, g_workMemory, size, 0, &read_size));
 
-            R_UNLESS((u64)size == read_size, capsrv::ResultInvalidArgument());
+            R_UNLESS(static_cast<u64>(size) == read_size, capsrv::ResultInvalidArgument());
 
             /* TODO: Actually check JFIF header and only pass exif size. */
             R_UNLESS(read_size > 0xc, capsrv::ResultInvalidJFIF());
@@ -584,14 +610,12 @@ namespace ams::capsrv::impl {
             .count = 0,
             .flags = flags,
         };
-        Result res = 0;
         {
             std::scoped_lock lk(g_mutex);
-            res = ProcessImageDirectory(storage, cb_count, &countObject);
+            R_TRY(ProcessImageDirectory(storage, cb_count, &countObject));
         }
-        if (res.IsSuccess() && outCount)
-            *outCount = countObject.count;
-        return res;
+        *outCount = countObject.count;
+        return ResultSuccess();
     }
 
     Result GetAlbumFileList(void *ptr, u64 size, u64 *outCount, StorageId storage, u8 flags) {
@@ -602,14 +626,12 @@ namespace ams::capsrv::impl {
             .count = 0,
             .flags = flags,
         };
-        Result res = 0;
         {
             std::scoped_lock lk(g_mutex);
-            res = ProcessImageDirectory(storage, cb_list, &listObject);
+            R_TRY(ProcessImageDirectory(storage, cb_list, &listObject));
         }
-        if (res.IsSuccess() && outCount)
-            *outCount = listObject.count;
-        return res;
+        *outCount = listObject.count;
+        return ResultSuccess();
     }
 
     Result RefreshAlbumCache(StorageId storage) {
@@ -625,6 +647,74 @@ namespace ams::capsrv::impl {
         g_storage.Set(storage, ContentType::ExtraScreenshot, cacheObject.cache[ContentType::ExtraScreenshot]);
         g_storage.Set(storage, ContentType::ExtraMovie, cacheObject.cache[ContentType::ExtraMovie]);
         return ResultSuccess();
+    }
+
+    Result GetRequiredStorageSpaceSizeToCopyAll(u64 *out, StorageId dst, StorageId src) {
+        if (dst == src) {
+            *out = 0;
+            return ResultSuccess();
+        }
+        R_UNLESS(config::StorageValid(src), capsrv::ResultInvalidStorageId());
+        R_UNLESS(config::StorageValid(dst), capsrv::ResultInvalidStorageId());
+        u64 requiredSize = 0;
+        {
+            std::scoped_lock lk(g_mutex);
+            R_TRY(MountAlbumImpl(src));
+            R_TRY(MountAlbumImpl(dst));
+            R_TRY(ProcessImageDirectory(src, cb_required_size, &requiredSize));
+        }
+        *out = requiredSize;
+        return ResultSuccess();
+    }
+
+    struct UsageObject {
+        CapsAlbumContentsUsage remains;
+        CapsAlbumContentsUsage usage[4];
+        u8 flags;
+    };
+
+    bool cb_usage(const Entry &entry, void *ptr) {
+        UsageObject *user = (UsageObject *)ptr;
+        auto type = entry.fileId.type;
+
+        auto &usage = (user->flags & BIT(type)) ? user->usage[type] : user->remains;
+        usage.count++;
+        usage.size += entry.size;
+        return true;
+    }
+    Result GetAlbumUsageImpl(CapsAlbumContentsUsage *remains, CapsAlbumContentsUsage *usage, u8 usage_size, StorageId storage, u8 flags) {
+        R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
+        UsageObject usageObject{
+            .remains{},
+            .usage{},
+            .flags = flags,
+        };
+        {
+            std::scoped_lock lk(g_mutex);
+            R_TRY(ProcessImageDirectory(storage, cb_usage, &usageObject));
+        }
+        for (u8 i = 0; i < usage_size; i++) {
+            usage[i] = {};
+            if ((flags & BIT(i)) && (i < 4)) {
+                usage[i] = usageObject.usage[i];
+                usage[i].file_contents = i;
+            }
+        }
+        *remains = usageObject.remains;
+        remains->flags = 2;
+        return ResultSuccess();
+    }
+
+    Result GetAlbumUsage(CapsAlbumUsage2 *usage, StorageId storage) {
+        return GetAlbumUsageImpl(&usage->usages[1], usage->usages, 1, storage, CapsAlbumFileContentsFlag_ScreenShot);
+    }
+
+    Result GetAlbumUsage3(CapsAlbumUsage3 *usage, StorageId storage) {
+        return GetAlbumUsageImpl(&usage->usages[2], usage->usages, 2, storage, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie);
+    }
+
+    Result GetAlbumUsage16(CapsAlbumUsage16 *usage, StorageId storage, u8 flags) {
+        return GetAlbumUsageImpl(&usage->usages[15], usage->usages, 15, storage, flags);
     }
 
     Result GetAlbumCache(CapsAlbumCache *out, StorageId storage, ContentType type) {
@@ -661,6 +751,11 @@ namespace ams::capsrv::impl {
     Result CopyAlbumFile(StorageId storage, const FileId &fileId) {
         std::scoped_lock lk(g_mutex);
         return CopyAlbumFileImpl(storage, fileId);
+    }
+
+    Result GetAlbumFileSize(u64 *out, const FileId &fileId) {
+        std::scoped_lock lk(g_mutex);
+        return GetAlbumFileSizeImpl(out, fileId);
     }
 
     Result SaveAlbumScreenShotFile(const u8 *buffer, u64 size, const FileId &fileId) {

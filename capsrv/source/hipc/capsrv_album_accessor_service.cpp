@@ -37,14 +37,14 @@ namespace ams::capsrv {
         return impl::IsAlbumMounted(out.GetPointer(), storage);
     }
 
-    Result AlbumAccessorService::GetAlbumUsage(sf::Out<CapsAlbumUsage2> out, StorageId storage) {
+    Result AlbumAccessorService::GetAlbumUsage(sf::Out<CapsAlbumUsage2> usage, StorageId storage) {
         WriteLogFile("Accessor", "GetAlbumUsage: storage(%hhd)", storage);
-        return ResultSuccess();
+        return impl::GetAlbumUsage(usage.GetPointer(), storage);
     }
 
     Result AlbumAccessorService::GetAlbumFileSize(sf::Out<u64> out, const FileId &fileId) {
         WriteLogFile("Accessor", "GetAlbumFileSize: fileId(%s)", fileId.AsString());
-        return ResultSuccess();
+        return impl::GetAlbumFileSize(out.GetPointer(), fileId);
     }
 
     Result AlbumAccessorService::LoadAlbumFileThumbnail(sf::OutBuffer image, sf::Out<u64> out, const FileId &fileId) {
@@ -84,17 +84,17 @@ namespace ams::capsrv {
 
     Result AlbumAccessorService::GetAlbumUsage3(sf::Out<CapsAlbumUsage3> usage, StorageId storage) {
         WriteLogFile("Accessor", "GetAlbumUsage3: storage(%d)", storage);
-        return ResultSuccess();
+        return impl::GetAlbumUsage3(usage.GetPointer(), storage);
     }
 
     Result AlbumAccessorService::GetAlbumMountResult(StorageId storage) {
         WriteLogFile("Accessor", "GetAlbumMountResult: storage(%d)", storage);
-        return ResultSuccess();
+        return impl::MountAlbum(storage);
     }
 
     Result AlbumAccessorService::GetAlbumUsage16(sf::Out<AlbumUsage16> usage, StorageId storage, u8 flags) {
         WriteLogFile("Accessor", "GetAlbumUsage16: storage(%hhd), flags(%hhd)", storage, flags);
-        return ResultSuccess();
+        return impl::GetAlbumUsage16(usage.GetPointer(), storage, flags);
     }
 
     Result AlbumAccessorService::GetMinMaxAppletId(sf::OutNonSecureBuffer minMax, sf::Out<bool> success) {
@@ -119,7 +119,7 @@ namespace ams::capsrv {
     }
 
     //Result AlbumAccessorService::SaveEditedScreenShot
-    //Result GetLastOverlayThumbnail(void *ptr, u64 size, FileId *fileId, bool isMovie)
+
     Result AlbumAccessorService::GetLastOverlayScreenShotThumbnail(sf::OutBuffer buffer, sf::Out<FileId> out, sf::Out<u64> size) {
         WriteLogFile("Accessor", "GetLastOverlayScreenShotThumbnail: bufferSize(%ld)", buffer.GetSize());
         return ovl::GetLastOverlayThumbnail(buffer.GetPointer(), buffer.GetSize(), out.GetPointer(), size.GetPointer(), false);
@@ -137,7 +137,7 @@ namespace ams::capsrv {
 
     Result AlbumAccessorService::GetRequiredStorageSpaceSizeToCopyAll(sf::Out<u64> out, StorageId dst, StorageId src) {
         WriteLogFile("Accessor", "GetRequiredStorageSpaceSizeToCopyAll: dst(%hhd), src(%hhd)", dst, src);
-        return ResultSuccess();
+        return impl::GetRequiredStorageSpaceSizeToCopyAll(out.GetPointer(), dst, src);
     }
 
     Result AlbumAccessorService::LoadAlbumScreenShotThumbnailImageEx0(sf::Out<CapsScreenShotAttribute> attrs, sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
@@ -157,17 +157,17 @@ namespace ams::capsrv {
 
     Result AlbumAccessorService::ForceAlbumUnmounted(StorageId storage) {
         WriteLogFile("Accessor", "ForceAlbumUnmounted: storage(%hhd)", storage);
-        return ResultSuccess();
+        return impl::UnmountAlbum(storage);
     }
 
     Result AlbumAccessorService::ResetAlbumMountStatus(StorageId storage) {
         WriteLogFile("Accessor", "ResetAlbumMountStatus: storage(%hhd)", storage);
-        return ResultSuccess();
+        return impl::MountAlbum(storage);
     }
 
     Result AlbumAccessorService::RefreshAlbumCache(StorageId storage) {
         WriteLogFile("Accessor", "RefreshAlbumCache: storage(%hhd)", storage);
-        return ResultSuccess();
+        return impl::RefreshAlbumCache(storage);
     }
 
     Result AlbumAccessorService::GetAlbumCache(sf::Out<CapsAlbumCache> cache, StorageId storage) {
@@ -185,7 +185,7 @@ namespace ams::capsrv {
         return control::GetAlbumEntryFromApplicationAlbumEntryAruid(out.GetPointer(), &appEntry, aruid.GetValue().value);
     }
 
-    Result AlbumAccessorService::SetInternalErrorConversionEnabled(const bool enabled) {
+    Result AlbumAccessorService::SetInternalErrorConversionEnabled(bool enabled) {
         WriteLogFile("Accessor", "SetInternalErrorConversionEnabled: enabled(%s)", enabled ? "true" : "false");
         return ResultSuccess();
     }

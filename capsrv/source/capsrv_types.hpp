@@ -76,7 +76,7 @@ namespace ams::capsrv {
     static_assert(sizeof(FileId) == sizeof(CapsAlbumFileId));
 
     struct Entry {
-        u64 size;
+        s64 size;
         FileId fileId;
 
         const char *AsString() const;
@@ -98,7 +98,7 @@ namespace ams::capsrv {
             } v0;
 
             struct {
-                u64 size;
+                s64 size;
                 u64 hash;
                 DateTime datetime;
                 u8 storage;

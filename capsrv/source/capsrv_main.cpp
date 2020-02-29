@@ -213,6 +213,25 @@ int main(int argc, char **argv) {
     TEST(impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie), count, 6);
     TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie), count, 0);
 
+    CapsAlbumUsage2 u2;
+    RUN(impl::GetAlbumUsage(&u2, StorageId::Sd));
+    for (auto &usage : u2.usages) {
+        printf("count: %2ld, size: %8ld, %d, %d\n", usage.count, usage.size, usage.flags, usage.file_contents);
+    }
+    printf("\n");
+    CapsAlbumUsage3 u3;
+    RUN(impl::GetAlbumUsage3(&u3, StorageId::Sd));
+    for (auto &usage : u3.usages) {
+        printf("count: %2ld, size: %8ld, %d, %d\n", usage.count, usage.size, usage.flags, usage.file_contents);
+    }
+    printf("\n");
+    CapsAlbumUsage16 u16;
+    RUN(impl::GetAlbumUsage16(&u16, StorageId::Sd, 0xff));
+    for (auto &usage : u16.usages) {
+        printf("count: %2ld, size: %8ld, %d, %d\n", usage.count, usage.size, usage.flags, usage.file_contents);
+    }
+    printf("\n");
+
     Entry entries[10] = {0};
 
     TEST(impl::GetAlbumFileList(entries, 10, &count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot), count, 6);

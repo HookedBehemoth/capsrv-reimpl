@@ -3,18 +3,26 @@
 
 namespace ams::capsrv::impl {
 
+    /* Query operations. */
     Result GetAlbumFileCount(u64 *outCount, StorageId storage, u8 flags);
     Result GetAlbumFileList(void *ptr, u64 size, u64 *outCount, StorageId storage, u8 flags);
+    Result RefreshAlbumCache(StorageId storage);
+    Result GetRequiredStorageSpaceSizeToCopyAll(u64 *out, StorageId dst, StorageId src);
+    Result GetAlbumUsage(CapsAlbumUsage2 *usage, StorageId storage);
+    Result GetAlbumUsage3(CapsAlbumUsage3 *usage, StorageId storage);
+    Result GetAlbumUsage16(CapsAlbumUsage16 *usage, StorageId storage, u8 flags);
 
-    Result DeleteAlbumFile(const FileId &fileId);
-    Result CopyAlbumFile(StorageId storage, const FileId &fileId);
+    Result GetAlbumCache(CapsAlbumCache *out, StorageId storage, ContentType type);
     Result GetAutoSavingStorage(StorageId *storage);
 
+    /* FS modifiers. */
     Result IsAlbumMounted(bool *out, StorageId storage);
     Result MountAlbum(StorageId storage);
     Result UnmountAlbum(StorageId storage);
 
-    Result GetAlbumCache(CapsAlbumCache *out, StorageId storage, ContentType type);
+    Result DeleteAlbumFile(const FileId &fileId);
+    Result CopyAlbumFile(StorageId storage, const FileId &fileId);
+    Result GetAlbumFileSize(u64 *out, const FileId &fileId);
 
     Result SaveAlbumScreenShotFile(const u8 *buffer, u64 size, const FileId &fileId);
 
