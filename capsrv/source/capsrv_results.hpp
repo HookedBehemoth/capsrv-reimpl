@@ -34,9 +34,10 @@ namespace ams::capsrv {
     R_DEFINE_ERROR_RESULT(InvalidContentType,               14);
 
     R_DEFINE_ERROR_RESULT(FailedToMountImageDirectory,      21);
-
-    R_DEFINE_ERROR_RESULT(FileTooBig,                       23);
+    R_DEFINE_ERROR_RESULT(ReachedSizeLimit,                 22);
+    R_DEFINE_ERROR_RESULT(FileTooBig,                       23); /// ? see DeleteAlbumFileByAruid
     R_DEFINE_ERROR_RESULT(InvalidFileData,                  24);
+    R_DEFINE_ERROR_RESULT(ReachedCountLimit,                25);
 
     R_DEFINE_ERROR_RESULT(InvalidThumbnail,                 26);
 

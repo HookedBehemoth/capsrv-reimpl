@@ -12,6 +12,7 @@ namespace ams::capsrv::config {
     bool SupportsType(ContentType type);
     bool StorageValid(StorageId storage);
     u64 GetMax(StorageId storage, ContentType type);
+    s64 GetMaxFileSize(StorageId storage, ContentType type);
     const char *GetCustomDirectoryPath();
 
     void print();

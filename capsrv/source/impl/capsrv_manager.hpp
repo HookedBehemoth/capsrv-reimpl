@@ -26,6 +26,12 @@ namespace ams::capsrv::impl {
 
     Result SaveAlbumScreenShotFile(const u8 *buffer, u64 size, const FileId &fileId);
 
+    /* Application Accessor. */
+    Result DeleteAlbumFileByAruid(ContentType type, const ApplicationEntry &appEntry, u64 aruid);
+    Result DeleteAlbumFileByAruidForDebug(const ApplicationEntry &appEntry, u64 aruid);
+    Result GetAlbumFileSizeByAruid(u64 *size, const ApplicationEntry &appEntry, u64 aruid);
+    Result PrecheckToCreateContentsByAruid(ContentType type, u64 unk);
+
     /* Load Image. */
     Result LoadAlbumFile(void *ptr, u64 size, u64 *outSize, const FileId &fileId);
     Result LoadAlbumFileThumbnail(void *ptr, u64 size, u64 *out, const FileId &fileId);
@@ -42,7 +48,7 @@ namespace ams::capsrv::impl {
     Result LoadAlbumScreenShotImageEx1(LoadAlbumScreenShotImageOutput *out, void *img, u64 img_size, void *work, u64 work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
     Result LoadAlbumScreenShotThumbnailImageEx1(LoadAlbumScreenShotImageOutput *out, void *img, u64 img_size, void *work, u64 work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
 
-    Result LoadAlbumScreenShotImageByAruid(LoadAlbumScreenShotImageOutputForApplication *out, void *img, u64 img_size, void *work, u64 work_size, u64 aruid, const CapsApplicationAlbumFileEntry &appFileEntry, const CapsScreenShotDecodeOption &opts);
-    Result LoadAlbumScreenShotThumbnailImageByAruid(LoadAlbumScreenShotImageOutputForApplication *out, void *img, u64 img_size, void *work, u64 work_size, u64 aruid, const CapsApplicationAlbumFileEntry &appFileEntry, const CapsScreenShotDecodeOption &opts);
+    Result LoadAlbumScreenShotImageByAruid(LoadAlbumScreenShotImageOutputForApplication *out, void *img, u64 img_size, void *work, u64 work_size, u64 aruid, const ApplicationEntry &appFileEntry, const CapsScreenShotDecodeOption &opts);
+    Result LoadAlbumScreenShotThumbnailImageByAruid(LoadAlbumScreenShotImageOutputForApplication *out, void *img, u64 img_size, void *work, u64 work_size, u64 aruid, const ApplicationEntry &appFileEntry, const CapsScreenShotDecodeOption &opts);
 
 }

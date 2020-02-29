@@ -14,17 +14,6 @@
 
 namespace ams::capsrv::impl {
 
-    constexpr s64 maxFileSize[2][2] = {
-        [StorageId::Nand] = {
-            [ContentType::Screenshot] = 0x7D000,
-            [ContentType::Movie] = 0x80000000,
-        },
-        [StorageId::Sd] = {
-            [ContentType::Screenshot] = 0x7D000,
-            [ContentType::Movie] = 0x80000000,
-        },
-    };
-
     namespace {
 
         ContentStorage g_storage;
@@ -53,7 +42,8 @@ namespace ams::capsrv::impl {
             R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
             R_UNLESS(config::SupportsType(type), capsrv::ResultInvalidContentType());
 
-            *out = g_storage.cache[storage][type];
+            out->count = g_storage.cache[storage][type].count;
+            out->unk_x8 = 0;
 
             return ResultSuccess();
         }
@@ -158,6 +148,7 @@ namespace ams::capsrv::impl {
         bool cb_cache(const Entry &entry, void *ptr) {
             CacheObject *user = (CacheObject *)ptr;
             user->cache[entry.fileId.type].count++;
+            user->cache[entry.fileId.type].unk_x8 += entry.size;
             return true;
         }
 
@@ -376,7 +367,7 @@ namespace ams::capsrv::impl {
             s64 size;
             R_TRY(fsFileGetSize(&file, &size));
 
-            R_UNLESS(maxFileSize[fileId.storage][fileId.type] >= size, capsrv::ResultFileTooBig());
+            R_UNLESS(config::GetMaxFileSize(fileId.storage, fileId.type) >= size, capsrv::ResultFileTooBig());
 
             *out = static_cast<u64>(size);
             return ResultSuccess();
@@ -425,7 +416,7 @@ namespace ams::capsrv::impl {
             R_TRY(fsFileGetSize(&file, &size));
 
             R_UNLESS(size > 0, capsrv::ResultInvalidFileData());
-            R_UNLESS(size <= maxFileSize[fileId.storage][0], capsrv::ResultFileTooBig());
+            R_UNLESS(size <= config::GetMaxFileSize(fileId.storage, fileId.type), capsrv::ResultFileTooBig());
             R_UNLESS(static_cast<u64>(size) <= jpeg_size, capsrv::ResultInvalidArgument());
 
             R_TRY(fsFileRead(&file, 0, jpeg, size, 0, out_size));
@@ -510,7 +501,7 @@ namespace ams::capsrv::impl {
             R_TRY(fsFileGetSize(&file, &size));
 
             R_UNLESS(size > 0, capsrv::ResultInvalidFileData());
-            R_UNLESS(size <= maxFileSize[fileId.storage][0], capsrv::ResultFileTooBig());
+            R_UNLESS(size <= config::GetMaxFileSize(fileId.storage, fileId.type), capsrv::ResultFileTooBig());
 
             if (size > 0x11000)
                 size = 0x11000;
@@ -763,6 +754,52 @@ namespace ams::capsrv::impl {
         return SaveAlbumScreenShotFileImpl(buffer, size, fileId);
     }
 
+    /* Application Accessor. */
+    Result DeleteAlbumFileByAruid(ContentType type, const ApplicationEntry &appEntry, u64 aruid) {
+        Entry entry;
+        R_UNLESS(type == ContentType::ExtraMovie, capsrv::ResultInvalidContentType());
+        R_TRY(control::GetAlbumEntryFromApplicationAlbumEntryAruid(&entry, &appEntry, aruid));
+        R_UNLESS(type == ContentType::ExtraMovie, capsrv::ResultFileTooBig());
+
+        std::scoped_lock lk(g_mutex);
+        return DeleteAlbumFileImpl(entry.fileId);
+    }
+
+    Result DeleteAlbumFileByAruidForDebug(const ApplicationEntry &appEntry, u64 aruid) {
+        /* TODO: IsDebug? */
+        Entry entry;
+        R_TRY(control::GetAlbumEntryFromApplicationAlbumEntryAruid(&entry, &appEntry, aruid));
+
+        std::scoped_lock lk(g_mutex);
+        return DeleteAlbumFileImpl(entry.fileId);
+    }
+
+    Result GetAlbumFileSizeByAruid(u64 *size, const ApplicationEntry &appEntry, u64 aruid) {
+        Entry entry;
+        R_TRY(control::GetAlbumEntryFromApplicationAlbumEntryAruid(&entry, &appEntry, aruid));
+        u64 tmp_size;
+        {
+            std::scoped_lock lk(g_mutex);
+            R_TRY(GetAlbumFileSizeImpl(&tmp_size, entry.fileId));
+        }
+        *size = tmp_size;
+        return ResultSuccess();
+    }
+
+    /* TODO: fix. */
+    Result PrecheckToCreateContentsByAruid(ContentType type, u64 size) {
+        std::scoped_lock lk(g_mutex);
+        {
+            StorageId storage;
+            R_TRY(GetAutoSavingStorageImpl(&storage));
+            R_UNLESS(config::GetMax(storage, type) >= g_storage.cache[storage][type].count, capsrv::ResultReachedCountLimit());
+            s64 freeSpace;
+            R_TRY(fsFsGetFreeSpace(&g_fsFs[storage], "/", &freeSpace));
+            R_UNLESS(static_cast<u64>(freeSpace) >= g_storage.cache[storage][type].unk_x8 + size, capsrv::ResultReachedSizeLimit());
+        }
+        return ResultSuccess();
+    }
+
     /* Load file. */
     Result LoadAlbumFile(void *ptr, u64 size, u64 *outSize, const FileId &fileId) {
         std::scoped_lock lk(g_mutex);
@@ -913,12 +950,12 @@ namespace ams::capsrv::impl {
         return rc;
     }
 
-    Result LoadAlbumScreenShotImageByAruid(LoadAlbumScreenShotImageOutputForApplication *out, void *img, u64 img_size, void *work, u64 work_size, u64 aruid, const CapsApplicationAlbumFileEntry &appFileEntry, const CapsScreenShotDecodeOption &opts) {
+    Result LoadAlbumScreenShotImageByAruid(LoadAlbumScreenShotImageOutputForApplication *out, void *img, u64 img_size, void *work, u64 work_size, u64 aruid, const ApplicationEntry &appEntry, const CapsScreenShotDecodeOption &opts) {
         Result rc{};
         Dimensions dims{};
         CapsScreenShotAttribute attr{};
         Entry entry{};
-        control::GetAlbumEntryFromApplicationAlbumEntryAruid(&entry, (ApplicationEntry *)&appFileEntry.entry, aruid);
+        R_TRY(control::GetAlbumEntryFromApplicationAlbumEntryAruid(&entry, &appEntry, aruid));
         {
             std::scoped_lock lk(g_mutex);
             rc = LoadScreenShotImage(&dims, &attr, nullptr, &out->appdata, img, img_size, work, work_size, entry.fileId, opts);
@@ -947,12 +984,12 @@ namespace ams::capsrv::impl {
         }
         return rc;
     }
-    Result LoadAlbumScreenShotThumbnailImageByAruid(LoadAlbumScreenShotImageOutputForApplication *out, void *img, u64 img_size, void *work, u64 work_size, u64 aruid, const CapsApplicationAlbumFileEntry &appFileEntry, const CapsScreenShotDecodeOption &opts) {
+    Result LoadAlbumScreenShotThumbnailImageByAruid(LoadAlbumScreenShotImageOutputForApplication *out, void *img, u64 img_size, void *work, u64 work_size, u64 aruid, const ApplicationEntry &appEntry, const CapsScreenShotDecodeOption &opts) {
         Result rc{};
         Dimensions dims{};
         CapsScreenShotAttribute attr{};
         Entry entry{};
-        control::GetAlbumEntryFromApplicationAlbumEntryAruid(&entry, (ApplicationEntry *)&appFileEntry.entry, aruid);
+        R_TRY(control::GetAlbumEntryFromApplicationAlbumEntryAruid(&entry, &appEntry, aruid));;
         {
             std::scoped_lock lk(g_mutex);
             rc = LoadScreenShotThumbnail(&dims, &attr, nullptr, &out->appdata, img, img_size, work, work_size, entry.fileId, opts);

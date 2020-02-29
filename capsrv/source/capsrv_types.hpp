@@ -110,6 +110,13 @@ namespace ams::capsrv {
     };
     static_assert(sizeof(ApplicationEntry) == sizeof(CapsApplicationAlbumEntry));
 
+    struct ApplicationFileEntry {
+        ApplicationEntry entry;
+        DateTime datetime;
+        u64 unk_x28;
+    };
+    static_assert(sizeof(ApplicationFileEntry) == sizeof(CapsApplicationAlbumFileEntry));
+
     struct Dimensions {
         u64 width;
         u64 height;

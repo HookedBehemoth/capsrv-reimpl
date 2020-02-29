@@ -6,6 +6,17 @@ namespace ams::capsrv::config {
 
     namespace {
 
+        constexpr s64 maxFileSize[2][2] = {
+            [StorageId::Nand] = {
+                [ContentType::Screenshot] = 0x7D000,
+                [ContentType::Movie] = 0x80000000,
+            },
+            [StorageId::Sd] = {
+                [ContentType::Screenshot] = 0x7D000,
+                [ContentType::Movie] = 0x80000000,
+            },
+        };
+
         bool defaultDirectory = true;
         //bool debugMode = false;
         bool screenshotSupport = true;
@@ -99,6 +110,10 @@ namespace ams::capsrv::config {
                 }
         }
         return 0;
+    }
+
+    s64 GetMaxFileSize(StorageId storage, ContentType type) {
+        return maxFileSize[storage][type];
     }
 
     const char *GetCustomDirectoryPath() {
