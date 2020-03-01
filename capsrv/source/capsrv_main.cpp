@@ -207,11 +207,11 @@ int main(int argc, char **argv) {
     u64 count;
 
     TEST(impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot), count, 6);
-    TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot), count, 0);
+    TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot), count, 5);
     TEST(impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_Movie), count, 0);
-    TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_Movie), count, 0);
+    TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_Movie), count, 1);
     TEST(impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie), count, 6);
-    TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie), count, 0);
+    TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie), count, 6);
 
     CapsAlbumUsage2 u2;
     RUN(impl::GetAlbumUsage(&u2, StorageId::Sd));
@@ -237,66 +237,33 @@ int main(int argc, char **argv) {
     TEST(impl::GetAlbumFileList(entries, 10, &count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot), count, 6);
     TEST(impl::GetAlbumFileList(entries, 10, &count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot), count, 5);
 
-    Entry &ent = entries[0];
-    printf("%s\n", ent.AsString());
-
-    u64 path_length = ent.fileId.GetPathLength();
-    char path[path_length];
-    ent.fileId.GetFilePath(path, path_length);
-
-    printf("%s\n", path);
-
-    u64 size = ent.size;
-    u8 *buffer = (u8 *)malloc(size);
-    u64 readSize = 0;
-    RUN(impl::LoadAlbumFile(buffer, size, &readSize, ent.fileId));
-    printf("%ld\n", readSize);
-    for (int i = 0; i < 0x10; i++)
-        printf("%02X", buffer[i]);
-    printf("\n");
-
-    RUN(impl::LoadAlbumFileThumbnail(buffer, size, &readSize, ent.fileId));
-    printf("%ld\n", readSize);
-    for (int i = 0; i < 0x10; i++)
-        printf("%02X", buffer[i]);
-    printf("\n");
-
-    u64 thumbSize = 320*180*4;
-    u8 *img = (u8 *)malloc(thumbSize);
-    u64 width = 0, height = 0;
-    RUN(impl::LoadAlbumScreenShotThumbnailImage(&width, &height, img, thumbSize, buffer, readSize, ent.fileId));
-    printf("%ld:%ld\n", width, height);
-    for (int i = 0; i < 0x10; i++)
-        printf("%02X", buffer[i]);
-    printf("\n");
-    for (int i = 0; i < 0x10; i++)
-        printf("%02X", img[i]);
-    printf("\n");
-
     /* Can't test exact equlity since datetime is... time. */
     FileId fileId = {0};
-    RUN(control::GenerateCurrentAlbumFileId(&fileId, 0x1337, ContentType::Screenshot));
-    RUN(control::GenerateCurrentAlbumFileId(&fileId, 0x1337, ContentType::Movie));
+    u64 appId = 0x0100152000022000;
+    u64 aruid = 0x420;
+    RUN(control::GenerateCurrentAlbumFileId(&fileId, appId, ContentType::Screenshot));
+    RUN(control::GenerateCurrentAlbumFileId(&fileId, appId, ContentType::Movie));
 
-    FAIL(control::CheckApplicationIdRegistered(0x1337));
-    RUN(control::RegisterAppletResourceUserId(0x420, 0x1337));
-    RUN(control::CheckApplicationIdRegistered(0x1337));
-    u64 appId;
-    TEST(control::GetApplicationIdFromAruid(&appId, 0x420), appId, 0x1337);
+    FAIL(control::CheckApplicationIdRegistered(appId));
+    RUN(control::RegisterAppletResourceUserId(aruid, appId));
+    RUN(control::CheckApplicationIdRegistered(appId));
+    u64 tmpId;
+    TEST(control::GetApplicationIdFromAruid(&tmpId, aruid), tmpId, appId);
 
     Entry entry = {0x1337, fileId};
     Entry exp = entry;
     ApplicationEntry appEntry;
-    RUN(control::GenerateApplicationAlbumEntry(&appEntry, entry, 0x1337));
-    TEST(control::GetAlbumEntryFromApplicationAlbumEntry(&exp, &appEntry, 0x1337), exp, entry);
+    RUN(control::GenerateApplicationAlbumEntry(&appEntry, entry, appId));
+    TEST(control::GetAlbumEntryFromApplicationAlbumEntry(&exp, &appEntry, appId), exp, entry);
 
-    FAIL(control::SetShimLibraryVersion(0, 0x420));
-    RUN(control::SetShimLibraryVersion(1, 0x420));
-    RUN(control::GenerateApplicationAlbumEntry(&appEntry, entry, 0x1337));
-    TEST(control::GetAlbumEntryFromApplicationAlbumEntry(&entry, &appEntry, 0x1337), entry, exp);
-    TEST(control::GetAlbumEntryFromApplicationAlbumEntryAruid(&entry, &appEntry, 0x420), entry, exp);
+    FAIL(control::SetShimLibraryVersion(0, aruid));
+    RUN(control::SetShimLibraryVersion(1, aruid));
 
-    RUN(control::UnregisterAppletResourceUserId(0x420, 0x1337));
+    RUN(control::GenerateApplicationAlbumEntry(&appEntry, entry, appId));
+    TEST(control::GetAlbumEntryFromApplicationAlbumEntry(&entry, &appEntry, appId), entry, exp);
+    TEST(control::GetAlbumEntryFromApplicationAlbumEntryAruid(&entry, &appEntry, aruid), entry, exp);
+
+    RUN(control::UnregisterAppletResourceUserId(aruid, appId));
 
     RUN(impl::UnmountAlbum(StorageId::Nand));
     RUN(impl::UnmountAlbum(StorageId::Sd));
@@ -310,5 +277,5 @@ int main(int argc, char **argv) {
     return 0;
 }
 #else
-    static_assert(false, "undefined state");
+static_assert(false, "undefined state");
 #endif

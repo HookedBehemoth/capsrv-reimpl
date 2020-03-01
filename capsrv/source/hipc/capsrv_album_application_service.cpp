@@ -47,22 +47,22 @@ namespace ams::capsrv {
         return impl::PrecheckToCreateContentsByAruid(type, size);
     }
 
-    Result AlbumApplicationService::GetAlbumFileList1AafeAruidDeprecated(sf::OutBuffer buffer, sf::Out<u64> out, const sf::ClientAppletResourceUserId &aruid, ContentType type, const DateTime &start, const DateTime &end) {
+    Result AlbumApplicationService::GetAlbumFileList1AafeAruidDeprecated(sf::OutBuffer buffer, sf::Out<u64> out, const sf::ClientAppletResourceUserId &aruid, ContentType type, DateTime start, DateTime end) {
         WriteLogFile("Application", "GetAlbumFileList1AafeAruidDeprecated: bufferSize(%ld), aruid(%ld), type(%hhd), start(%s), end(%s)", buffer.GetSize(), static_cast<u64>(aruid.GetValue()), type, start.AsString(), end.AsString());
-        return ResultSuccess();
+        return impl::GetAlbumFileListAafeAruid(buffer.GetPointer(), buffer.GetSize(), out.GetPointer(), start, end, type, static_cast<u64>(aruid.GetValue()));
     }
 
-    Result AlbumApplicationService::GetAlbumFileList2AafeUidAruidDeprecated(sf::OutBuffer buffer, sf::Out<u64> out, const sf::ClientAppletResourceUserId &aruid, ContentType type, const DateTime &start, const DateTime &end, AccountUid uid) {
+    Result AlbumApplicationService::GetAlbumFileList2AafeUidAruidDeprecated(sf::OutBuffer buffer, sf::Out<u64> out, const sf::ClientAppletResourceUserId &aruid, ContentType type, DateTime start, DateTime end, const AccountUid &uid) {
         WriteLogFile("Application", "GetAlbumFileList2AafeUidAruidDeprecated: bufferSize(%ld), aruid(%ld), type(%hhd), start(%s), end(%s), uuid(%ld)", buffer.GetSize(), static_cast<u64>(aruid.GetValue()), type, start.AsString(), end.AsString(), uid);
         return ResultSuccess();
     }
 
-    Result AlbumApplicationService::GetAlbumFileList3AaeAruid(sf::OutBuffer buffer, sf::Out<u64> out, const sf::ClientAppletResourceUserId &aruid, ContentType type, const DateTime &start, const DateTime &end) {
+    Result AlbumApplicationService::GetAlbumFileList3AaeAruid(sf::OutBuffer buffer, sf::Out<u64> out, const sf::ClientAppletResourceUserId &aruid, ContentType type, DateTime start, DateTime end) {
         WriteLogFile("Application", "GetAlbumFileList3AaeAruid: bufferSize(%ld), aruid(%ld), type(%hhd), start(%s), end(%s)", buffer.GetSize(), static_cast<u64>(aruid.GetValue()), type, start.AsString(), end.AsString());
-        return ResultSuccess();
+        return impl::GetAlbumFileListAaeAruid(buffer.GetPointer(), buffer.GetSize(), out.GetPointer(), start, end, type, static_cast<u64>(aruid.GetValue()));
     }
 
-    Result AlbumApplicationService::GetAlbumFileList4AaeUidAruid(sf::OutBuffer buffer, sf::Out<u64> out, const sf::ClientAppletResourceUserId &aruid, ContentType type, const DateTime &start, const DateTime &end, AccountUid uid) {
+    Result AlbumApplicationService::GetAlbumFileList4AaeUidAruid(sf::OutBuffer buffer, sf::Out<u64> out, const sf::ClientAppletResourceUserId &aruid, ContentType type, DateTime start, DateTime end, const AccountUid &uid) {
         WriteLogFile("Application", "GetAlbumFileList2AafeUidAruidDeprecated: bufferSize(%ld), aruid(%ld), type(%hhd), start(%s), end(%s), uuid(%ld)", buffer.GetSize(), static_cast<u64>(aruid.GetValue()), type, start.AsString(), end.AsString(), uid);
         return ResultSuccess();
     }

@@ -133,6 +133,40 @@ namespace ams::capsrv::control {
         return capsrv::ResultApplicationNotRegistered();
     }
 
+    Result EncryptAafeBuffer(ApplicationFileEntry *appFileEntry, u64 count, u64 aruid) {
+        std::scoped_lock lk(g_mutex);
+        /* Find own resource. */
+        FIND_RESOURCE(aruid, aruid) {
+            for (u64 i = 0; i < count; i++) {
+                /* Generate ApplicationEntry. */
+                if (res.version == 0) {
+                    crypto::aes256::EncryptV0(&appFileEntry[i].entry, (const Entry *)&appFileEntry[i].entry, (u8 *)res.key);
+                } else {
+                    R_TRY(crypto::aes256::EncryptV1(&appFileEntry[i].entry, (const Entry *)&appFileEntry[i].entry, res.version));
+                }
+            }
+            return ResultSuccess();
+        }
+        return capsrv::ResultApplicationNotRegistered();
+    }
+
+    Result EncryptAaeBuffer(ApplicationEntry *appEntry, u64 count, u64 aruid) {
+        std::scoped_lock lk(g_mutex);
+        /* Find own resource. */
+        FIND_RESOURCE(aruid, aruid) {
+            for (u64 i = 0; i < count; i++) {
+                /* Generate ApplicationEntry. */
+                if (res.version == 0) {
+                    crypto::aes256::EncryptV0(&appEntry[i], (const Entry *)&appEntry[i], (u8 *)res.key);
+                } else {
+                    R_TRY(crypto::aes256::EncryptV1(&appEntry[i], (const Entry *)&appEntry[i], res.version));
+                }
+            }
+            return ResultSuccess();
+        }
+        return capsrv::ResultApplicationNotRegistered();
+    }
+
     Result GetAlbumEntryFromApplicationAlbumEntry(Entry *out, const ApplicationEntry *src, u64 applicationId) {
         std::scoped_lock lk(g_mutex);
         /* Find own resource. */

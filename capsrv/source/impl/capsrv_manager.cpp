@@ -89,7 +89,7 @@ namespace ams::capsrv::impl {
         Result UnmountAlbumImpl(StorageId storage) {
             R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
             R_UNLESS(g_mountStatus[storage % 2], ResultSuccess());
-            /* TODO: Close movie stream. */
+            /* TODO: Close movie streams. */
             return UnmountImageDirectory(storage);
         }
 
@@ -104,57 +104,6 @@ namespace ams::capsrv::impl {
             R_UNLESS(MountAlbumImpl(storage).IsSuccess(), capsrv::ResultFailedToMountImageDirectory());
             *out = storage;
             return ResultSuccess();
-        }
-
-        struct CountObject {
-            u64 count;
-            u8 flags;
-        };
-
-        bool cb_count(const Entry &entry, void *ptr) {
-            CountObject *user = (CountObject *)ptr;
-            if ((user->flags & BIT(0) && (entry.fileId.type % 2 == ContentType::Screenshot)) ||
-                (user->flags & BIT(1) && (entry.fileId.type % 2 == ContentType::Movie))) {
-                user->count++;
-            }
-            return true;
-        }
-
-        struct ListObject {
-            Entry *entries;
-            u64 size;
-            u64 count;
-            u8 flags;
-        };
-
-        bool cb_list(const Entry &entry, void *ptr) {
-            ListObject *user = (ListObject *)ptr;
-            if (user->size == user->count)
-                return false;
-
-            if ((user->flags & BIT(0) && (entry.fileId.type % 2 == ContentType::Screenshot)) ||
-                (user->flags & BIT(1) && (entry.fileId.type % 2 == ContentType::Movie))) {
-                *user->entries = entry;
-                user->entries++;
-                user->count++;
-            }
-            return true;
-        }
-
-        struct CacheObject {
-            CapsAlbumCache cache[4];
-        };
-
-        bool cb_cache(const Entry &entry, void *ptr) {
-            CacheObject *user = (CacheObject *)ptr;
-            user->cache[entry.fileId.type].count++;
-            user->cache[entry.fileId.type].unk_x8 += entry.size;
-            return true;
-        }
-
-        bool cb_required_size(const Entry &entry, void *ptr) {
-            *(s64 *)ptr += entry.size;
-            return true;
         }
 
         Result _fsFsOpenCommon(FsFileSystem *fs, const char *path, size_t path_size, u32 flags, Service *out, u32 cmd_id) {
@@ -174,7 +123,7 @@ namespace ams::capsrv::impl {
         }
 
         /* TODO: Extra contents. */
-        Result ProcessImageDirectory(StorageId storage, std::function<bool(const Entry &, void *)> callback, void *user) {
+        Result ProcessImageDirectory(StorageId storage, std::function<bool(const Entry &)> callback) {
             char tmp_path[0x10] = "/";
             /* Open root directory. Only read directories. */
             FsDir rootDir;
@@ -283,7 +232,7 @@ namespace ams::capsrv::impl {
                                 .fileId = fileId,
                             };
                             if (R_SUCCEEDED(rc)) {
-                                R_UNLESS(callback(entry, user), ResultSuccess());
+                                R_UNLESS(callback(entry), ResultSuccess());
                             }
                         }
                     }
@@ -597,46 +546,141 @@ namespace ams::capsrv::impl {
     /* Query operations. */
     Result GetAlbumFileCount(u64 *outCount, StorageId storage, u8 flags) {
         R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
-        CountObject countObject = {
-            .count = 0,
-            .flags = flags,
-        };
+        u64 count = 0;
         {
             std::scoped_lock lk(g_mutex);
-            R_TRY(ProcessImageDirectory(storage, cb_count, &countObject));
+            R_TRY(ProcessImageDirectory(storage, [&count, flags](const Entry &entry) -> bool {
+                for (u8 i = 0; i < 4; i++) {
+                    if (flags & BIT(i) && entry.fileId.type == ContentType(i)) {
+                        count++;
+                        return true;
+                    }
+                }
+                return true;
+            }));
         }
-        *outCount = countObject.count;
+        *outCount = count;
         return ResultSuccess();
     }
 
     Result GetAlbumFileList(void *ptr, u64 size, u64 *outCount, StorageId storage, u8 flags) {
         R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
-        ListObject listObject = {
-            .entries = (Entry *)ptr,
-            .size = size,
-            .count = 0,
-            .flags = flags,
-        };
+        Entry *entries = static_cast<Entry *>(ptr);
+        u64 count = 0;
         {
             std::scoped_lock lk(g_mutex);
-            R_TRY(ProcessImageDirectory(storage, cb_list, &listObject));
+            R_TRY(ProcessImageDirectory(storage, [&](const Entry &entry) -> bool {
+                if (size == count)
+                    return false;
+
+                for (u8 i = 0; i < 4; i++) {
+                    if (flags & BIT(i) && entry.fileId.type == ContentType(i)) {
+                        *entries = entry;
+                        entries++;
+                        count++;
+                        return true;
+                    }
+                }
+
+                return true;
+            }));
         }
-        *outCount = listObject.count;
+        *outCount = count;
+        return ResultSuccess();
+    }
+
+    Result GetAlbumFileListAafeAruid(void *ptr, u64 size, u64 *outCount, DateTime start, DateTime end, ContentType type, u64 aruid) {
+        *outCount = 0;
+        R_UNLESS(type < 4, capsrv::ResultInvalidContentType());
+        R_UNLESS(type != ContentType::ExtraScreenshot, capsrv::ResultInvalidContentType());
+        u64 appId;
+        R_TRY(control::GetApplicationIdFromAruid(&appId, aruid));
+        ApplicationFileEntry *entries = static_cast<ApplicationFileEntry *>(ptr);
+        u64 count = 0;
+        {
+            std::scoped_lock lk(g_mutex);
+            for (u8 i = 0; i < 2; i++) {
+                StorageId storage = StorageId(i);
+                R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
+                R_TRY(ProcessImageDirectory(storage, [&](const Entry &entry) -> bool {
+                    if (size == count)
+                        return false;
+
+                    if (appId != entry.fileId.applicationId)
+                        return true;
+
+                    for (u8 i = 0; i < 4; i++) {
+                        if (BIT(type) & BIT(i) && entry.fileId.type == ContentType(i)) {
+                            entries[0].entry = *(ApplicationEntry *)&entry;
+                            entries[0].datetime = entry.fileId.datetime;
+                            entries[0].unk_x28 = 0;
+                            entries++;
+                            count++;
+                            return true;
+                        }
+                    }
+                    return true;
+                }));
+            }
+        }
+        R_TRY(control::EncryptAafeBuffer(static_cast<ApplicationFileEntry *>(ptr), count, aruid));
+        *outCount = count;
+        return ResultSuccess();
+    }
+
+    Result GetAlbumFileListAaeAruid(void *ptr, u64 size, u64 *outCount, DateTime start, DateTime end, ContentType type, u64 aruid) {
+        *outCount = 0;
+        R_UNLESS(type < 4, capsrv::ResultInvalidContentType());
+        R_UNLESS(type != ContentType::ExtraScreenshot, capsrv::ResultInvalidContentType());
+        u64 appId;
+        R_TRY(control::GetApplicationIdFromAruid(&appId, aruid));
+        ApplicationEntry *entries = static_cast<ApplicationEntry *>(ptr);
+        u64 count = 0;
+        {
+            std::scoped_lock lk(g_mutex);
+            for (u8 i = 0; i < 2; i++) {
+                StorageId storage = StorageId(i);
+                R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
+                R_TRY(ProcessImageDirectory(storage, [&](const Entry &entry) -> bool {
+                    if (size == count)
+                        return false;
+
+                    if (appId != entry.fileId.applicationId)
+                        return true;
+
+                    for (u8 i = 0; i < 4; i++) {
+                        if (BIT(type) & BIT(i) && entry.fileId.type == ContentType(i)) {
+                            *entries = *(ApplicationEntry *)&entry;
+                            entries++;
+                            count++;
+                            return true;
+                        }
+                    }
+                    return true;
+                }));
+            }
+        }
+        R_TRY(control::EncryptAaeBuffer(static_cast<ApplicationEntry *>(ptr), count, aruid));
+        *outCount = count;
         return ResultSuccess();
     }
 
     Result RefreshAlbumCache(StorageId storage) {
         R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
-        CacheObject cacheObject{};
+        CapsAlbumCache cache[4]{};
         {
             std::scoped_lock lk(g_mutex);
             R_TRY(MountAlbumImpl(storage));
-            R_TRY(ProcessImageDirectory(storage, cb_cache, &cacheObject));
+            R_TRY(ProcessImageDirectory(storage, [&cache](const Entry &entry) -> bool {
+                cache[entry.fileId.type].count++;
+                cache[entry.fileId.type].unk_x8 += entry.size;
+                return true;
+            }));
         }
-        g_storage.Set(storage, ContentType::Screenshot, cacheObject.cache[ContentType::Screenshot]);
-        g_storage.Set(storage, ContentType::Movie, cacheObject.cache[ContentType::Movie]);
-        g_storage.Set(storage, ContentType::ExtraScreenshot, cacheObject.cache[ContentType::ExtraScreenshot]);
-        g_storage.Set(storage, ContentType::ExtraMovie, cacheObject.cache[ContentType::ExtraMovie]);
+        g_storage.Set(storage, ContentType::Screenshot, cache[ContentType::Screenshot]);
+        g_storage.Set(storage, ContentType::Movie, cache[ContentType::Movie]);
+        g_storage.Set(storage, ContentType::ExtraScreenshot, cache[ContentType::ExtraScreenshot]);
+        g_storage.Set(storage, ContentType::ExtraMovie, cache[ContentType::ExtraMovie]);
         return ResultSuccess();
     }
 
@@ -652,46 +696,36 @@ namespace ams::capsrv::impl {
             std::scoped_lock lk(g_mutex);
             R_TRY(MountAlbumImpl(src));
             R_TRY(MountAlbumImpl(dst));
-            R_TRY(ProcessImageDirectory(src, cb_required_size, &requiredSize));
+            R_TRY(ProcessImageDirectory(src, [&requiredSize](const Entry &entry) -> bool {
+                requiredSize += entry.size;
+                return true;
+            }));
         }
         *out = requiredSize;
         return ResultSuccess();
     }
 
-    struct UsageObject {
-        CapsAlbumContentsUsage remains;
-        CapsAlbumContentsUsage usage[4];
-        u8 flags;
-    };
-
-    bool cb_usage(const Entry &entry, void *ptr) {
-        UsageObject *user = (UsageObject *)ptr;
-        auto type = entry.fileId.type;
-
-        auto &usage = (user->flags & BIT(type)) ? user->usage[type] : user->remains;
-        usage.count++;
-        usage.size += entry.size;
-        return true;
-    }
     Result GetAlbumUsageImpl(CapsAlbumContentsUsage *remains, CapsAlbumContentsUsage *usage, u8 usage_size, StorageId storage, u8 flags) {
         R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
-        UsageObject usageObject{
-            .remains{},
-            .usage{},
-            .flags = flags,
-        };
+        CapsAlbumContentsUsage tmp_remains{};
+        CapsAlbumContentsUsage tmp_usage[4]{};
         {
             std::scoped_lock lk(g_mutex);
-            R_TRY(ProcessImageDirectory(storage, cb_usage, &usageObject));
+            R_TRY(ProcessImageDirectory(storage, [&](const Entry &entry) -> bool {
+                CapsAlbumContentsUsage &usage = (flags & BIT(entry.fileId.type)) ? tmp_usage[entry.fileId.type] : tmp_remains;
+                usage.count++;
+                usage.size += entry.size;
+                return true;
+            }));
         }
         for (u8 i = 0; i < usage_size; i++) {
             usage[i] = {};
             if ((flags & BIT(i)) && (i < 4)) {
-                usage[i] = usageObject.usage[i];
+                usage[i] = tmp_usage[i];
                 usage[i].file_contents = i;
             }
         }
-        *remains = usageObject.remains;
+        *remains = tmp_remains;
         remains->flags = 2;
         return ResultSuccess();
     }
@@ -989,7 +1023,8 @@ namespace ams::capsrv::impl {
         Dimensions dims{};
         CapsScreenShotAttribute attr{};
         Entry entry{};
-        R_TRY(control::GetAlbumEntryFromApplicationAlbumEntryAruid(&entry, &appEntry, aruid));;
+        R_TRY(control::GetAlbumEntryFromApplicationAlbumEntryAruid(&entry, &appEntry, aruid));
+        ;
         {
             std::scoped_lock lk(g_mutex);
             rc = LoadScreenShotThumbnail(&dims, &attr, nullptr, &out->appdata, img, img_size, work, work_size, entry.fileId, opts);

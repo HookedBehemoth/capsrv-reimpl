@@ -6,6 +6,8 @@ namespace ams::capsrv::impl {
     /* Query operations. */
     Result GetAlbumFileCount(u64 *outCount, StorageId storage, u8 flags);
     Result GetAlbumFileList(void *ptr, u64 size, u64 *outCount, StorageId storage, u8 flags);
+    Result GetAlbumFileListAafeAruid(void *ptr, u64 size, u64 *outCount, DateTime start, DateTime end, ContentType type, u64 aruid);
+    Result GetAlbumFileListAaeAruid(void *ptr, u64 size, u64 *outCount, DateTime start, DateTime end, ContentType type, u64 aruid);
     Result RefreshAlbumCache(StorageId storage);
     Result GetRequiredStorageSpaceSizeToCopyAll(u64 *out, StorageId dst, StorageId src);
     Result GetAlbumUsage(CapsAlbumUsage2 *usage, StorageId storage);
