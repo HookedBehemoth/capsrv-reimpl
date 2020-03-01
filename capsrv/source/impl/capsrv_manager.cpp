@@ -2,9 +2,6 @@
 
 #include <machine/endian.h>
 
-#include <map>
-#include <string>
-
 #include "../capsrv_config.hpp"
 #include "../image/exif_extractor.hpp"
 #include "../logger.hpp"
@@ -256,6 +253,50 @@ namespace ams::capsrv::impl {
             return ResultSuccess();
         }
 
+#define EnsureDirectory(delimiter)                                         \
+    {                                                                      \
+        path[delimiter] = '\0';                                            \
+        Result rc = fsFsCreateDirectory(&g_fsFs[storage], path);    \
+        if (rc.GetValue() == 0x402) {                                      \
+            FsDirEntryType type;                                           \
+            R_TRY(fsFsGetEntryType(&g_fsFs[storage], path, &type)); \
+            R_UNLESS(type == FsDirEntryType_Dir, 0x90ce);                  \
+        }                                                                  \
+        path[delimiter] = '/';                                             \
+    }
+        Result CreateAlbumFileImpl(StorageId storage, char* path, u64 path_size, bool isExtra, s64 size, FsFile *file) {
+            if (isExtra) {
+                EnsureDirectory(6);
+                EnsureDirectory(23);
+                EnsureDirectory(28);
+                EnsureDirectory(31);
+                EnsureDirectory(34);
+            } else {
+                EnsureDirectory(5);
+                EnsureDirectory(8);
+                EnsureDirectory(11);
+            }
+            Result rc = fsFsCreateFile(&g_fsFs[storage], path, size, 0);
+            if (R_SUCCEEDED(rc)) {
+                rc = fsFsOpenFileSmoll(&g_fsFs[storage], path, path_size, FsOpenMode_Write, file);
+                if (R_FAILED(rc)) {
+                    fsFsDeleteFile(&g_fsFs[storage], path);
+                }
+            } else {
+                if (rc.GetValue() == 0x402) {
+                    rc = fsFsOpenFileSmoll(&g_fsFs[storage], path, path_size, FsOpenMode_Write, file);
+                    if (R_SUCCEEDED(rc)) {
+                        rc = fsFileSetSize(file, size);
+                        if (R_FAILED(rc)) {
+                            fsFsDeleteFile(&g_fsFs[storage], path);
+                        }
+                    }
+                }
+            }
+
+            return rc;
+        }
+
         Result CopyAlbumFileImpl(StorageId storage, const FileId &fileId) {
             R_UNLESS(!IsReserved(fileId, writeReserve), capsrv::ResultFileTooBig());
             R_TRY(fileId.Verify());
@@ -263,8 +304,6 @@ namespace ams::capsrv::impl {
             R_TRY(MountAlbumImpl(fileId.storage));
             R_TRY(MountAlbumImpl(storage));
             R_UNLESS(storage != fileId.storage, capsrv::ResultInvalidStorageId());
-
-            /* TODO: Ensure directory. */
 
             u64 path_length = fileId.GetPathLength();
             char path[path_length];
@@ -277,11 +316,9 @@ namespace ams::capsrv::impl {
             s64 size;
             R_TRY(fsFileGetSize(&srcFile, &size));
 
-            R_TRY(fsFsCreateFile(&g_fsFs[storage], path, size, 0));
-            auto file_failure_guard = SCOPE_GUARD { fsFsDeleteFile(&g_fsFs[storage], path); };
-
             FsFile dstFile;
-            R_TRY(fsFsOpenFileSmoll(&g_fsFs[storage], path, path_length, FsOpenMode_Write, &dstFile));
+            R_TRY(CreateAlbumFileImpl(storage, path, path_length, fileId.IsExtra(), size, &dstFile));
+            auto file_failure_guard = SCOPE_GUARD { fsFsDeleteFile(&g_fsFs[storage], path); };
             ON_SCOPE_EXIT { fsFileClose(&dstFile); };
 
             s64 offset = 0;
@@ -335,12 +372,9 @@ namespace ams::capsrv::impl {
             char path[path_length];
             fileId.GetFilePath(path, path_length);
 
-            /* TODO: Ensure directory. */
-
-            R_TRY(fsFsCreateFile(&g_fsFs[fileId.storage], path, size, 0));
-
             FsFile dstFile;
-            R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], path, path_length, FsOpenMode_Write, &dstFile));
+            R_TRY(CreateAlbumFileImpl(fileId.storage, path, path_length, fileId.IsExtra(), size, &dstFile));
+            auto file_failure_guard = SCOPE_GUARD { fsFsDeleteFile(&g_fsFs[fileId.storage], path); };
             ON_SCOPE_EXIT { fsFileClose(&dstFile); };
 
             R_TRY(fsFileSetSize(&dstFile, size));

@@ -206,11 +206,11 @@ int main(int argc, char **argv) {
 
     u64 count;
 
-    TEST(impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot), count, 6);
+    TEST(impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot), count, 10);
     TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot), count, 5);
     TEST(impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_Movie), count, 0);
     TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_Movie), count, 1);
-    TEST(impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie), count, 6);
+    TEST(impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie), count, 10);
     TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie), count, 6);
 
     CapsAlbumUsage2 u2;
@@ -234,8 +234,12 @@ int main(int argc, char **argv) {
 
     Entry entries[10] = {0};
 
-    TEST(impl::GetAlbumFileList(entries, 10, &count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot), count, 6);
+    TEST(impl::GetAlbumFileList(entries, 10, &count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot), count, 10);
     TEST(impl::GetAlbumFileList(entries, 10, &count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot), count, 5);
+
+    char path[EXTRA_PATH_LENGTH];
+    entries[0].fileId.GetFilePath(path, EXTRA_PATH_LENGTH);
+    printf("path: %s, size: %ld\n", path, entries[0].size);
 
     /* Can't test exact equlity since datetime is... time. */
     FileId fileId = {0};

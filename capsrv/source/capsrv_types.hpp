@@ -5,6 +5,8 @@
 
 #include "capsrv_results.hpp"
 
+#define DIR_LENGTH 0xc
+#define EXTRA_DIR_LENGTH 0x23
 #define NORMAL_PATH_LENGTH 0x42
 #define EXTRA_PATH_LENGTH 0x69
 
