@@ -380,6 +380,7 @@ namespace ams::capsrv::impl {
             R_TRY(fsFileSetSize(&dstFile, size));
             R_TRY(fsFileWrite(&dstFile, 0, buffer, size, FsWriteOption_Flush));
 
+            file_failure_guard.Cancel();
             g_storage.Increment(fileId.storage, fileId.type);
             return ResultSuccess();
         }
