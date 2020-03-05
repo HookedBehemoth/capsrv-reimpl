@@ -21,13 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#include <stdlib.h>
-#include <string.h>
-#include <switch.h>
-#include <time.h>
+#include "logger.hpp"
 
 #include <cstdarg>
-#include <cstdio>
 
 #include "capsrv_types.hpp"
 #include "capsrv_util.hpp"
@@ -54,17 +50,17 @@ void LogExit() {
     fsFsClose(&sdmc);
 }
 
-int raw_fprintf(FsFile* file, const char *fmt, ...) {
-	va_list args;
-	int n;
+int raw_fprintf(FsFile *file, const char *fmt, ...) {
+    va_list args;
+    int n;
 
-	va_start(args, fmt);
-	n = vsprintf(sprint_buf, fmt, args);
-	va_end(args);
-	if (file)
+    va_start(args, fmt);
+    n = vsprintf(sprint_buf, fmt, args);
+    va_end(args);
+    if (file)
         if (R_FAILED(fsFileWrite(file, offset, sprint_buf, n, FsWriteOption_None)))
             return 0;
-	return n;
+    return n;
 }
 
 void WriteLogFile(const char *type, const char *fmt, ...) {
@@ -77,7 +73,7 @@ void WriteLogFile(const char *type, const char *fmt, ...) {
     int hour = datetime.hour;
     int min = datetime.minute;
     int sec = datetime.second;
-    
+
     FsFile log_file;
     if (R_FAILED(fsFsOpenFile(&sdmc, "/log.txt", FsOpenMode_Write | FsOpenMode_Append, &log_file)))
         return;
@@ -87,7 +83,7 @@ void WriteLogFile(const char *type, const char *fmt, ...) {
 
     va_list f_args;
     va_start(f_args, fmt);
-	int n = vsprintf(sprint_buf, fmt, f_args);
+    int n = vsprintf(sprint_buf, fmt, f_args);
     va_end(f_args);
     if (R_SUCCEEDED(fsFileWrite(&log_file, offset, sprint_buf, n, FsWriteOption_None)))
         offset += n;
