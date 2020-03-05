@@ -32,6 +32,41 @@
 #include "capsrv_types.hpp"
 #include "capsrv_util.hpp"
 
+static char sprint_buf[1024];
+u64 offset = 0;
+FsFileSystem sdmc;
+
+Result LogInit() {
+    R_TRY(fsOpenSdCardFileSystem(&sdmc));
+    if (R_SUCCEEDED(fsFsCreateFile(&sdmc, "/log.txt", 0, 0)))
+        return 0;
+    FsFile log_file;
+    R_TRY(fsFsOpenFile(&sdmc, "/log.txt", FsOpenMode_Read, &log_file));
+    ON_SCOPE_EXIT { fsFileClose(&log_file); };
+    s64 tmp;
+    R_TRY(fsFileGetSize(&log_file, &tmp));
+    if (tmp >= 0)
+        offset = static_cast<u64>(tmp);
+    return 0;
+}
+
+void LogExit() {
+    fsFsClose(&sdmc);
+}
+
+int raw_fprintf(FsFile* file, const char *fmt, ...) {
+	va_list args;
+	int n;
+
+	va_start(args, fmt);
+	n = vsprintf(sprint_buf, fmt, args);
+	va_end(args);
+	if (file)
+        if (R_FAILED(fsFileWrite(file, offset, sprint_buf, n, FsWriteOption_None)))
+            return 0;
+	return n;
+}
+
 void WriteLogFile(const char *type, const char *fmt, ...) {
 #ifdef __DEBUG__
 #ifdef SYSTEM_MODULE
@@ -42,16 +77,24 @@ void WriteLogFile(const char *type, const char *fmt, ...) {
     int hour = datetime.hour;
     int min = datetime.minute;
     int sec = datetime.second;
-    FILE *pFile = fopen("sdmc:/log.txt", "a");
-    if (pFile) {
-        fprintf(pFile, "[%02d:%02d:%02d]_[%s] ", hour, min, sec, type);
-        va_list args;
-        va_start(args, fmt);
-        vfprintf(pFile, fmt, args);
-        va_end(args);
-        fprintf(pFile, "\n");
-        fclose(pFile);
-    }
+    
+    FsFile log_file;
+    if (R_FAILED(fsFsOpenFile(&sdmc, "/log.txt", FsOpenMode_Write | FsOpenMode_Append, &log_file)))
+        return;
+    ON_SCOPE_EXIT { fsFileClose(&log_file); };
+
+    offset += raw_fprintf(&log_file, "[%02d:%02d:%02d] [%s] ", hour, min, sec, type);
+
+    va_list f_args;
+    va_start(f_args, fmt);
+	int n = vsprintf(sprint_buf, fmt, f_args);
+    va_end(f_args);
+    if (R_SUCCEEDED(fsFileWrite(&log_file, offset, sprint_buf, n, FsWriteOption_None)))
+        offset += n;
+
+    offset += raw_fprintf(&log_file, "\n");
+
+    fsFileFlush(&log_file);
 #elif APPLET_TEST
     printf("[%s] ", type);
     va_list args;

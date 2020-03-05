@@ -385,8 +385,30 @@ namespace ams::capsrv::impl {
             return ResultSuccess();
         }
 
+        Result LoadMoviePreview(u64 *out_size, void *jpeg, u64 jpeg_size, const FileId &fileId) {
+            FsFile file;
+
+            u64 path_length = fileId.GetPathLength();
+            char path[path_length];
+            fileId.GetFilePath(path, path_length);
+
+            R_TRY(fsFsOpenFileSmoll(&g_fsFs[fileId.storage], path, path_length, FsOpenMode_Read, &file));
+            ON_SCOPE_EXIT { fsFileClose(&file); };
+
+            s64 size;
+            R_TRY(fsFileGetSize(&file, &size));
+
+            R_UNLESS(size > 0, capsrv::ResultInvalidFileData());
+            R_UNLESS(size <= config::GetMaxFileSize(fileId.storage, fileId.type), capsrv::ResultFileTooBig());
+            R_UNLESS(static_cast<u64>(size) <= jpeg_size, capsrv::ResultInvalidArgument());
+
+            
+
+            return ResultSuccess();
+        }
+
         /* Do it better... */
-        Result IHateNamingStuff(u64 *out_size, void *jpeg, u64 jpeg_size, const FileId &fileId) {
+        Result LoadJpeg(u64 *out_size, void *jpeg, u64 jpeg_size, const FileId &fileId) {
             FsFile file;
 
             u64 path_length = fileId.GetPathLength();
@@ -426,9 +448,11 @@ namespace ams::capsrv::impl {
             R_TRY(MountAlbumImpl(fileId.storage));
             R_UNLESS(config::SupportsType(fileId.type), capsrv::ResultInvalidContentType());
 
-            Result rc = {}; /* TODO: Load image. */
+            Result rc = {};
             if ((fileId.type % 2) == ContentType::Screenshot) {
-                rc = IHateNamingStuff(out_size, work, work_size, fileId);
+                rc = LoadJpeg(out_size, work, work_size, fileId);
+            } else {
+                rc = LoadMoviePreview(out_size, work, work_size, fileId);
             }
 
             if (R_SUCCEEDED(rc))
@@ -471,7 +495,7 @@ namespace ams::capsrv::impl {
         }
 
         /* Do it better... */
-        Result IHateNamingStuffThumbnail(u64 *out_size, void *thumb, u64 thumb_size, const FileId &fileId) {
+        Result LoadJpegThumbnail(u64 *out_size, void *thumb, u64 thumb_size, const FileId &fileId) {
             FsFile file;
 
             u64 path_length = fileId.GetPathLength();
@@ -532,9 +556,9 @@ namespace ams::capsrv::impl {
             R_TRY(MountAlbumImpl(fileId.storage));
             R_UNLESS(config::SupportsType(fileId.type), capsrv::ResultInvalidContentType());
 
-            Result rc = {}; /* TODO: Load thumbnail. */
+            Result rc = {}; /* TODO: Load video thumbnail. */
             if ((fileId.type % 2) == ContentType::Screenshot) {
-                rc = IHateNamingStuffThumbnail(out_size, work, work_size, fileId);
+                rc = LoadJpegThumbnail(out_size, work, work_size, fileId);
             }
 
             if (R_SUCCEEDED(rc))

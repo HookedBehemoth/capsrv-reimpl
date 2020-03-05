@@ -118,7 +118,10 @@ namespace ams::capsrv {
         return impl::GetAlbumFileList(buffer.GetPointer(), buffer.GetSize(), out.GetPointer(), StorageId(storage), flags);
     }
 
-    //Result AlbumAccessorService::SaveEditedScreenShot
+    Result AlbumAccessorService::SaveEditedScreenShot(sf::InBuffer buf0, sf::InBuffer buf1, sf::Out<Entry> out, u64 a, u64 b, u64 c, u64 d, u64 e, u64 f, u64 g) {
+        WriteLogFile("Accessor", "SaveEditedScreenShot: buf0Size: %ld, buf1Size: %ld, [%ld, %ld, %ld, %ld, %ld, %ld, %ld]", buf0.GetSize(), buf1.GetSize(), a, b, c, d, e, f, g);
+        return ResultSuccess();
+    }
 
     Result AlbumAccessorService::GetLastOverlayScreenShotThumbnail(sf::OutBuffer buffer, sf::Out<FileId> out, sf::Out<u64> size) {
         WriteLogFile("Accessor", "GetLastOverlayScreenShotThumbnail: bufferSize(%ld)", buffer.GetSize());

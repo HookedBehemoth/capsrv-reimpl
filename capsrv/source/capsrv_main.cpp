@@ -276,6 +276,14 @@ int main(int argc, char **argv) {
 
     printf("\n\nfinished\n\n\n");
 
+    RUN(LogInit());
+    WriteLogFile("test", "empty");
+    WriteLogFile("test", "string: %s", "test");
+    WriteLogFile("test", "hex: 0x%x", 0x420);
+    WriteLogFile("test", "dec: %d", 1337);
+    WriteLogFile("test", "all: %s, 0x%x, %d", "test", 0x420, 1337);
+    LogExit();
+
     close(sock);
 
     return 0;

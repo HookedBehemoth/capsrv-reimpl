@@ -7,17 +7,35 @@
 
 namespace ams::capsrv {
 
-    //Result AlbumControlService::CaptureRawImage();
-    //Result AlbumControlService::CaptureRawImageWithTimeout();
+    Result AlbumControlService::CaptureRawImage(sf::OutNonSecureBuffer out, u64 a, u64 b, u64 c, u64 d) {
+        WriteLogFile("Control", "CaptureRawImage: buf_size: %ld, [%ld, %ld, %ld, %ld]", out.GetSize(), a, b, c, d);
+        return ResultSuccess();
+    }
+    
+    Result AlbumControlService::CaptureRawImageWithTimeout(sf::OutNonSecureBuffer out, u64 a, u64 b, u64 c, u64 d, u64 e) {
+        WriteLogFile("Control", "CaptureRawImageWithTimeout: buf_size: %ld, [%ld, %ld, %ld, %ld, %ld]", out.GetSize(), a, b, c, d, e);
+        return ResultSuccess();
+    }
 
     Result AlbumControlService::SetShimLibraryVersion(u64 version, u64 aruid) {
         WriteLogFile("Control", "SetShimLibraryVersion: version(%ld), aruid(%ld)", version, aruid);
         return control::SetShimLibraryVersion(version, aruid);
     }
 
-    //Result AlbumControlService::RequestTakingScreenShot();
-    //Result AlbumControlService::RequestTakingScreenShotWithTimeout();
-    //Result AlbumControlService::NotifyTakingScreenShotRefused();
+    Result AlbumControlService::RequestTakingScreenShot(u64 a, u64 b) {
+        WriteLogFile("Control", "RequestTakingScreenShot: [%ld, %ld]", a, b);
+        return ResultSuccess();
+    }
+
+    Result AlbumControlService::RequestTakingScreenShotWithTimeout(u64 a, u64 b, u64 c) {
+        WriteLogFile("Control", "RequestTakingScreenShotWithTimeout: [%ld, %ld, %ld]", a, b, c);
+        return ResultSuccess();
+    }
+
+    Result AlbumControlService::NotifyTakingScreenShotRefused(u64 a) {
+        WriteLogFile("Control", "NotifyTakingScreenShotRefused: [%ld]", a);
+        return ResultSuccess();
+    }
 
     Result AlbumControlService::NotifyAlbumStorageIsAvailable(StorageId storage) {
         WriteLogFile("Control", "NotifyAlbumStorageIsAvailable: storage(%hhd)", storage);

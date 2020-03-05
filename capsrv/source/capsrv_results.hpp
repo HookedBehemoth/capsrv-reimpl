@@ -48,6 +48,8 @@ namespace ams::capsrv {
     R_DEFINE_ERROR_RESULT(TooManyApplicationsRegistered,    820);
     R_DEFINE_ERROR_RESULT(ApplicationNotRegistered,         822);
 
+    R_DEFINE_ERROR_RESULT(DebugModeDisabled,                1023);
+
     R_DEFINE_ERROR_RESULT(InvalidJFIF,                      1302);
     R_DEFINE_ERROR_RESULT(InvalidEXIF,                      1303);
 

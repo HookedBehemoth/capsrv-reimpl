@@ -11,12 +11,12 @@ namespace ams::capsrv {
       protected:
         /* Command IDs. */
         enum class CommandId {
-            //CaptureRawImage                         = 1,
-            //CaptureRawImageWithTimeout              = 2,
+            CaptureRawImage = 1,
+            CaptureRawImageWithTimeout = 2,
             SetShimLibraryVersion = 33,
-            //RequestTakingScreenShot                 = 1001,
-            //RequestTakingScreenShotWithTimeout      = 1002,
-            //NotifyTakingScreenShotRefused           = 1011,
+            RequestTakingScreenShot = 1001,
+            RequestTakingScreenShotWithTimeout = 1002,
+            NotifyTakingScreenShotRefused = 1011,
             NotifyAlbumStorageIsAvailable = 2001,
             NotifyAlbumStorageIsUnavailable = 2002,
             RegisterAppletResourceUserId = 2011,
@@ -33,12 +33,12 @@ namespace ams::capsrv {
         };
 
       public:
-        //virtual Result CaptureRawImage();
-        //virtual Result CaptureRawImageWithTimeout();
+        virtual Result CaptureRawImage(sf::OutNonSecureBuffer out, u64 a, u64 b, u64 c, u64 d);
+        virtual Result CaptureRawImageWithTimeout(sf::OutNonSecureBuffer out, u64 a, u64 b, u64 c, u64 d, u64 e);
         virtual Result SetShimLibraryVersion(u64 version, u64 aruid);
-        //virtual Result RequestTakingScreenShot();
-        //virtual Result RequestTakingScreenShotWithTimeout();
-        //virtual Result NotifyTakingScreenShotRefused();
+        virtual Result RequestTakingScreenShot(u64 a, u64 b);
+        virtual Result RequestTakingScreenShotWithTimeout(u64 a, u64 b, u64 c);
+        virtual Result NotifyTakingScreenShotRefused(u64 a);
         virtual Result NotifyAlbumStorageIsAvailable(StorageId storage);
         virtual Result NotifyAlbumStorageIsUnavailable(StorageId storage);
         virtual Result RegisterAppletResourceUserId(u64 aruid, u64 appId);
@@ -55,12 +55,12 @@ namespace ams::capsrv {
 
       public:
         DEFINE_SERVICE_DISPATCH_TABLE{
-            //MAKE_SERVICE_COMMAND_META(CaptureRawImage,                    hos::Version_100, hos::Version_100),
-            //MAKE_SERVICE_COMMAND_META(CaptureRawImageWithTimeout          hos::Version_100, hos::Version_100),
+            MAKE_SERVICE_COMMAND_META(CaptureRawImage, hos::Version_100, hos::Version_100),
+            MAKE_SERVICE_COMMAND_META(CaptureRawImageWithTimeout, hos::Version_100, hos::Version_100),
             MAKE_SERVICE_COMMAND_META(SetShimLibraryVersion),
-            //MAKE_SERVICE_COMMAND_META(RequestTakingScreenShot),
-            //MAKE_SERVICE_COMMAND_META(RequestTakingScreenShotWithTimeout),
-            //MAKE_SERVICE_COMMAND_META(NotifyTakingScreenShotRefused),
+            MAKE_SERVICE_COMMAND_META(RequestTakingScreenShot, hos::Version_100, hos::Version_100),
+            MAKE_SERVICE_COMMAND_META(RequestTakingScreenShotWithTimeout, hos::Version_100, hos::Version_100),
+            MAKE_SERVICE_COMMAND_META(NotifyTakingScreenShotRefused, hos::Version_100, hos::Version_100),
             MAKE_SERVICE_COMMAND_META(NotifyAlbumStorageIsAvailable),
             MAKE_SERVICE_COMMAND_META(NotifyAlbumStorageIsUnavailable),
             MAKE_SERVICE_COMMAND_META(RegisterAppletResourceUserId),

@@ -32,7 +32,7 @@ namespace ams::capsrv {
             GetMinMaxAppletId = 18,
             GetAlbumFileCountEx0 = 100,
             GetAlbumFileListEx0 = 101,
-            //SaveEditedScreenShot = 202,
+            SaveEditedScreenShot = 202,
             GetLastOverlayScreenShotThumbnail = 301,
             GetLastOverlayMovieThumbnail = 302,
             GetAutoSavingStorage = 401,
@@ -73,7 +73,7 @@ namespace ams::capsrv {
         virtual Result GetMinMaxAppletId(sf::OutNonSecureBuffer minMax, sf::Out<bool> success);
         virtual Result GetAlbumFileCountEx0(sf::Out<u64> out, StorageId storage, u8 flags);
         virtual Result GetAlbumFileListEx0(sf::OutBuffer buffer, sf::Out<u64> out, u64 storage, u64 flags);
-        //virtual Result SaveEditedScreenShot
+        virtual Result SaveEditedScreenShot(sf::InBuffer buf0, sf::InBuffer buf1, sf::Out<Entry> out, u64 a, u64 b, u64 c, u64 d, u64 e, u64 f, u64 g);
         virtual Result GetLastOverlayScreenShotThumbnail(sf::OutBuffer buffer, sf::Out<FileId> out, sf::Out<u64> size);
         virtual Result GetLastOverlayMovieThumbnail(sf::OutBuffer buffer, sf::Out<FileId> out, sf::Out<u64> size);
         virtual Result GetAutoSavingStorage(sf::Out<StorageId> out);
@@ -114,7 +114,7 @@ namespace ams::capsrv {
             MAKE_SERVICE_COMMAND_META(GetMinMaxAppletId, hos::Version_600),
             MAKE_SERVICE_COMMAND_META(GetAlbumFileCountEx0, hos::Version_500),
             MAKE_SERVICE_COMMAND_META(GetAlbumFileListEx0, hos::Version_500),
-            //MAKE_SERVICE_COMMAND_META(SaveEditedScreenShot, hos::Version_100, hos::Version_200),
+            MAKE_SERVICE_COMMAND_META(SaveEditedScreenShot, hos::Version_100, hos::Version_200),
             MAKE_SERVICE_COMMAND_META(GetLastOverlayScreenShotThumbnail),
             MAKE_SERVICE_COMMAND_META(GetLastOverlayMovieThumbnail, hos::Version_400),
             MAKE_SERVICE_COMMAND_META(GetAutoSavingStorage),

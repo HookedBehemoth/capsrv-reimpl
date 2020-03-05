@@ -22,5 +22,8 @@
  * SOFTWARE.
  */
 #pragma once
+#include <stratosphere.hpp>
 
+Result LogInit();
+void LogExit();
 void WriteLogFile(const char *type, const char *fmt, ...);
