@@ -1,5 +1,6 @@
 #include "capsrv_config.hpp"
 #include "capsrv_crypto.hpp"
+#include "capsrv_time.hpp"
 #include "image/exif_extractor.hpp"
 #include "impl/capsrv_controller.hpp"
 #include "impl/capsrv_file_id_generator.hpp"
@@ -106,6 +107,7 @@ namespace {
 }
 
 int main(int argc, char **argv) {
+    capsrv::time::Initialize();
     capsrv::config::Initialize();
     R_ASSERT(capsrv::crypto::Initialize());
     capsrv::ovl::Initialize();
@@ -165,39 +167,33 @@ void __appExit(void) {
     setsysExit();
 }
 
-#define RUNN(function)                                \
-    {                                                 \
-        u32 rc = function;                            \
-        if (R_FAILED(rc))                             \
-            printf("0x%x %s\n", function, #function); \
-    }
-
 using namespace ams::capsrv;
 
 #define RUN(function)                                                       \
-    {                                                                       \
-        ams::Result rc = function;                                          \
+    ({                                                                      \
+        auto const &rc = function;                                          \
         if (R_FAILED(rc))                                                   \
             printf("0x%x %s expected success\n", rc.GetValue(), #function); \
-    }
+    })
 
 #define FAIL(function)                                                      \
-    {                                                                       \
-        ams::Result rc = function;                                          \
+    ({                                                                      \
+        auto const &rc = function;                                          \
         if (R_SUCCEEDED(rc))                                                \
             printf("0x%x %s expected failure\n", rc.GetValue(), #function); \
-    }
+    })
 
 #define TEST(function, var, expected)                                    \
-    {                                                                    \
+    ({                                                                   \
         RUN(function)                                                    \
         if (var != expected)                                             \
             printf("FAILED %s: %s != %s\n", #function, #var, #expected); \
-    }
+    })
 
 int main(int argc, char **argv) {
     int sock = nxlinkStdio();
 
+    time::Initialize();
     config::Initialize();
     R_ASSERT(crypto::Initialize());
     ovl::Initialize();
@@ -207,12 +203,12 @@ int main(int argc, char **argv) {
 
     u64 count;
 
-    TEST(impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot), count, 10);
+    TEST(impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot), count, 6);
     TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot), count, 5);
     TEST(impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_Movie), count, 0);
-    TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_Movie), count, 1);
-    TEST(impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie), count, 10);
-    TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie), count, 6);
+    TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_Movie), count, 3);
+    TEST(impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie), count, 6);
+    TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie), count, 8);
 
     CapsAlbumUsage2 u2;
     RUN(impl::GetAlbumUsage(&u2, StorageId::Sd));
@@ -235,7 +231,7 @@ int main(int argc, char **argv) {
 
     Entry entries[10] = {0};
 
-    TEST(impl::GetAlbumFileList(entries, 10, &count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot), count, 10);
+    TEST(impl::GetAlbumFileList(entries, 10, &count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot), count, 6);
     TEST(impl::GetAlbumFileList(entries, 10, &count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot), count, 5);
 
     char path[EXTRA_PATH_LENGTH];
@@ -247,7 +243,9 @@ int main(int argc, char **argv) {
     u64 appId = 0x0100152000022000;
     u64 aruid = 0x420;
     RUN(impl::GenerateCurrentAlbumFileId(&fileId, appId, ContentType::Screenshot));
+    printf("%s\n", fileId.AsString());
     RUN(impl::GenerateCurrentAlbumFileId(&fileId, appId, ContentType::Movie));
+    printf("%s\n", fileId.AsString());
 
     FAIL(control::CheckApplicationIdRegistered(appId));
     RUN(control::RegisterAppletResourceUserId(aruid, appId));

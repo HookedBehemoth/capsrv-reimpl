@@ -5,6 +5,8 @@
 
 namespace ams::capsrv::time {
 
+    Result Initialize();
+
     Result TimestampToCalendarTime(DateTime *datetime, u64 timestamp);
     u64 DateTimeToTimestamp(DateTime datetime);
 

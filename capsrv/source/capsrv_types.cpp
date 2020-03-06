@@ -205,17 +205,17 @@ namespace ams::capsrv {
     }
 
     void ContentStorage::Set(StorageId storage, ContentType type, CapsAlbumCache cache) {
-        if (storage < 2 && type < 4)
+        if (config::StorageValid(storage) && config::ContentTypeValid(type))
             this->cache[storage][type] = cache;
     }
 
     void ContentStorage::Increment(StorageId storage, ContentType type) {
-        if (storage < 2 && type < 4)
+        if (config::StorageValid(storage) && config::ContentTypeValid(type))
             this->cache[storage][type].count++;
     }
 
     void ContentStorage::Decrement(StorageId storage, ContentType type) {
-        if (storage < 2 && type < 4)
+        if (config::StorageValid(storage) && config::ContentTypeValid(type))
             this->cache[storage][type].count--;
     }
 

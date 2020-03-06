@@ -83,10 +83,6 @@ namespace ams::capsrv::config {
         return false;
     }
 
-    bool StorageValid(StorageId storage) {
-        return storage == StorageId::Nand || storage == StorageId::Sd;
-    }
-
     u64 GetMax(StorageId storage, ContentType type) {
         switch (storage) {
             case StorageId::Nand:
