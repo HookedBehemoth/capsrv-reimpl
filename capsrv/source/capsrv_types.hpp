@@ -36,8 +36,6 @@ namespace ams::capsrv {
         u8 id;
 
         const char* AsString() const;
-
-        static Result FromString(DateTime *date, const char *str, const char **next);
     };
     static_assert(sizeof(DateTime) == sizeof(CapsAlbumFileDateTime));
 

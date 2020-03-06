@@ -7,7 +7,7 @@ namespace ams::capsrv::ovl {
     namespace {
 
         struct {
-            u8 buffer[BufferSize];
+            u8 buffer[BufferSize]{0xff};
             u64 size = 0;
             FileId fileId;
         } data[2];

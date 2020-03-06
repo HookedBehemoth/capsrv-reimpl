@@ -3,8 +3,8 @@
 #include <mutex>
 
 #include "../capsrv_crypto.hpp"
-#include "../capsrv_util.hpp"
 #include "capsrv_manager.hpp"
+#include "../capsrv_time.hpp"
 
 #define FIND_RESOURCE(by, cmp)       \
     for (Resource & res : resources) \
@@ -13,11 +13,6 @@
 namespace ams::capsrv::control {
 
     namespace {
-
-        struct {
-            u64 lastTimestamp = 0;
-            u32 id = 0;
-        } idGenerator;
 
         struct Resource {
             bool used;
@@ -193,33 +188,6 @@ namespace ams::capsrv::control {
             }
         }
         return capsrv::ResultApplicationNotRegistered();
-    }
-
-    Result GenerateCurrentAlbumFileId(FileId *fileId, u64 appId, ContentType type) {
-        /* Get StorageId. */
-        StorageId storage;
-        R_TRY(impl::GetAutoSavingStorage(&storage));
-
-        /* Get timestamp. */
-        u64 timestamp;
-        R_TRY(timeGetCurrentTime(TimeType_Default, &timestamp));
-
-        /* Increment counter if timestamp matches. */
-        if (idGenerator.lastTimestamp == timestamp && idGenerator.id < 99) {
-            idGenerator.id++;
-        } else {
-            idGenerator.lastTimestamp = timestamp;
-            idGenerator.id = 0;
-        }
-
-        /* Get DateTime. */
-        R_TRY(util::TimestampToCalendarTime(&fileId->datetime, timestamp));
-
-        fileId->applicationId = appId;
-        fileId->datetime.id = idGenerator.id;
-        fileId->storage = storage;
-        fileId->type = type;
-        return ResultSuccess();
     }
 
 }

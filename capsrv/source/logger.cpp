@@ -25,10 +25,11 @@
 
 #include <cstdarg>
 
+#include "capsrv_time.hpp"
 #include "capsrv_types.hpp"
-#include "capsrv_util.hpp"
 
-static char sprint_buf[1024];
+constexpr size_t buf_size = 1024;
+static char sprint_buf[buf_size];
 u64 offset = 0;
 FsFileSystem sdmc;
 
@@ -55,7 +56,7 @@ int raw_fprintf(FsFile *file, const char *fmt, ...) {
     int n;
 
     va_start(args, fmt);
-    n = vsprintf(sprint_buf, fmt, args);
+    n = std::snprintf(sprint_buf, buf_size, fmt, args);
     va_end(args);
     if (file)
         if (R_FAILED(fsFileWrite(file, offset, sprint_buf, n, FsWriteOption_None)))
@@ -65,15 +66,15 @@ int raw_fprintf(FsFile *file, const char *fmt, ...) {
 
 void WriteLogFile(const char *type, const char *fmt, ...) {
 #ifdef __DEBUG__
-#ifdef SYSTEM_MODULE
     u64 timestamp;
     timeGetCurrentTime(TimeType_Default, &timestamp);
     ams::capsrv::DateTime datetime;
-    ams::capsrv::util::TimestampToCalendarTime(&datetime, timestamp);
+    ams::capsrv::time::TimestampToCalendarTime(&datetime, timestamp);
     int hour = datetime.hour;
     int min = datetime.minute;
     int sec = datetime.second;
 
+#ifdef SYSTEM_MODULE
     FsFile log_file;
     if (R_FAILED(fsFsOpenFile(&sdmc, "/log.txt", FsOpenMode_Write | FsOpenMode_Append, &log_file)))
         return;
@@ -83,7 +84,7 @@ void WriteLogFile(const char *type, const char *fmt, ...) {
 
     va_list f_args;
     va_start(f_args, fmt);
-    int n = vsprintf(sprint_buf, fmt, f_args);
+    int n = std::snprintf(sprint_buf, buf_size, fmt, f_args);
     va_end(f_args);
     if (R_SUCCEEDED(fsFileWrite(&log_file, offset, sprint_buf, n, FsWriteOption_None)))
         offset += n;
@@ -92,7 +93,7 @@ void WriteLogFile(const char *type, const char *fmt, ...) {
 
     fsFileFlush(&log_file);
 #elif APPLET_TEST
-    printf("[%s] ", type);
+    printf("[%02d:%02d:%02d] [%s] ", hour, min, sec, type);
     va_list args;
     va_start(args, fmt);
     vprintf(fmt, args);

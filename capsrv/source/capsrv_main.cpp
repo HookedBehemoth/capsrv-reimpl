@@ -2,6 +2,7 @@
 #include "capsrv_crypto.hpp"
 #include "image/exif_extractor.hpp"
 #include "impl/capsrv_controller.hpp"
+#include "impl/capsrv_file_id_generator.hpp"
 #include "impl/capsrv_manager.hpp"
 #include "impl/capsrv_overlay.hpp"
 #include "logger.hpp"
@@ -71,13 +72,13 @@ void __appInit(void) {
 
     /* TODO: remove this for a better logging solution (TMA, LogManager?) */
 #ifdef __DEBUG__
-    fsdevMountSdmc();
+    LogInit();
 #endif /* __DEBUG__ */
 }
 
 void __appExit(void) {
 #ifdef __DEBUG__
-    fsdevUnmountAll();
+    LogExit();
 #endif /* __DEBUG__ */
     /* Cleanup services. */
     capsdcExit();
@@ -245,8 +246,8 @@ int main(int argc, char **argv) {
     FileId fileId = {0};
     u64 appId = 0x0100152000022000;
     u64 aruid = 0x420;
-    RUN(control::GenerateCurrentAlbumFileId(&fileId, appId, ContentType::Screenshot));
-    RUN(control::GenerateCurrentAlbumFileId(&fileId, appId, ContentType::Movie));
+    RUN(impl::GenerateCurrentAlbumFileId(&fileId, appId, ContentType::Screenshot));
+    RUN(impl::GenerateCurrentAlbumFileId(&fileId, appId, ContentType::Movie));
 
     FAIL(control::CheckApplicationIdRegistered(appId));
     RUN(control::RegisterAppletResourceUserId(aruid, appId));
@@ -274,15 +275,7 @@ int main(int argc, char **argv) {
 
     config::Exit();
 
-    printf("\n\nfinished\n\n\n");
-
-    RUN(LogInit());
-    WriteLogFile("test", "empty");
-    WriteLogFile("test", "string: %s", "test");
-    WriteLogFile("test", "hex: 0x%x", 0x420);
-    WriteLogFile("test", "dec: %d", 1337);
-    WriteLogFile("test", "all: %s, 0x%x, %d", "test", 0x420, 1337);
-    LogExit();
+    printf("\nfinished\n");
 
     close(sock);
 

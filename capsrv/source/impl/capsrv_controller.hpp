@@ -11,7 +11,6 @@ namespace ams::capsrv::control {
     Result GetApplicationIdFromAruid(u64 *appId, u64 aruid);
     Result CheckApplicationIdRegistered(u64 appId);
 
-    Result GenerateCurrentAlbumFileId(FileId *out, u64 appId, ContentType type);
     Result GenerateApplicationAlbumEntry(ApplicationEntry *appEntry, const Entry &entry, u64 appId);
 
     Result EncryptAafeBuffer(ApplicationFileEntry *appFileEntry, u64 count, u64 aruid);

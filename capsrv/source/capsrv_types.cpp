@@ -4,7 +4,7 @@
 
 #include "capsrv_config.hpp"
 #include "capsrv_crypto.hpp"
-#include "capsrv_util.hpp"
+#include "capsrv_time.hpp"
 
 #define DATE_FORMAT "%04d%02d%02d%02d%02d%02d%02d"
 #define CYPHER_FORMAT "%016lX%016lX"
@@ -21,13 +21,29 @@ namespace ams::capsrv {
         };
 
         Result DecryptFileIdentifier(u64 *applicationId, bool *isExtra, const char *str, const char **next) {
-            u64 in[2] = {0};
-            sscanf(str, CYPHER_FORMAT, &in[0], &in[1]);
-            *next = str + 0x20;
-            in[0] = __bswap64(in[0]);
-            in[1] = __bswap64(in[1]);
+            union {
+                u64 a[2];
+                u8 b[0x10];
+            } in;
+            char buffer[3];
+            char *end;
+            buffer[2] = '\0';
+            for (int i = 0; i < 0x10; i++) {
+                /* Copy to temporary buffer. */
+                buffer[0] = *(str++);
+                buffer[1] = *(str++);
+                /* Read buffer. */
+                u8 tmp = strtoul(buffer, &end, 0x10);
+                /* Check if number is valid. */
+                if (end != &buffer[2] || tmp >= 0x100)
+                    break;
+                in.b[i] = tmp;
+            }
+
             u64 out[2];
-            crypto::aes128::Decrypt(out, in);
+            crypto::aes128::Decrypt(out, in.a);
+
+            *next = str;
 
             R_UNLESS(out[1] <= 1, capsrv::ResultInvalidUnknown());
             *isExtra = out[1] == 1;
@@ -37,7 +53,7 @@ namespace ams::capsrv {
 
         Result GetFileType(ContentType *type, bool isExtra, const char *str) {
             for (u8 i = 0; i < 2; i++) {
-                if (strcmp(fileExtensions[i], str) != 0)
+                if (std::strcmp(fileExtensions[i], str) != 0)
                     continue;
                 *type = static_cast<ContentType>(i + (isExtra ? 2 : 0));
                 return ResultSuccess();
@@ -49,45 +65,48 @@ namespace ams::capsrv {
 
     const char *DateTime::AsString() const {
         static char date_buffer[32];
-        snprintf(date_buffer, 32, "[%04d:%02d:%02d %02d:%02d:%02d %02d]",
-                 this->year,
-                 this->month,
-                 this->day,
-                 this->hour,
-                 this->minute,
-                 this->second,
-                 this->id);
+        std::snprintf(date_buffer, 32, "[%04d:%02d:%02d %02d:%02d:%02d %02d]",
+                      this->year,
+                      this->month,
+                      this->day,
+                      this->hour,
+                      this->minute,
+                      this->second,
+                      this->id);
         return date_buffer;
     }
 
-    Result DateTime::FromString(DateTime *date, const char *str, const char **next) {
+    Result DateTimeFromString(DateTime *date, const char *str, const char **next) {
         DateTime tmp;
-        sscanf(str, "%4hd%2hhd%2hhd%2hhd%2hhd%2hhd%2hhd",
-               &tmp.year,
-               &tmp.month,
-               &tmp.day,
-               &tmp.hour,
-               &tmp.minute,
-               &tmp.second,
-               &tmp.id);
-
+        tmp.year = (str[3] - 0x30) + (str[2] - 0x30) * 10 + (str[1] - 0x30) * 100 + (str[0] - 0x30) * 1000;
         R_UNLESS(tmp.year < 10000, capsrv::ResultInvalidFileId());
+
+        tmp.month = (str[5] - 0x30) + (str[4] - 0x30) * 10;
         R_UNLESS(tmp.month - 1 < 12, capsrv::ResultInvalidFileId());
+
+        tmp.day = (str[7] - 0x30) + (str[6] - 0x30) * 10;
         R_UNLESS(tmp.day - 1 < 31, capsrv::ResultInvalidFileId());
+
+        tmp.hour = (str[9] - 0x30) + (str[8] - 0x30) * 10;
         R_UNLESS(tmp.hour < 24, capsrv::ResultInvalidFileId());
+
+        tmp.minute = (str[11] - 0x30) + (str[10] - 0x30) * 10;
         R_UNLESS(tmp.minute < 60, capsrv::ResultInvalidFileId());
+
+        tmp.second = (str[13] - 0x30) + (str[12] - 0x30) * 10;
         R_UNLESS(tmp.second < 60, capsrv::ResultInvalidFileId());
+
+        tmp.id = (str[15] - 0x30) + (str[14] - 0x30) * 10;
         R_UNLESS(tmp.id < 100, capsrv::ResultInvalidFileId());
 
         *date = tmp;
-        if (next)
-            *next = str + 0x10;
+        *next = str + 0x10;
         return ResultSuccess();
     }
 
     const char *FileId::AsString() const {
         static char string_buffer[25];
-        snprintf(string_buffer, 25, "[%016lx, %hhd, %hhd]", this->applicationId, this->storage, this->type);
+        std::snprintf(string_buffer, 25, "[%016lx, %hhd, %hhd]", this->applicationId, this->storage, this->type);
         return string_buffer;
     }
 
@@ -96,8 +115,8 @@ namespace ams::capsrv {
             const u64 in[2] = {this->applicationId, 0};
             u64 aes[2] = {0};
             crypto::aes128::Encrypt(aes, in);
-            aes[0] = __bswap64(aes[0]);
-            aes[1] = __bswap64(aes[1]);
+            aes[0] = ams::util::ConvertToBigEndian(aes[0]);
+            aes[1] = ams::util::ConvertToBigEndian(aes[1]);
 
             return std::snprintf(buffer, max_length, "/Extra/" CYPHER_FORMAT DATE_PATH_FORMAT,
                                  aes[0],
@@ -118,8 +137,8 @@ namespace ams::capsrv {
         const u64 in[2] = {this->applicationId, isExtra};
         u64 aes[2] = {0};
         crypto::aes128::Encrypt(aes, in);
-        aes[0] = __bswap64(aes[0]);
-        aes[1] = __bswap64(aes[1]);
+        aes[0] = ams::util::ConvertToBigEndian(aes[0]);
+        aes[1] = ams::util::ConvertToBigEndian(aes[1]);
 
         const char *fmt = isExtra ? FILENAME_FORMAT "X%s" : FILENAME_FORMAT "%s";
         return std::snprintf(buffer, max_length, fmt,
@@ -157,7 +176,7 @@ namespace ams::capsrv {
     Result FileId::FromString(FileId *fileId, StorageId storage, const char *str) {
         size_t length = strlen(str);
         R_UNLESS(length == 0x35 || length == 0x36, 0x10);
-        R_TRY(DateTime::FromString(&fileId->datetime, str, &str));
+        R_TRY(DateTimeFromString(&fileId->datetime, str, &str));
         R_UNLESS(*str == '-', capsrv::ResultInvalidFileId());
         str++;
         bool isExtra;

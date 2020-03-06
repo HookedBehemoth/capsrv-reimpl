@@ -3,6 +3,7 @@
 #include "../impl/capsrv_controller.hpp"
 #include "../impl/capsrv_manager.hpp"
 #include "../impl/capsrv_overlay.hpp"
+#include "../impl/capsrv_file_id_generator.hpp"
 #include "../logger.hpp"
 
 namespace ams::capsrv {
@@ -69,7 +70,7 @@ namespace ams::capsrv {
 
     Result AlbumControlService::GenerateCurrentAlbumFileId(sf::Out<FileId> out, u64 appId, ContentType type) {
         WriteLogFile("Control", "GenerateCurrentAlbumFileId: applicationId(%lx), type(%hhd)", appId, type);
-        return control::GenerateCurrentAlbumFileId(out.GetPointer(), appId, type);
+        return impl::GenerateCurrentAlbumFileId(out.GetPointer(), appId, type);
     }
 
     Result AlbumControlService::GenerateApplicationAlbumEntry(sf::Out<ApplicationEntry> out, const Entry &entry, u64 appId) {
