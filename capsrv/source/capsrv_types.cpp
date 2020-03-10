@@ -111,6 +111,7 @@ namespace ams::capsrv {
     }
 
     u64 FileId::GetFolderPath(char *buffer, u64 max_length) const {
+        const char *mount_point = fs::GetImageDirectoryMountName(static_cast<fs::ImageDirectoryId>(this->storage));
         if (this->IsExtra()) {
             const u64 in[2] = {this->applicationId, 0};
             u64 aes[2] = {0};
@@ -118,14 +119,16 @@ namespace ams::capsrv {
             aes[0] = ams::util::ConvertToBigEndian(aes[0]);
             aes[1] = ams::util::ConvertToBigEndian(aes[1]);
 
-            return std::snprintf(buffer, max_length, "/Extra/" CYPHER_FORMAT DATE_PATH_FORMAT,
+            return std::snprintf(buffer, max_length, "%s:/Extra/" CYPHER_FORMAT DATE_PATH_FORMAT,
+                                 mount_point,
                                  aes[0],
                                  aes[1],
                                  this->datetime.year,
                                  this->datetime.month,
                                  this->datetime.day);
         } else {
-            return std::snprintf(buffer, max_length, DATE_PATH_FORMAT,
+            return std::snprintf(buffer, max_length, "%s:" DATE_PATH_FORMAT,
+                                 mount_point,
                                  this->datetime.year,
                                  this->datetime.month,
                                  this->datetime.day);

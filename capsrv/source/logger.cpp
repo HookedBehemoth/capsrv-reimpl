@@ -29,38 +29,37 @@
 #include "capsrv_types.hpp"
 
 constexpr size_t buf_size = 1024;
+const char *log_path = "sdmc:/log.txt";
 static char sprint_buf[buf_size];
 u64 offset = 0;
-FsFileSystem sdmc;
 
-Result LogInit() {
-    R_TRY(fsOpenSdCardFileSystem(&sdmc));
-    if (R_SUCCEEDED(fsFsCreateFile(&sdmc, "/log.txt", 0, 0)))
+ams::Result LogInit() {
+    R_TRY(ams::fs::MountSdCard("sdmc"));
+    if (R_SUCCEEDED(ams::fs::CreateFile(log_path, 0)))
         return 0;
-    FsFile log_file;
-    R_TRY(fsFsOpenFile(&sdmc, "/log.txt", FsOpenMode_Read, &log_file));
-    ON_SCOPE_EXIT { fsFileClose(&log_file); };
+    ams::fs::FileHandle file;
+    R_TRY(ams::fs::OpenFile(&file, log_path, ams::fs::OpenMode_Read));
+    ON_SCOPE_EXIT { ams::fs::CloseFile(file); };
     s64 tmp;
-    R_TRY(fsFileGetSize(&log_file, &tmp));
+    R_TRY(ams::fs::GetFileSize(&tmp, file));
     if (tmp >= 0)
         offset = static_cast<u64>(tmp);
     return 0;
 }
 
 void LogExit() {
-    fsFsClose(&sdmc);
+    ams::fs::Unmount("sdmc");
 }
 
-int raw_fprintf(FsFile *file, const char *fmt, ...) {
+int raw_fprintf(ams::fs::FileHandle file, const char *fmt, ...) {
     va_list args;
     int n;
 
     va_start(args, fmt);
-    n = std::snprintf(sprint_buf, buf_size, fmt, args);
+    n = std::vsnprintf(sprint_buf, buf_size, fmt, args);
     va_end(args);
-    if (file)
-        if (R_FAILED(fsFileWrite(file, offset, sprint_buf, n, FsWriteOption_None)))
-            return 0;
+    if (R_FAILED(ams::fs::WriteFile(file, offset, sprint_buf, n, ams::fs::WriteOption::None)))
+        return 0;
     return n;
 }
 
@@ -75,23 +74,23 @@ void WriteLogFile(const char *type, const char *fmt, ...) {
     int sec = datetime.second;
 
 #ifdef SYSTEM_MODULE
-    FsFile log_file;
-    if (R_FAILED(fsFsOpenFile(&sdmc, "/log.txt", FsOpenMode_Write | FsOpenMode_Append, &log_file)))
+    ams::fs::FileHandle log_file;
+    if (R_FAILED(ams::fs::OpenFile(&log_file, log_path, ams::fs::OpenMode_Write | ams::fs::OpenMode_AllowAppend)))
         return;
-    ON_SCOPE_EXIT { fsFileClose(&log_file); };
+    ON_SCOPE_EXIT { ams::fs::CloseFile(log_file); };
 
-    offset += raw_fprintf(&log_file, "[%02d:%02d:%02d] [%s] ", hour, min, sec, type);
+    offset += raw_fprintf(log_file, "[%02d:%02d:%02d] [%s] ", hour, min, sec, type);
 
     va_list f_args;
     va_start(f_args, fmt);
-    int n = std::snprintf(sprint_buf, buf_size, fmt, f_args);
+    int n = std::vsnprintf(sprint_buf, buf_size, fmt, f_args);
     va_end(f_args);
-    if (R_SUCCEEDED(fsFileWrite(&log_file, offset, sprint_buf, n, FsWriteOption_None)))
+    if (R_SUCCEEDED(ams::fs::WriteFile(log_file, offset, sprint_buf, n, ams::fs::WriteOption::None)))
         offset += n;
 
-    offset += raw_fprintf(&log_file, "\n");
+    offset += raw_fprintf(log_file, "\n");
 
-    fsFileFlush(&log_file);
+    ams::fs::FlushFile(log_file);
 #elif APPLET_TEST
     printf("[%02d:%02d:%02d] [%s] ", hour, min, sec, type);
     va_list args;

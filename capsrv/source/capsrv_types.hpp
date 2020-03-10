@@ -4,11 +4,7 @@
 #include <type_traits>
 
 #include "capsrv_results.hpp"
-
-#define DIR_LENGTH 0xc
-#define EXTRA_DIR_LENGTH 0x23
-#define NORMAL_PATH_LENGTH 0x42
-#define EXTRA_PATH_LENGTH 0x69
+#include "fs/fs_image_directory.hpp"
 
 namespace ams::capsrv {
 
@@ -35,7 +31,7 @@ namespace ams::capsrv {
         u8 second;
         u8 id;
 
-        const char* AsString() const;
+        const char *AsString() const;
     };
     static_assert(sizeof(DateTime) == sizeof(CapsAlbumFileDateTime));
 
@@ -50,10 +46,6 @@ namespace ams::capsrv {
         u64 GetFolderPath(char *buffer, u64 max_length) const;
         u64 GetFileName(char *buffer, u64 max_length) const;
         u64 GetFilePath(char *buffer, u64 max_length) const;
-
-        inline u64 GetPathLength() const {
-            return this->IsExtra() ? EXTRA_PATH_LENGTH : NORMAL_PATH_LENGTH;
-        }
 
         inline bool IsExtra() const {
             return (u8)this->type > 1;

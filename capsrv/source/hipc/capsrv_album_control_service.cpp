@@ -49,17 +49,17 @@ namespace ams::capsrv {
     }
 
     Result AlbumControlService::RegisterAppletResourceUserId(u64 aruid, u64 appId) {
-        WriteLogFile("Control", "RegisterAppletResourceUserId: storage(%ld)", aruid);
+        WriteLogFile("Control", "RegisterAppletResourceUserId: aruid(%ld)", aruid);
         return control::RegisterAppletResourceUserId(aruid, appId);
     }
 
     Result AlbumControlService::UnregisterAppletResourceUserId(u64 aruid, u64 appId) {
-        WriteLogFile("Control", "UnregisterAppletResourceUserId: storage(%ld)", aruid);
+        WriteLogFile("Control", "UnregisterAppletResourceUserId: aruid(%ld)", aruid);
         return control::UnregisterAppletResourceUserId(aruid, appId);
     }
 
     Result AlbumControlService::GetApplicationIdFromAruid(sf::Out<u64> appId, u64 aruid) {
-        WriteLogFile("Control", "GetApplicationIdFromAruid: storage(%ld)", aruid);
+        WriteLogFile("Control", "GetApplicationIdFromAruid: aruid(%ld)", aruid);
         return control::GetApplicationIdFromAruid(appId.GetPointer(), aruid);
     }
 
