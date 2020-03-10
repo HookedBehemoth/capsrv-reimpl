@@ -10,7 +10,7 @@
 
 namespace ams {
 
-    ncm::ProgramId CurrentProgramId = ncm::ProgramId::CapSrv;
+    ncm::ProgramId CurrentProgramId = ncm::SystemProgramId::CapSrv;
 
     namespace result {
 
@@ -171,21 +171,21 @@ using namespace ams::capsrv;
 
 #define RUN(function)                                                       \
     ({                                                                      \
-        auto const &rc = function;                                          \
+        auto const &rc = (function);                                        \
         if (R_FAILED(rc))                                                   \
             printf("0x%x %s expected success\n", rc.GetValue(), #function); \
     })
 
 #define FAIL(function)                                                      \
     ({                                                                      \
-        auto const &rc = function;                                          \
+        auto const &rc = (function);                                        \
         if (R_SUCCEEDED(rc))                                                \
             printf("0x%x %s expected failure\n", rc.GetValue(), #function); \
     })
 
 #define TEST(function, var, expected)                                    \
     ({                                                                   \
-        RUN(function)                                                    \
+        RUN(function);                                                   \
         if (var != expected)                                             \
             printf("FAILED %s: %s != %s\n", #function, #var, #expected); \
     })
@@ -204,35 +204,16 @@ int main(int argc, char **argv) {
     u64 count;
 
     TEST(impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot), count, 6);
-    TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot), count, 5);
+    TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot), count, 9);
     TEST(impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_Movie), count, 0);
     TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_Movie), count, 3);
     TEST(impl::GetAlbumFileCount(&count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie), count, 6);
-    TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie), count, 8);
-
-    CapsAlbumUsage2 u2;
-    RUN(impl::GetAlbumUsage(&u2, StorageId::Sd));
-    for (auto &usage : u2.usages) {
-        printf("count: %2ld, size: %8ld, %d, %d\n", usage.count, usage.size, usage.flags, usage.file_contents);
-    }
-    printf("\n");
-    CapsAlbumUsage3 u3;
-    RUN(impl::GetAlbumUsage3(&u3, StorageId::Sd));
-    for (auto &usage : u3.usages) {
-        printf("count: %2ld, size: %8ld, %d, %d\n", usage.count, usage.size, usage.flags, usage.file_contents);
-    }
-    printf("\n");
-    CapsAlbumUsage16 u16;
-    RUN(impl::GetAlbumUsage16(&u16, StorageId::Sd, 0xff));
-    for (auto &usage : u16.usages) {
-        printf("count: %2ld, size: %8ld, %d, %d\n", usage.count, usage.size, usage.flags, usage.file_contents);
-    }
-    printf("\n");
+    TEST(impl::GetAlbumFileCount(&count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie), count, 12);
 
     Entry entries[10] = {0};
 
     TEST(impl::GetAlbumFileList(entries, 10, &count, StorageId::Nand, CapsAlbumFileContentsFlag_ScreenShot), count, 6);
-    TEST(impl::GetAlbumFileList(entries, 10, &count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot), count, 5);
+    TEST(impl::GetAlbumFileList(entries, 10, &count, StorageId::Sd, CapsAlbumFileContentsFlag_ScreenShot), count, 9);
 
     char path[EXTRA_PATH_LENGTH];
     entries[0].fileId.GetFilePath(path, EXTRA_PATH_LENGTH);
