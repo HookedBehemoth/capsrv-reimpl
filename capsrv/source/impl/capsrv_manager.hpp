@@ -26,7 +26,7 @@ namespace ams::capsrv::impl {
     Result CopyAlbumFile(StorageId storage, const FileId &fileId);
     Result GetAlbumFileSize(u64 *out, const FileId &fileId);
 
-    Result SaveAlbumScreenShotFile(const u8 *buffer, u64 size, const FileId &fileId);
+    Result SaveAlbumScreenShotFile(const u8 *buffer, size_t size, const FileId &fileId);
 
     /* Application Accessor. */
     Result DeleteAlbumFileByAruid(ContentType type, const ApplicationEntry &appEntry, u64 aruid);
@@ -35,22 +35,24 @@ namespace ams::capsrv::impl {
     Result PrecheckToCreateContentsByAruid(ContentType type, u64 unk);
 
     /* Load Image. */
-    Result LoadAlbumFile(void *ptr, u64 size, u64 *outSize, const FileId &fileId);
-    Result LoadAlbumFileThumbnail(void *ptr, u64 size, u64 *out, const FileId &fileId);
+    Result LoadAlbumFile(void *ptr, size_t size, u64 *outSize, const FileId &fileId);
+    Result LoadAlbumFileThumbnail(void *ptr, size_t size, u64 *out, const FileId &fileId);
 
-    Result LoadAlbumScreenShotImage(u64 *width, u64 *height, void *img, u64 img_size, void *work, u64 work_size, const FileId &fileId);
-    Result LoadAlbumScreenShotThumbnailImage(u64 *width, u64 *height, void *img, u64 img_size, void *work, u64 work_size, const FileId &fileId);
+    Result LoadAlbumScreenShotImage(u64 *width, u64 *height, void *img, size_t img_size, void *work, size_t work_size, const FileId &fileId);
+    Result LoadAlbumScreenShotThumbnailImage(u64 *width, u64 *height, void *img, size_t img_size, void *work, size_t work_size, const FileId &fileId);
 
-    Result LoadAlbumScreenShotImageEx(u64 *width, u64 *height, void *img, u64 img_size, void *work, u64 work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
-    Result LoadAlbumScreenShotThumbnailImageEx(u64 *width, u64 *height, void *img, u64 img_size, void *work, u64 work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
+    Result LoadAlbumScreenShotImageEx(u64 *width, u64 *height, void *img, size_t img_size, void *work, size_t work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
+    Result LoadAlbumScreenShotThumbnailImageEx(u64 *width, u64 *height, void *img, size_t img_size, void *work, size_t work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
 
-    Result LoadAlbumScreenShotImageEx0(CapsScreenShotAttribute *attrs, u64 *width, u64 *height, void *img, u64 img_size, void *work, u64 work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
-    Result LoadAlbumScreenShotThumbnailImageEx0(CapsScreenShotAttribute *attrs, u64 *width, u64 *height, void *img, u64 img_size, void *work, u64 work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
+    Result LoadAlbumScreenShotImageEx0(CapsScreenShotAttribute *attrs, u64 *width, u64 *height, void *img, size_t img_size, void *work, size_t work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
+    Result LoadAlbumScreenShotThumbnailImageEx0(CapsScreenShotAttribute *attrs, u64 *width, u64 *height, void *img, size_t img_size, void *work, size_t work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
 
-    Result LoadAlbumScreenShotImageEx1(LoadAlbumScreenShotImageOutput *out, void *img, u64 img_size, void *work, u64 work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
-    Result LoadAlbumScreenShotThumbnailImageEx1(LoadAlbumScreenShotImageOutput *out, void *img, u64 img_size, void *work, u64 work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
+    Result LoadAlbumScreenShotImageEx1(LoadAlbumScreenShotImageOutput *out, void *img, size_t img_size, void *work, size_t work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
+    Result LoadAlbumScreenShotThumbnailImageEx1(LoadAlbumScreenShotImageOutput *out, void *img, size_t img_size, void *work, size_t work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
 
-    Result LoadAlbumScreenShotImageByAruid(LoadAlbumScreenShotImageOutputForApplication *out, void *img, u64 img_size, void *work, u64 work_size, u64 aruid, const ApplicationEntry &appFileEntry, const CapsScreenShotDecodeOption &opts);
-    Result LoadAlbumScreenShotThumbnailImageByAruid(LoadAlbumScreenShotImageOutputForApplication *out, void *img, u64 img_size, void *work, u64 work_size, u64 aruid, const ApplicationEntry &appFileEntry, const CapsScreenShotDecodeOption &opts);
+    Result LoadAlbumScreenShotImageByAruid(LoadAlbumScreenShotImageOutputForApplication *out, void *img, size_t img_size, void *work, size_t work_size, u64 aruid, const ApplicationEntry &appFileEntry, const CapsScreenShotDecodeOption &opts);
+    Result LoadAlbumScreenShotThumbnailImageByAruid(LoadAlbumScreenShotImageOutputForApplication *out, void *img, size_t img_size, void *work, size_t work_size, u64 aruid, const ApplicationEntry &appFileEntry, const CapsScreenShotDecodeOption &opts);
+
+    Result LoadMakerNoteInfoForDebug(u64* out, void *makerNote, size_t makerNoteSize, void *work, size_t work_size, const FileId &fileId);
 
 }

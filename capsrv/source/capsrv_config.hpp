@@ -15,6 +15,9 @@ namespace ams::capsrv::config {
     s64 GetMaxFileSize(StorageId storage, ContentType type);
     const char *GetCustomDirectoryPath();
 
+    bool IsDebug();
+    bool SetVerification(bool value);
+
     ALWAYS_INLINE bool ContentTypeValid(ContentType type) {
         return type == ContentType::Screenshot || type == ContentType::Movie || type == ContentType::ExtraScreenshot || type == ContentType::ExtraMovie;
     }
@@ -22,7 +25,5 @@ namespace ams::capsrv::config {
     ALWAYS_INLINE bool StorageValid(StorageId storage) {
         return storage == StorageId::Nand || storage == StorageId::Sd;
     }
-
-    void print();
 
 }

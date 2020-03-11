@@ -193,9 +193,9 @@ namespace ams::capsrv {
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::LoadMakerNoteInfoForDebug(sf::Out<u64> out, sf::OutBuffer unk0, sf::OutBuffer unk1, const FileId &fileId) {
-        WriteLogFile("Accessor", "LoadMakerNoteInfoForDebug: bufferSize(%ld), bufferSize(%ld), fileId(%s)", unk0.GetSize(), unk1.GetSize(), fileId.AsString());
-        return ResultSuccess();
+    Result AlbumAccessorService::LoadMakerNoteInfoForDebug(sf::Out<u64> out, sf::OutBuffer makerNote, sf::OutBuffer workBuffer, const FileId &fileId) {
+        WriteLogFile("Accessor", "LoadMakerNoteInfoForDebug: bufferSize(%ld), bufferSize(%ld), fileId(%s)", makerNote.GetSize(), workBuffer.GetSize(), fileId.AsString());
+        return impl::LoadMakerNoteInfoForDebug(out.GetPointer(), makerNote.GetPointer(), makerNote.GetSize(), workBuffer.GetPointer(), workBuffer.GetSize(), fileId);
     }
 
     Result AlbumAccessorService::OpenAccessorSession(sf::Out<std::shared_ptr<AccessorSession>> out, const sf::ClientAppletResourceUserId &aruid) {

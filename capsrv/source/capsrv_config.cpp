@@ -18,16 +18,16 @@ namespace ams::capsrv::config {
         };
 
         bool defaultDirectory = true;
-        //bool debugMode = false;
+        bool debugMode = false;
         bool screenshotSupport = true;
         bool movieSupport = false;
         bool verifyScreenShotFiledata = true;
         bool verifyMovieFileSignature = true;
         bool verifyMovieFileHash = true;
-        u64 nandScreenshotMax = 1000;
-        u64 nandMovieMax = 100;
-        u64 sdScreenshotMax = 10000;
-        u64 sdMovieMax = 1000;
+        constexpr const inline u64 nandScreenshotMax = 1000;
+        constexpr const inline u64 nandMovieMax = 100;
+        constexpr const inline u64 sdScreenshotMax = 10000;
+        constexpr const inline u64 sdMovieMax = 1000;
         char *directoryPath = nullptr;
 
     }
@@ -116,6 +116,19 @@ namespace ams::capsrv::config {
         if (defaultDirectory)
             return nullptr;
         return directoryPath;
+    }
+
+    bool IsDebug() {
+        return debugMode;
+    }
+
+    bool SetVerification(bool value) {
+        bool old = verifyScreenShotFiledata;
+        if (defaultDirectory) {
+            return old;
+        }
+        verifyScreenShotFiledata = value;
+        return old;
     }
 
 }

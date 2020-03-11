@@ -35,23 +35,35 @@ namespace ams::capsrv {
 
     R_DEFINE_ERROR_RESULT(FailedToMountImageDirectory,      21);
     R_DEFINE_ERROR_RESULT(ReachedSizeLimit,                 22);
-    R_DEFINE_ERROR_RESULT(FileTooBig,                       23); /// ? see DeleteAlbumFileByAruid
+    R_DEFINE_ERROR_RESULT(FileInaccessible,                 23);
     R_DEFINE_ERROR_RESULT(InvalidFileData,                  24);
     R_DEFINE_ERROR_RESULT(ReachedCountLimit,                25);
-
     R_DEFINE_ERROR_RESULT(InvalidThumbnail,                 26);
 
     R_DEFINE_ERROR_RESULT(BufferInsufficient,               30);
 
     R_DEFINE_ERROR_RESULT(FileReserved,                     94);
+    R_DEFINE_ERROR_RESULT(FileReservedRead,                 96);
 
     R_DEFINE_ERROR_RESULT(TooManyApplicationsRegistered,    820);
     R_DEFINE_ERROR_RESULT(ApplicationNotRegistered,         822);
 
     R_DEFINE_ERROR_RESULT(DebugModeDisabled,                1023);
 
-    R_DEFINE_ERROR_RESULT(InvalidJFIF,                      1302);
-    R_DEFINE_ERROR_RESULT(InvalidEXIF,                      1303);
+    R_DEFINE_ERROR_RANGE(JpegMeta, 1300, 1399);
+        R_DEFINE_ERROR_RESULT(ContentTypeMissmatch,             1300);
+        R_DEFINE_ERROR_RESULT(InvalidJPEG,                      1301);
+        R_DEFINE_ERROR_RESULT(InvalidJFIF,                      1302);
+        R_DEFINE_ERROR_RESULT(InvalidEXIF,                      1303);
+        R_DEFINE_ERROR_RESULT(MissingDateTime,                  1304);
+        R_DEFINE_ERROR_RESULT(InvalidDateTimeLength,            1305);
+        R_DEFINE_ERROR_RESULT(DateTimeMissmatch,                1306);
+        R_DEFINE_ERROR_RESULT(MissingMakerNote,                 1307);
+        R_DEFINE_ERROR_RESULT(ApplicationIdMissmatch,           1308);
+
+        R_DEFINE_ERROR_RESULT(MakerNoteUnk0,                    1310);
+        R_DEFINE_ERROR_RESULT(InvalidDimension,                 1311);
+        R_DEFINE_ERROR_RESULT(MakerNoteUnk1,                    1312);
 
     R_DEFINE_ERROR_RESULT(TooManyFiles,                     1401);
 
