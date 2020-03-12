@@ -7,8 +7,10 @@ namespace ams::capsrv::crypto {
 
     Result Initialize();
 
-    Result GenerateScreenshotMac(u8 *out, u8 *in, size_t size);
-    Result GenerateMovieMac(u8 *out, u8 *in, size_t size);
+    Result GenerateScreenshotMac(u64 out[2], const u8 *in, size_t size, size_t makerNoteOffset);
+    Result GenerateMovieMac(u64 out[2], const u8 *in, size_t size);
+
+    void ComputeScreenShotHMAC(u64 out[2], const u8 *in, size_t size, size_t makerNoteOffset);
 
     namespace aes128 {
 

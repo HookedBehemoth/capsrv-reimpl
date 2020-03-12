@@ -6,15 +6,11 @@ namespace ams::capsrv::config {
 
     namespace {
 
-        constexpr s64 maxFileSize[2][2] = {
-            [StorageId::Nand] = {
-                [ContentType::Screenshot] = 0x7D000,
-                [ContentType::Movie] = 0x80000000,
-            },
-            [StorageId::Sd] = {
-                [ContentType::Screenshot] = 0x7D000,
-                [ContentType::Movie] = 0x80000000,
-            },
+        constexpr s64 maxFileSize[4] = {
+            [ContentType::Screenshot] = 0x7D000,
+            [ContentType::Movie] = 0x80000000,
+            [ContentType::ExtraScreenshot] = 0x7D000,
+            [ContentType::ExtraMovie] = 0x80000000,
         };
 
         bool defaultDirectory = true;
@@ -108,8 +104,10 @@ namespace ams::capsrv::config {
         return 0;
     }
 
-    s64 GetMaxFileSize(StorageId storage, ContentType type) {
-        return maxFileSize[storage][type];
+    s64 GetMaxFileSize(ContentType type) {
+        if (SupportsType(type))
+            return maxFileSize[type];
+        return 0;
     }
 
     const char *GetCustomDirectoryPath() {
@@ -129,6 +127,10 @@ namespace ams::capsrv::config {
         }
         verifyScreenShotFiledata = value;
         return old;
+    }
+
+    bool ShouldVerify() {
+        return verifyScreenShotFiledata;
     }
 
 }

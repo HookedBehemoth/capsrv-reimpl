@@ -49,6 +49,7 @@ namespace ams::capsrv {
     R_DEFINE_ERROR_RESULT(ApplicationNotRegistered,         822);
 
     R_DEFINE_ERROR_RESULT(DebugModeDisabled,                1023);
+    R_DEFINE_ERROR_RESULT(InvalidMakerNote,                 1024);
 
     R_DEFINE_ERROR_RANGE(JpegMeta, 1300, 1399);
         R_DEFINE_ERROR_RESULT(ContentTypeMissmatch,             1300);
@@ -60,12 +61,15 @@ namespace ams::capsrv {
         R_DEFINE_ERROR_RESULT(DateTimeMissmatch,                1306);
         R_DEFINE_ERROR_RESULT(MissingMakerNote,                 1307);
         R_DEFINE_ERROR_RESULT(ApplicationIdMissmatch,           1308);
-
-        R_DEFINE_ERROR_RESULT(MakerNoteUnk0,                    1310);
+        R_DEFINE_ERROR_RESULT(InvalidMacHash,                   1309);
+        R_DEFINE_ERROR_RESULT(InvalidOrientation,               1310);
         R_DEFINE_ERROR_RESULT(InvalidDimension,                 1311);
-        R_DEFINE_ERROR_RESULT(MakerNoteUnk1,                    1312);
+        R_DEFINE_ERROR_RESULT(MakerNoteUnk,                     1312);
 
     R_DEFINE_ERROR_RESULT(TooManyFiles,                     1401);
+
+    R_DEFINE_ERROR_RESULT(InvalidJpegHeader,                1501);
+    R_DEFINE_ERROR_RESULT(InvalidJpegSize,                  1502);
 
     /* TODO: Move to fs results */
     R_DEFINE_ERROR_RESULT(AllocationFailureInImageDirectoryA,   3231);

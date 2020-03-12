@@ -14,9 +14,13 @@ namespace ams::capsrv::crypto {
         constexpr u8 movie_key_source[0x10] = {0x71, 0x70, 0x7d, 0xed, 0x3e, 0x2f, 0x48, 0x03, 0x37, 0x2f, 0x42, 0x35, 0x12, 0x39, 0x2c, 0xfe};
         u8 movie_kek[0x10] = {0};
 
-        /* Unofficial key source for decrypting official AES keys. */
+        /* Unofficial key source for decrypting official keys. */
         constexpr u8 aes_kek_source[0x10] = {0xE2, 0x41, 0x1A, 0xA8, 0x2E, 0x55, 0xEB, 0x16, 0xF2, 0xF7, 0x82, 0xFB, 0x44, 0x10, 0xFE, 0xE5};
         constexpr u8 aes_key_source[0x10] = {0x8C, 0xFB, 0x07, 0x94, 0xC8, 0x1C, 0xD3, 0x88, 0x80, 0x71, 0x01, 0x98, 0xAC, 0xB9, 0x13, 0xB9};
+
+        /* HMAC-SHA256 key source. */
+        constexpr u8 hmac_encrypted_key[0x20] = {0x56, 0x13, 0xA8, 0xAF, 0x2C, 0x46, 0xF2, 0x0D, 0xC6, 0x74, 0x4A, 0xA2, 0x3A, 0x51, 0x09, 0x52, 0xEC, 0xBE, 0x03, 0xF1, 0x46, 0x2A, 0x95, 0x79, 0x79, 0x0A, 0xD7, 0x01, 0x93, 0x34, 0x80, 0xDA};
+        u8 hmac_key[0x20] = {0};
 
         /* AES 128 key for path names. */
         constexpr u8 aes128_encrypted_key[0x10] = {0xD9, 0x63, 0x84, 0x08, 0x48, 0x9B, 0x43, 0xDB, 0x79, 0x50, 0xDC, 0x3D, 0x32, 0x92, 0x2B, 0x3A};
@@ -26,7 +30,7 @@ namespace ams::capsrv::crypto {
         constexpr u8 aes256_encrypted_key[0x20] = {0x38, 0x5E, 0x44, 0xF9, 0x60, 0xFB, 0x37, 0x10, 0xEA, 0x2A, 0xD3, 0xC8, 0x40, 0xB8, 0x89, 0xA2, 0x34, 0x7B, 0xFD, 0xA3, 0xBC, 0xB5, 0x03, 0xD0, 0xCE, 0xD0, 0xE5, 0x81, 0x6F, 0x4D, 0x8B, 0xB8};
         u8 aes256_key[0x20] = {0};
 
-        Result GenerateMac(u8 *out, u8 *in, size_t size, const u8 kek[0x10], const u8 key_source[0x10]) {
+        Result GenerateMac(u64 out[2], const u8 *in, size_t size, const u8 kek[0x10], const u8 key_source[0x10]) {
             u32 keyslot;
             R_TRY(splCryptoLockAesEngine(&keyslot));
             ON_SCOPE_EXIT {
@@ -50,22 +54,54 @@ namespace ams::capsrv::crypto {
         R_TRY(splCryptoGenerateAesKek(aes_kek_source, 0, 0, aes_kek));
         R_TRY(splCryptoGenerateAesKey(aes_kek, aes_key_source, aes_aes_key));
 
-        /* Decrypt official AES keys. */
+        /* Decrypt official keys. */
         Aes128Context ctx;
         aes128ContextCreate(&ctx, aes_aes_key, 0);
         aes128DecryptBlock(&ctx, aes128_key, aes128_encrypted_key);
         aes128DecryptBlock(&ctx, aes256_key, aes256_encrypted_key);
         aes128DecryptBlock(&ctx, aes256_key + 0x10, aes256_encrypted_key + 0x10);
+        aes128DecryptBlock(&ctx, hmac_key, hmac_encrypted_key);
+        aes128DecryptBlock(&ctx, hmac_key + 0x10, hmac_encrypted_key + 0x10);
 
         return ResultSuccess();
     }
 
-    Result GenerateScreenshotMac(u8 *out, u8 *in, size_t size) {
-        return GenerateMac(out, in, size, screenshot_kek, screenshot_key_source);
+    Result GenerateScreenshotMac(u64 out[2], const u8 *in, size_t size, size_t makerNoteOffset) {
+        u8 nil[0x10]{};
+        ams::crypto::Sha256Generator sha256;
+        sha256.Initialize();
+        sha256.Update(nil, 0x10);
+        sha256.Update(in + makerNoteOffset + 0x10, size - makerNoteOffset + 0x10);
+        u8 hash[0x20];
+        sha256.GetHash(&hash, 0x20);
+
+        u64 mac[2];
+        R_TRY(GenerateMac(mac, hash, 0x20, screenshot_kek, screenshot_key_source));
+
+        out[0] = mac[0];
+        out[1] = mac[1];
+
+        return ResultSuccess();
     }
 
-    Result GenerateMovieMac(u8 *out, u8 *in, size_t size) {
+    Result GenerateMovieMac(u64 out[2], const u8 *in, size_t size) {
         return GenerateMac(out, in, size, movie_kek, movie_key_source);
+    }
+
+    void ComputeScreenShotHMAC(u64 out[2], const u8 *in, size_t size, size_t makerNoteOffset) {
+        size_t off = makerNoteOffset + 0x10;
+        u8 nil[0x10]{};
+        HmacSha256Context ctx;
+        hmacSha256ContextCreate(&ctx, hmac_key, 0x20);
+        hmacSha256ContextUpdate(&ctx, in, makerNoteOffset);
+        hmacSha256ContextUpdate(&ctx, nil, 0x10);
+        hmacSha256ContextUpdate(&ctx, in + off, size - off);
+
+        u64 mac[4];
+        hmacSha256ContextGetMac(&ctx, mac);
+
+        out[0] = mac[0];
+        out[1] = mac[1];
     }
 
     namespace aes128 {

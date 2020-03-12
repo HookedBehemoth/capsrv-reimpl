@@ -4,6 +4,7 @@
 
 #include "../capsrv_config.hpp"
 #include "../image/exif_extractor.hpp"
+#include "../image/exif_verify.hpp"
 #include "../logger.hpp"
 #include "capsrv_controller.hpp"
 
@@ -294,7 +295,7 @@ namespace ams::capsrv::impl {
             s64 size;
             R_TRY(fs::GetFileSize(&size, file));
 
-            R_UNLESS(size <= config::GetMaxFileSize(fileId.storage, fileId.type), capsrv::ResultFileInaccessible());
+            R_UNLESS(size <= config::GetMaxFileSize(fileId.type), capsrv::ResultFileInaccessible());
 
             *out = static_cast<u64>(size);
             return ResultSuccess();
@@ -326,7 +327,7 @@ namespace ams::capsrv::impl {
             return ResultSuccess();
         }
 
-        Result LoadMoviePreview(u64 *out_size, void *jpeg, u64 jpeg_size, const FileId &fileId) {
+        Result LoadMoviePreview(u64 *out_size, u8 *jpeg, u64 jpeg_size, const FileId &fileId) {
             const size_t path_length = fs::EntryNameLengthMax + 1;
             char path[path_length];
             fileId.GetFilePath(path, path_length);
@@ -339,14 +340,14 @@ namespace ams::capsrv::impl {
             R_TRY(fs::GetFileSize(&size, file));
 
             R_UNLESS(size > 0, capsrv::ResultInvalidFileData());
-            R_UNLESS(size <= config::GetMaxFileSize(fileId.storage, fileId.type), capsrv::ResultFileInaccessible());
+            R_UNLESS(size <= config::GetMaxFileSize(fileId.type), capsrv::ResultFileInaccessible());
             R_UNLESS(static_cast<u64>(size) <= jpeg_size, capsrv::ResultInvalidArgument());
 
             return ResultSuccess();
         }
 
         /* Do it better... */
-        Result LoadJpeg(u64 *out_size, void *jpeg, u64 jpeg_size, const FileId &fileId) {
+        Result LoadJpeg(u64 *out_size, u8 *jpeg, u64 jpeg_size, const FileId &fileId) {
             const size_t path_length = fs::EntryNameLengthMax + 1;
             char path[path_length];
             fileId.GetFilePath(path, path_length);
@@ -359,7 +360,7 @@ namespace ams::capsrv::impl {
             R_TRY(fs::GetFileSize(&size, file));
 
             R_UNLESS(size > 0, capsrv::ResultInvalidFileData());
-            R_UNLESS(size <= config::GetMaxFileSize(fileId.storage, fileId.type), capsrv::ResultFileInaccessible());
+            R_UNLESS(size <= config::GetMaxFileSize(fileId.type), capsrv::ResultFileInaccessible());
             R_UNLESS(static_cast<u64>(size) <= jpeg_size, capsrv::ResultInvalidArgument());
 
             R_TRY(fs::ReadFile(out_size, file, 0, jpeg, size));
@@ -370,13 +371,13 @@ namespace ams::capsrv::impl {
         }
 
         /* Load file. */
-        Result LoadImage(CapsScreenShotAttribute *out_attr, void *buf_0, void *buf_1, u64 *out_size, void *work, size_t work_size, const FileId &fileId) {
+        Result LoadImage(CapsScreenShotAttribute *out_attr, u8 *buf_0, CapsApplicationData *appData, u64 *out_size, u8 *work, size_t work_size, const FileId &fileId) {
             if (out_attr)
                 *out_attr = {0};
             if (buf_0)
                 std::memset(buf_0, 0, 0x400);
-            if (buf_1)
-                std::memset(buf_1, 0, 0x404);
+            if (appData)
+                std::memset(appData, 0, sizeof(CapsApplicationData));
 
             std::memset(work, 0, work_size);
 
@@ -399,17 +400,17 @@ namespace ams::capsrv::impl {
                 *out_attr = {0};
             if (buf_0)
                 std::memset(buf_0, 0, 0x400);
-            if (buf_1)
-                std::memset(buf_1, 0, 0x404);
+            if (appData)
+                std::memset(appData, 0, sizeof(CapsApplicationData));
 
             return rc;
         }
 
-        Result LoadScreenShotImage(Dimensions *dims, CapsScreenShotAttribute *out_attr, void *buf_0, void *buf_1, void *img, size_t img_size, void *work, size_t work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts = {0}) {
+        Result LoadScreenShotImage(Dimensions *dims, CapsScreenShotAttribute *out_attr, u8 *buf_0, CapsApplicationData *appData, u8 *img, size_t img_size, u8 *work, size_t work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts = {0}) {
             CapsScreenShotAttribute attr{};
             u64 jpegSize = 0;
             /* Load JPEG image. */
-            Result rc = LoadImage(out_attr, buf_0, buf_1, &jpegSize, work, work_size, fileId);
+            Result rc = LoadImage(out_attr, buf_0, appData, &jpegSize, work, work_size, fileId);
             if (R_SUCCEEDED(rc)) {
                 /* Convert JPEG image. */
                 rc = capsdcDecodeJpeg(1280, 720, &opts, work, jpegSize, img, img_size);
@@ -425,14 +426,14 @@ namespace ams::capsrv::impl {
                 *out_attr = {0};
             if (buf_0)
                 std::memset(buf_0, 0, 0x400);
-            if (buf_1)
-                std::memset(buf_1, 0, 0x404);
+            if (appData)
+                std::memset(appData, 0, sizeof(CapsApplicationData));
 
             return rc;
         }
 
         /* Do it better... */
-        Result LoadJpegThumbnail(u64 *out_size, void *thumb, u64 thumb_size, const FileId &fileId) {
+        Result LoadJpegThumbnail(u64 *out_size, u8 *thumb, u64 thumb_size, const FileId &fileId) {
             const size_t path_length = fs::EntryNameLengthMax + 1;
             char path[path_length];
             fileId.GetFilePath(path, path_length);
@@ -445,7 +446,7 @@ namespace ams::capsrv::impl {
             R_TRY(fs::GetFileSize(&size, file));
 
             R_UNLESS(size > 0, capsrv::ResultInvalidFileData());
-            R_UNLESS(size <= config::GetMaxFileSize(fileId.storage, fileId.type), capsrv::ResultFileInaccessible());
+            R_UNLESS(size <= config::GetMaxFileSize(fileId.type), capsrv::ResultFileInaccessible());
 
             if (size > 0x11000)
                 size = 0x11000;
@@ -477,13 +478,13 @@ namespace ams::capsrv::impl {
             return ResultSuccess();
         }
 
-        Result LoadThumbnail(CapsScreenShotAttribute *out_attr, void *buf_0, void *buf_1, u64 *out_size, void *work, size_t work_size, const FileId &fileId) {
+        Result LoadThumbnail(CapsScreenShotAttribute *out_attr, u8 *buf_0, CapsApplicationData *appData, u64 *out_size, u8 *work, size_t work_size, const FileId &fileId) {
             if (out_attr)
                 *out_attr = {0};
             if (buf_0)
                 std::memset(buf_0, 0, 0x400);
-            if (buf_1)
-                std::memset(buf_1, 0, 0x404);
+            if (appData)
+                std::memset(appData, 0, sizeof(CapsApplicationData));
 
             std::memset(work, 0, work_size);
 
@@ -492,9 +493,11 @@ namespace ams::capsrv::impl {
             R_TRY(MountAlbumImpl(fileId.storage));
             R_UNLESS(config::SupportsType(fileId.type), capsrv::ResultInvalidContentType());
 
-            Result rc = {}; /* TODO: Load video thumbnail. */
+            Result rc = {};
             if ((fileId.type % 2) == ContentType::Screenshot) {
                 rc = LoadJpegThumbnail(out_size, work, work_size, fileId);
+            } else {
+                /* TODO: Load video thumbnail. */
             }
 
             if (R_SUCCEEDED(rc))
@@ -504,17 +507,17 @@ namespace ams::capsrv::impl {
                 *out_attr = {0};
             if (buf_0)
                 std::memset(buf_0, 0, 0x400);
-            if (buf_1)
-                std::memset(buf_1, 0, 0x404);
+            if (appData)
+                std::memset(appData, 0, sizeof(CapsApplicationData));
 
             return rc;
         }
 
-        Result LoadScreenShotThumbnail(Dimensions *dims, CapsScreenShotAttribute *out_attr, void *buf_0, void *buf_1, void *img, size_t img_size, void *work, size_t work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts = {0}) {
+        Result LoadScreenShotThumbnail(Dimensions *dims, CapsScreenShotAttribute *out_attr, u8 *buf_0, CapsApplicationData *appData, u8 *img, size_t img_size, u8 *work, size_t work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts = {0}) {
             CapsScreenShotAttribute attr{};
             u64 jpegSize = 0;
             /* Load JPEG thumbnail. */
-            Result rc = LoadThumbnail(out_attr, buf_0, buf_1, &jpegSize, work, work_size, fileId);
+            Result rc = LoadThumbnail(out_attr, buf_0, appData, &jpegSize, work, work_size, fileId);
             if (R_SUCCEEDED(rc)) {
                 /* Convert JPEG thumbnail. */
                 rc = capsdcDecodeJpeg(320, 180, &opts, work, jpegSize, img, img_size);
@@ -530,10 +533,55 @@ namespace ams::capsrv::impl {
                 *out_attr = {0};
             if (buf_0)
                 std::memset(buf_0, 0, 0x400);
-            if (buf_1)
-                std::memset(buf_1, 0, 0x404);
+            if (appData)
+                std::memset(appData, 0, sizeof(CapsApplicationData));
 
             return rc;
+        }
+
+        Result LoadJpegMakerNote(u64 *out, u8 *makerNote, u8 *work, size_t workSize, const FileId &fileId) {
+            const size_t path_length = fs::EntryNameLengthMax + 1;
+            char path[path_length];
+            fileId.GetFilePath(path, path_length);
+
+            fs::FileHandle file;
+            R_TRY(fs::OpenFile(&file, path, fs::OpenMode_Read));
+            ON_SCOPE_EXIT { fs::CloseFile(file); };
+
+            s64 fileSize;
+            R_TRY(fs::GetFileSize(&fileSize, file));
+            R_UNLESS(fileSize <= config::GetMaxFileSize(fileId.type), capsrv::ResultFileInaccessible());
+            s64 readSize = fileSize;
+            if (readSize >= 0x11000)
+                readSize = 0x11000;
+            R_UNLESS(readSize <= static_cast<s64>(workSize), capsrv::ResultOutOfMemory());
+
+            size_t actualReadSize;
+            R_TRY(fs::ReadFile(&actualReadSize, file, 0, work, readSize));
+            R_UNLESS(readSize == static_cast<s64>(actualReadSize), capsrv::ResultInvalidArgument());
+
+            R_TRY(image::VerifyMakerNote(makerNote, work, workSize, fileId, true));
+            *out = fileSize;
+            return ResultSuccess();
+        }
+
+        Result LoadMovieMakerNote(u64 *out, u8 *makerNote, u8 *work, size_t workSize, const FileId &fileId) {
+            /* TODO: Implement. */
+            return ResultSuccess();
+        }
+
+        Result LoadMakerNoteInfo(u64 *out, u8 *makerNote, u8 *work, size_t workSize, const FileId &fileId) {
+            std::memset(makerNote, 0, 0xc78);
+            R_UNLESS(!IsReserved(fileId, writeReserve), capsrv::ResultFileInaccessible());
+            R_UNLESS(config::StorageValid(fileId.storage), capsrv::ResultInvalidStorageId());
+            R_TRY(MountAlbumImpl(fileId.storage));
+            R_UNLESS(config::SupportsType(fileId.type), capsrv::ResultInvalidContentType());
+
+            if ((fileId.type % 2) == ContentType::Screenshot) {
+                return LoadJpegMakerNote(out, makerNote, work, workSize, fileId);
+            } else {
+                return LoadMovieMakerNote(out, makerNote, work, workSize, fileId);
+            }
         }
 
     }
@@ -834,17 +882,17 @@ namespace ams::capsrv::impl {
     }
 
     /* Load file. */
-    Result LoadAlbumFile(void *ptr, size_t size, u64 *outSize, const FileId &fileId) {
+    Result LoadAlbumFile(u8 *ptr, size_t size, u64 *outSize, const FileId &fileId) {
         std::scoped_lock lk(g_mutex);
         return LoadImage(nullptr, nullptr, nullptr, outSize, ptr, size, fileId);
     }
 
-    Result LoadAlbumFileThumbnail(void *ptr, size_t size, u64 *outSize, const FileId &fileId) {
+    Result LoadAlbumFileThumbnail(u8 *ptr, size_t size, u64 *outSize, const FileId &fileId) {
         std::scoped_lock lk(g_mutex);
         return LoadThumbnail(nullptr, nullptr, nullptr, outSize, ptr, size, fileId);
     }
 
-    Result LoadAlbumScreenShotImage(u64 *width, u64 *height, void *img, size_t img_size, void *work, size_t work_size, const FileId &fileId) {
+    Result LoadAlbumScreenShotImage(u64 *width, u64 *height, u8 *img, size_t img_size, u8 *work, size_t work_size, const FileId &fileId) {
         Result rc{};
         Dimensions dims{};
         {
@@ -861,7 +909,7 @@ namespace ams::capsrv::impl {
         return rc;
     }
 
-    Result LoadAlbumScreenShotThumbnailImage(u64 *width, u64 *height, void *img, size_t img_size, void *work, size_t work_size, const FileId &fileId) {
+    Result LoadAlbumScreenShotThumbnailImage(u64 *width, u64 *height, u8 *img, size_t img_size, u8 *work, size_t work_size, const FileId &fileId) {
         Result rc{};
         Dimensions dims{};
         {
@@ -878,7 +926,7 @@ namespace ams::capsrv::impl {
         return rc;
     }
 
-    Result LoadAlbumScreenShotImageEx(u64 *width, u64 *height, void *img, size_t img_size, void *work, size_t work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
+    Result LoadAlbumScreenShotImageEx(u64 *width, u64 *height, u8 *img, size_t img_size, u8 *work, size_t work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
         Result rc{};
         Dimensions dims{};
         {
@@ -894,7 +942,7 @@ namespace ams::capsrv::impl {
         std::memset(work, 0, work_size);
         return rc;
     }
-    Result LoadAlbumScreenShotThumbnailImageEx(u64 *width, u64 *height, void *img, size_t img_size, void *work, size_t work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
+    Result LoadAlbumScreenShotThumbnailImageEx(u64 *width, u64 *height, u8 *img, size_t img_size, u8 *work, size_t work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
         Result rc{};
         Dimensions dims{};
         {
@@ -911,7 +959,7 @@ namespace ams::capsrv::impl {
         return rc;
     }
 
-    Result LoadAlbumScreenShotImageEx0(CapsScreenShotAttribute *out_attr, u64 *width, u64 *height, void *img, size_t img_size, void *work, size_t work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
+    Result LoadAlbumScreenShotImageEx0(CapsScreenShotAttribute *out_attr, u64 *width, u64 *height, u8 *img, size_t img_size, u8 *work, size_t work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
         Result rc{};
         Dimensions dims{};
         CapsScreenShotAttribute attr{};
@@ -930,7 +978,7 @@ namespace ams::capsrv::impl {
         std::memset(work, 0, work_size);
         return rc;
     }
-    Result LoadAlbumScreenShotThumbnailImageEx0(CapsScreenShotAttribute *out_attr, u64 *width, u64 *height, void *img, size_t img_size, void *work, size_t work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
+    Result LoadAlbumScreenShotThumbnailImageEx0(CapsScreenShotAttribute *out_attr, u64 *width, u64 *height, u8 *img, size_t img_size, u8 *work, size_t work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
         Result rc{};
         Dimensions dims{};
         CapsScreenShotAttribute attr{};
@@ -950,7 +998,7 @@ namespace ams::capsrv::impl {
         return rc;
     }
 
-    Result LoadAlbumScreenShotImageEx1(LoadAlbumScreenShotImageOutput *out, void *img, size_t img_size, void *work, size_t work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
+    Result LoadAlbumScreenShotImageEx1(LoadAlbumScreenShotImageOutput *out, u8 *img, size_t img_size, u8 *work, size_t work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
         Result rc{};
         Dimensions dims{};
         CapsScreenShotAttribute attr{};
@@ -966,7 +1014,7 @@ namespace ams::capsrv::impl {
         std::memset(work, 0, work_size);
         return rc;
     }
-    Result LoadAlbumScreenShotThumbnailImageEx1(LoadAlbumScreenShotImageOutput *out, void *img, size_t img_size, void *work, size_t work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
+    Result LoadAlbumScreenShotThumbnailImageEx1(LoadAlbumScreenShotImageOutput *out, u8 *img, size_t img_size, u8 *work, size_t work_size, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
         Result rc{};
         Dimensions dims{};
         CapsScreenShotAttribute attr{};
@@ -983,7 +1031,7 @@ namespace ams::capsrv::impl {
         return rc;
     }
 
-    Result LoadAlbumScreenShotImageByAruid(LoadAlbumScreenShotImageOutputForApplication *out, void *img, size_t img_size, void *work, size_t work_size, u64 aruid, const ApplicationEntry &appEntry, const CapsScreenShotDecodeOption &opts) {
+    Result LoadAlbumScreenShotImageByAruid(LoadAlbumScreenShotImageOutputForApplication *out, u8 *img, size_t img_size, u8 *work, size_t work_size, u64 aruid, const ApplicationEntry &appEntry, const CapsScreenShotDecodeOption &opts) {
         Result rc{};
         Dimensions dims{};
         CapsScreenShotAttribute attr{};
@@ -1017,7 +1065,7 @@ namespace ams::capsrv::impl {
         }
         return rc;
     }
-    Result LoadAlbumScreenShotThumbnailImageByAruid(LoadAlbumScreenShotImageOutputForApplication *out, void *img, size_t img_size, void *work, size_t work_size, u64 aruid, const ApplicationEntry &appEntry, const CapsScreenShotDecodeOption &opts) {
+    Result LoadAlbumScreenShotThumbnailImageByAruid(LoadAlbumScreenShotImageOutputForApplication *out, u8 *img, size_t img_size, u8 *work, size_t work_size, u64 aruid, const ApplicationEntry &appEntry, const CapsScreenShotDecodeOption &opts) {
         Result rc{};
         Dimensions dims{};
         CapsScreenShotAttribute attr{};
@@ -1053,7 +1101,7 @@ namespace ams::capsrv::impl {
         return rc;
     }
 
-    Result LoadMakerNoteInfoForDebug(u64* out, void *makerNote, size_t makerNoteSize, void *work, size_t work_size, const FileId &fileId) {
+    Result LoadMakerNoteInfoForDebug(u64 *out, u8 *makerNote, size_t makerNoteSize, u8 *work, size_t work_size, const FileId &fileId) {
         R_UNLESS(config::IsDebug(), capsrv::ResultDebugModeDisabled());
         R_UNLESS(makerNoteSize >= 0xc78, capsrv::ResultBufferInsufficient());
         R_UNLESS(work_size >= 0x7d000, capsrv::ResultOutOfMemory());
@@ -1061,13 +1109,14 @@ namespace ams::capsrv::impl {
         std::memset(makerNote, 0, makerNoteSize);
         std::memset(work, 0, work_size);
 
-        Result rc;
-        u8 tempNote[0xc78];
-        u64 temp;
+        Result rc{};
+        /* TODO: MakerNoteInfo struct. */
+        u8 tempNote[0xc78]{};
+        u64 temp{};
         {
             std::scoped_lock lk(g_mutex);
             bool old = config::SetVerification(false);
-            /* TODO: Load makernote info. */
+            rc = LoadMakerNoteInfo(out, makerNote, work, work_size, fileId);
             old = config::SetVerification(old);
         }
         if (R_SUCCEEDED(rc)) {

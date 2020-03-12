@@ -12,11 +12,12 @@ namespace ams::capsrv::config {
     bool SupportsType(ContentType type);
 
     u64 GetMax(StorageId storage, ContentType type);
-    s64 GetMaxFileSize(StorageId storage, ContentType type);
+    s64 GetMaxFileSize(ContentType type);
     const char *GetCustomDirectoryPath();
 
     bool IsDebug();
     bool SetVerification(bool value);
+    bool ShouldVerify();
 
     ALWAYS_INLINE bool ContentTypeValid(ContentType type) {
         return type == ContentType::Screenshot || type == ContentType::Movie || type == ContentType::ExtraScreenshot || type == ContentType::ExtraMovie;
