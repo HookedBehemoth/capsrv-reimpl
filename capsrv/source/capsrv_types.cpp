@@ -1,7 +1,5 @@
 #include "capsrv_types.hpp"
 
-#include <machine/endian.h>
-
 #include "capsrv_config.hpp"
 #include "capsrv_crypto.hpp"
 #include "capsrv_time.hpp"
@@ -15,9 +13,14 @@ namespace ams::capsrv {
 
     namespace {
 
-        constexpr const char *fileExtensions[] = {
-            [0] = ".jpg",
-            [1] = ".mp4",
+        constexpr const char *const file_extensions[] = {
+            ".jpg",
+            ".mp4",
+        };
+
+        constexpr const char *const mount_names[] = {
+            "NA",
+            "SD",
         };
 
         Result DecryptFileIdentifier(u64 *applicationId, bool *isExtra, const char *str, const char **next) {
@@ -53,7 +56,7 @@ namespace ams::capsrv {
 
         Result GetFileType(ContentType *type, bool isExtra, const char *str) {
             for (u8 i = 0; i < 2; i++) {
-                if (std::strcmp(fileExtensions[i], str) != 0)
+                if (std::strcmp(file_extensions[i], str) != 0)
                     continue;
                 *type = static_cast<ContentType>(i + (isExtra ? 2 : 0));
                 return ResultSuccess();
@@ -111,7 +114,7 @@ namespace ams::capsrv {
     }
 
     u64 FileId::GetFolderPath(char *buffer, u64 max_length) const {
-        const char *mount_point = fs::GetImageDirectoryMountName(static_cast<fs::ImageDirectoryId>(this->storage));
+        const char *mount_point = GetMountName(this->storage);
         if (this->IsExtra()) {
             const u64 in[2] = {this->applicationId, 0};
             u64 aes[2] = {0};
@@ -153,11 +156,13 @@ namespace ams::capsrv {
                              this->datetime.second,
                              this->datetime.id,
                              aes[0], aes[1],
-                             fileExtensions[this->type % 2]);
+                             GetFileExtension(this->type));
     }
 
     u64 FileId::GetFilePath(char *buffer, u64 max_length) const {
+        /* Get Path to file. */
         u64 folder_path_length = this->GetFolderPath(buffer, max_length);
+        /* Append filename. */
         u64 file_name_length = this->GetFileName(buffer + folder_path_length, max_length - folder_path_length);
         return folder_path_length + file_name_length;
     }
@@ -196,6 +201,14 @@ namespace ams::capsrv {
 
     const char *Entry::AsString() const {
         return this->fileId.AsString();
+    }
+
+    const char *GetFileExtension(ContentType type) {
+        return file_extensions[type];
+    }
+
+    const char *GetMountName(StorageId storage) {
+        return mount_names[storage];
     }
 
     Result ContentStorage::CanSave(StorageId storage, ContentType type) const {

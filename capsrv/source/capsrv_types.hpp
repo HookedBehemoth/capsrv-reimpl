@@ -4,7 +4,6 @@
 #include <type_traits>
 
 #include "capsrv_results.hpp"
-#include "fs/fs_image_directory.hpp"
 
 namespace ams::capsrv {
 
@@ -113,6 +112,9 @@ namespace ams::capsrv {
         u64 width;
         u64 height;
     };
+
+    const char* GetFileExtension(ContentType type);
+    const char* GetMountName(StorageId storage);
 
     struct ContentStorage {
         CapsAlbumCache cache[2][4]{};

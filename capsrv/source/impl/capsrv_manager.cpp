@@ -1,7 +1,5 @@
 #include "capsrv_manager.hpp"
 
-#include <machine/endian.h>
-
 #include "../capsrv_config.hpp"
 #include "../image/exif_extractor.hpp"
 #include "../image/exif_verify.hpp"
@@ -55,29 +53,29 @@ namespace ams::capsrv::impl {
 
         Result IsAlbumMountedImpl(bool *out, StorageId storage) {
             R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
-            *out = g_mountStatus[storage % 2];
+            *out = g_mountStatus[storage];
             return ResultSuccess();
         }
 
         Result MountAlbumImpl(StorageId storage) {
             R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
-            R_SUCCEED_IF(g_mountStatus[storage % 2]);
+            R_SUCCEED_IF(g_mountStatus[storage]);
 
             const char *customDirectory = config::GetCustomDirectoryPath();
             if (storage == StorageId::Sd && customDirectory) {
                 return MountCustomImageDirectory(customDirectory);
             }
-            R_TRY(fs::MountImageDirectory(static_cast<fs::ImageDirectoryId>(storage)));
-            g_mountStatus[storage % 2] = true;
+            R_TRY(fs::MountImageDirectory(GetMountName(storage), static_cast<fs::ImageDirectoryId>(storage)));
+            g_mountStatus[storage] = true;
             return ResultSuccess();
         }
 
         Result UnmountAlbumImpl(StorageId storage) {
             R_UNLESS(config::StorageValid(storage), capsrv::ResultInvalidStorageId());
-            R_SUCCEED_IF(!g_mountStatus[storage % 2]);
+            R_SUCCEED_IF(!g_mountStatus[storage]);
             /* TODO: Close movie streams. */
-            fs::Unmount(fs::GetImageDirectoryMountName(static_cast<fs::ImageDirectoryId>(storage)));
-            g_mountStatus[storage % 2] = false;
+            fs::Unmount(GetMountName(storage));
+            g_mountStatus[storage] = false;
             return ResultSuccess();
         }
 
@@ -96,7 +94,7 @@ namespace ams::capsrv::impl {
 
         /* TODO: Extra contents. */
         Result ProcessImageDirectory(StorageId storage, std::function<bool(const Entry &)> callback) {
-            const char *mount_name = fs::GetImageDirectoryMountName(static_cast<fs::ImageDirectoryId>(storage));
+            const char *mount_name = GetMountName(storage);
             R_TRY(MountAlbumImpl(storage));
 
             char path[fs::EntryNameLengthMax + 1];
@@ -867,17 +865,15 @@ namespace ams::capsrv::impl {
     /* TODO: fix. */
     Result PrecheckToCreateContentsByAruid(ContentType type, u64 size) {
         std::scoped_lock lk(g_mutex);
-        {
-            StorageId storage;
-            R_TRY(GetAutoSavingStorageImpl(&storage));
-            R_UNLESS(config::GetMax(storage, type) >= g_storage.cache[storage][type].count, capsrv::ResultReachedCountLimit());
-            const size_t path_length = fs::EntryNameLengthMax + 1;
-            char path[path_length];
-            std::snprintf(path, path_length, "%s/", fs::GetImageDirectoryMountName(static_cast<fs::ImageDirectoryId>(storage)));
-            s64 freeSpace;
-            R_TRY(fs::GetFreeSpaceSize(&freeSpace, path));
-            R_UNLESS(static_cast<u64>(freeSpace) >= g_storage.cache[storage][type].unk_x8 + size, capsrv::ResultReachedSizeLimit());
-        }
+        StorageId storage;
+        R_TRY(GetAutoSavingStorageImpl(&storage));
+        R_UNLESS(config::GetMax(storage, type) >= g_storage.cache[storage][type].count, capsrv::ResultReachedCountLimit());
+        const size_t path_length = fs::EntryNameLengthMax + 1;
+        char path[path_length];
+        std::snprintf(path, path_length, "%s/", GetMountName(storage));
+        s64 freeSpace;
+        R_TRY(fs::GetFreeSpaceSize(&freeSpace, path));
+        R_UNLESS(static_cast<u64>(freeSpace) >= g_storage.cache[storage][type].unk_x8 + size, capsrv::ResultReachedSizeLimit());
         return ResultSuccess();
     }
 
@@ -1046,22 +1042,22 @@ namespace ams::capsrv::impl {
             out->height = dims.height;
             (out->attr).unk_x0 = attr.orientation;
             (out->attr).unk_x4 = attr.unk_x0;
-            (out->attr).unk_x5 = attr.reserved[2];
-            (out->attr).unk_x6 = attr.reserved[1];
-            (out->attr).pad = '\0';
-            (out->attr).unk_x8 = attr.reserved[0];
-            (out->attr).unk_xc = attr.unk_xc;
-            (out->attr).unk_x10 = attr.unk_x10;
-            (out->attr).unk_x14 = attr.unk_x14;
-            (out->attr).unk_x18 = attr.unk_x18;
-            (out->attr).unk_x1c = attr.unk_x1c;
-            (out->attr).unk_x20 = attr.unk_x20;
-            (out->attr).unk_x22 = attr.unk_x22;
-            (out->attr).unk_x24 = attr.unk_x24;
-            (out->attr).unk_x26 = attr.unk_x26;
-            (out->attr).reserved[1] = 0;
-            (out->attr).reserved[2] = 0;
-            (out->attr).reserved[0] = 0;
+            //(out->attr).unk_x5 = attr.reserved[2];
+            //(out->attr).unk_x6 = attr.reserved[1];
+            //(out->attr).pad = '\0';
+            //(out->attr).unk_x8 = attr.reserved[0];
+            //(out->attr).unk_xc = attr.unk_xc;
+            //(out->attr).unk_x10 = attr.unk_x10;
+            //(out->attr).unk_x14 = attr.unk_x14;
+            //(out->attr).unk_x18 = attr.unk_x18;
+            //(out->attr).unk_x1c = attr.unk_x1c;
+            //(out->attr).unk_x20 = attr.unk_x20;
+            //(out->attr).unk_x22 = attr.unk_x22;
+            //(out->attr).unk_x24 = attr.unk_x24;
+            //(out->attr).unk_x26 = attr.unk_x26;
+            //(out->attr).reserved[1] = 0;
+            //(out->attr).reserved[2] = 0;
+            //(out->attr).reserved[0] = 0;
         }
         return rc;
     }
@@ -1071,7 +1067,6 @@ namespace ams::capsrv::impl {
         CapsScreenShotAttribute attr{};
         Entry entry{};
         R_TRY(control::GetAlbumEntryFromApplicationAlbumEntryAruid(&entry, &appEntry, aruid));
-        ;
         {
             std::scoped_lock lk(g_mutex);
             rc = LoadScreenShotThumbnail(&dims, &attr, nullptr, &out->appdata, img, img_size, work, work_size, entry.fileId, opts);
@@ -1081,22 +1076,22 @@ namespace ams::capsrv::impl {
             out->height = dims.height;
             (out->attr).unk_x0 = attr.orientation;
             (out->attr).unk_x4 = attr.unk_x0;
-            (out->attr).unk_x5 = attr.reserved[2];
-            (out->attr).unk_x6 = attr.reserved[1];
-            (out->attr).pad = '\0';
-            (out->attr).unk_x8 = attr.reserved[0];
-            (out->attr).unk_xc = attr.unk_xc;
-            (out->attr).unk_x10 = attr.unk_x10;
-            (out->attr).unk_x14 = attr.unk_x14;
-            (out->attr).unk_x18 = attr.unk_x18;
-            (out->attr).unk_x1c = attr.unk_x1c;
-            (out->attr).unk_x20 = attr.unk_x20;
-            (out->attr).unk_x22 = attr.unk_x22;
-            (out->attr).unk_x24 = attr.unk_x24;
-            (out->attr).unk_x26 = attr.unk_x26;
-            (out->attr).reserved[1] = 0;
-            (out->attr).reserved[2] = 0;
-            (out->attr).reserved[0] = 0;
+            //(out->attr).unk_x5 = attr.reserved[2];
+            //(out->attr).unk_x6 = attr.reserved[1];
+            //(out->attr).pad = '\0';
+            //(out->attr).unk_x8 = attr.reserved[0];
+            //(out->attr).unk_xc = attr.unk_xc;
+            //(out->attr).unk_x10 = attr.unk_x10;
+            //(out->attr).unk_x14 = attr.unk_x14;
+            //(out->attr).unk_x18 = attr.unk_x18;
+            //(out->attr).unk_x1c = attr.unk_x1c;
+            //(out->attr).unk_x20 = attr.unk_x20;
+            //(out->attr).unk_x22 = attr.unk_x22;
+            //(out->attr).unk_x24 = attr.unk_x24;
+            //(out->attr).unk_x26 = attr.unk_x26;
+            //(out->attr).reserved[1] = 0;
+            //(out->attr).reserved[2] = 0;
+            //(out->attr).reserved[0] = 0;
         }
         return rc;
     }

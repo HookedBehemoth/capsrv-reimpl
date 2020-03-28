@@ -71,8 +71,4 @@ namespace ams::capsrv {
     R_DEFINE_ERROR_RESULT(InvalidJpegHeader,                1501);
     R_DEFINE_ERROR_RESULT(InvalidJpegSize,                  1502);
 
-    /* TODO: Move to fs results */
-    R_DEFINE_ERROR_RESULT(AllocationFailureInImageDirectoryA,   3231);
-    R_DEFINE_ERROR_RESULT(AllocationFailureInImageDirectoryB,   3232);
-
 }
