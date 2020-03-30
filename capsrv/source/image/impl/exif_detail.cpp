@@ -18,8 +18,9 @@
 namespace ams::image::detail {
 
     namespace {
-        constexpr u16 MOTOROLA_MAGIC = 0x4d4d;
-        constexpr u16 INTEL_MAGIC = 0x4949;
+        constexpr const u16 MOTOROLA_MAGIC = 0x4d4d;
+        constexpr const u16 INTEL_MAGIC = 0x4949;
+        constexpr const u8 EXIF_START[6] = { 'E', 'X', 'I', 'F', '\0', '\0' };
 
         constexpr u8 DataFormatSize[12] = {1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8};
     }
@@ -141,5 +142,43 @@ namespace ams::image::detail {
         }
         return true;
     }
+
+    s32 ExtractExifRegion(const u8 **region, u32 *region_size, const u8 *in, u32 size) {
+        if (1 < size) {
+            s32 res = CheckSoi(in, size);
+            if (res != 0)
+                return res;
+
+            u32 tmp;
+            bool success = GetExifInfo(region, &tmp, in, size);
+            if (success) {
+                *region_size = tmp;
+                return 0;
+            }
+        }
+        return -0x20;
+    }
+
+    s32 CheckSoi(const u8 *soi, u32 size) {
+        if ((soi[0] == 0xff) && (soi[1] == 0xd8)) {
+            return 0;
+        }
+        return -0x20;
+    }
+
+    bool GetExifInfo(const u8 **region, u16 *region_size, const u8 *in, u32 size) {
+        /* TODO: Dynamically find region start- */
+        if ((in[2] == 0xff) && (in[3] == 0xe1)) {
+            u16 exif_size = (in[4] << 8) + (in[5]);
+            int res = std::memcmp(in + 6, EXIF_START, 6);
+            if (res == 0) {
+                *region = in + 0xC;
+                *region_size = exif_size - 8;
+                return true;
+            }
+        }
+        return false;
+    }
+
 
 }

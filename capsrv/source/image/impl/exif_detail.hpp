@@ -99,4 +99,8 @@ namespace ams::image::detail {
     bool ReadIfdHeader(IfdHeader *ifdHeader, u32 offset, const ExifBinary *exifBinary);
     bool SearchIfdTags(IfdTag *tags, u16 count, const IfdHeader *header, const ExifBinary *exifBinary);
 
+    s32 ExtractExifRegion(const u8 **region, u32 *region_size, const u8 *in, u32 size);
+    s32 CheckSoi(const u8 *soi, u32 size);
+    bool GetExifInfo(const u8 **region, u32 *region_size, const u8 *in, u32 size);
+
 }

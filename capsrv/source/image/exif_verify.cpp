@@ -17,14 +17,18 @@ namespace ams::capsrv::image {
             R_TRY(VerifyMAC(jpegBuffer, bufferSize, makerNoteOffset, makerNoteSize));
         }
 
-        /* TODO: Verify header magic. */
-        const size_t tiffSize = bufferSize - 0xc;
-        const u8 *tiff = jpegBuffer + 0xc;
-        R_UNLESS(tiff, capsrv::ResultInvalidJFIF());
+        std::memset(makerNoteOut, 0, 0xc90);
+
+        const u8 *exif_region = nullptr;
+        u32 exif_size = 0;
+        s32 res = ams::image::detail::ExtractExifRegion(&exif_region, &exif_size, jpegBuffer, bufferSize);
+        R_UNLESS(res == 0, capsrv::ResultInvalidJFIF());
+        R_UNLESS(exif_region != nullptr, capsrv::ResultInvalidJFIF());
+        R_UNLESS(exif_size != 0, capsrv::ResultInvalidJFIF());
 
         ams::image::detail::ExifBinary exifBinary;
         ams::image::ExifExtractor exifExtractor(&exifBinary);
-        exifExtractor.SetExifData(tiff, tiffSize);
+        exifExtractor.SetExifData(exif_region, exif_size);
         R_UNLESS(exifExtractor.Analyse(), capsrv::ResultInvalidEXIF());
         
         u32 dateStringLength;
