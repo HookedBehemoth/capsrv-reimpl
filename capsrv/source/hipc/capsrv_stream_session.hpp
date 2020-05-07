@@ -2,8 +2,9 @@
 #include <stratosphere.hpp>
 
 #include "../capsrv_types.hpp"
+#include "../capsrv_stream.hpp"
 
-namespace ams::capsrv {
+namespace ams::capsrv::server {
 
     class ISession : public sf::IServiceObject {
       protected:
@@ -36,39 +37,39 @@ namespace ams::capsrv {
         };
 
       private:
-        std::array<u64, 4> readStreams;
-        std::array<u64, 2> writeStreams;
+        static inline std::array<StreamId, 4> readStreams;
+        static inline std::array<StreamId, 2> writeStreams;
 
       public:
-        virtual Result CloseAlbumMovieReadStream(u64 stream);
-        virtual Result GetAlbumMovieReadStreamMovieDataSize(sf::Out<u64> size, u64 stream);
-        virtual Result ReadMovieDataFromAlbumMovieReadStream(sf::OutBuffer buffer, sf::Out<u64> size, u64 stream, u64 offset);
-        virtual Result GetAlbumMovieReadStreamBrokenReason(u64 stream);
-        virtual Result GetAlbumMovieReadStreamImageDataSize(sf::Out<u64> size, u64 stream);
-        virtual Result ReadImageDataFromAlbumMovieReadStream(sf::OutBuffer buffer, sf::Out<u64> size, u64 stream, u64 offset);
+        virtual Result CloseAlbumMovieReadStream(StreamId stream);
+        virtual Result GetAlbumMovieReadStreamMovieDataSize(sf::Out<u64> size, StreamId stream);
+        virtual Result ReadMovieDataFromAlbumMovieReadStream(sf::OutBuffer buffer, sf::Out<u64> size, StreamId stream, u64 offset);
+        virtual Result GetAlbumMovieReadStreamBrokenReason(StreamId stream);
+        virtual Result GetAlbumMovieReadStreamImageDataSize(sf::Out<u64> size, StreamId stream);
+        virtual Result ReadImageDataFromAlbumMovieReadStream(sf::OutBuffer buffer, sf::Out<u64> size, StreamId stream, u64 offset);
         virtual Result ReadFileAttributeFromAlbumMovieReadStream(sf::Out<CapsScreenShotAttribute> attrs);
 
-        virtual Result OpenAlbumMovieWriteStream(sf::Out<u64> stream, const FileId &fileId);
-        virtual Result FinishAlbumMovieWriteStream(u64 stream);
-        virtual Result CommitAlbumMovieWriteStream(u64 stream);
-        virtual Result DiscardAlbumMovieWriteStream(u64 stream);
-        virtual Result DiscardAlbumMovieWriteStreamNoDelete(u64 stream);
-        virtual Result CommitAlbumMovieWriteStreamEx(sf::Out<CapsAlbumEntry> output, u64 stream);
-        virtual Result StartAlbumMovieWriteStreamDataSection(u64 stream);
-        virtual Result EndAlbumMovieWriteStreamDataSection(u64 stream);
-        virtual Result StartAlbumMovieWriteStreamMetaSection(u64 stream);
-        virtual Result EndAlbumMovieWriteStreamMetaSection(u64 stream);
-        virtual Result ReadDataFromAlbumMovieWriteStream(sf::OutBuffer out, u64 stream, u64 offset);
-        virtual Result WriteDataToAlbumMovieWriteStream(sf::InBuffer data, u64 stream, u64 offset);
-        virtual Result WriteMetaToAlbumMovieWriteStream(sf::InBuffer meta, u64 stream, u64 offset, u64 unk0, u64 unk1);
-        virtual Result GetAlbumMovieWriteStreamBrokenReason(u64 stream);
-        virtual Result GetAlbumMovieWriteStreamDataSize(sf::Out<u64> size, u64 stream);
-        virtual Result SetAlbumMovieWriteStreamDataSize(u64 stream, u64 size);
+        virtual Result OpenAlbumMovieWriteStream(sf::Out<StreamId> stream, const AlbumFileId &fileId);
+        virtual Result FinishAlbumMovieWriteStream(StreamId stream);
+        virtual Result CommitAlbumMovieWriteStream(StreamId stream);
+        virtual Result DiscardAlbumMovieWriteStream(StreamId stream);
+        virtual Result DiscardAlbumMovieWriteStreamNoDelete(StreamId stream);
+        virtual Result CommitAlbumMovieWriteStreamEx(sf::Out<CapsAlbumEntry> output, StreamId stream);
+        virtual Result StartAlbumMovieWriteStreamDataSection(StreamId stream);
+        virtual Result EndAlbumMovieWriteStreamDataSection(StreamId stream);
+        virtual Result StartAlbumMovieWriteStreamMetaSection(StreamId stream);
+        virtual Result EndAlbumMovieWriteStreamMetaSection(StreamId stream);
+        virtual Result ReadDataFromAlbumMovieWriteStream(sf::OutBuffer out, StreamId stream, u64 offset);
+        virtual Result WriteDataToAlbumMovieWriteStream(sf::InBuffer data, StreamId stream, u64 offset);
+        virtual Result WriteMetaToAlbumMovieWriteStream(sf::InBuffer meta, StreamId stream, u64 offset, u64 unk0, u64 unk1);
+        virtual Result GetAlbumMovieWriteStreamBrokenReason(StreamId stream);
+        virtual Result GetAlbumMovieWriteStreamDataSize(sf::Out<u64> size, StreamId stream);
+        virtual Result SetAlbumMovieWriteStreamDataSize(StreamId stream, u64 size);
     };
 
     class AccessorSession : public ISession {
       public:
-        virtual Result OpenAlbumMovieReadStream(sf::Out<u64> stream, const FileId &fileId);
+        virtual Result OpenAlbumMovieReadStream(sf::Out<StreamId> stream, const AlbumFileId &fileId);
 
       public:
         DEFINE_SERVICE_DISPATCH_TABLE{
@@ -85,7 +86,7 @@ namespace ams::capsrv {
 
     class ControlSession : public ISession {
       public:
-        virtual Result OpenAlbumMovieReadStream(sf::Out<u64> stream, const FileId &fileId);
+        virtual Result OpenAlbumMovieReadStream(sf::Out<StreamId> stream, const AlbumFileId &fileId);
 
       public:
         DEFINE_SERVICE_DISPATCH_TABLE{
@@ -102,7 +103,7 @@ namespace ams::capsrv {
             MAKE_SERVICE_COMMAND_META(CommitAlbumMovieWriteStream),
             MAKE_SERVICE_COMMAND_META(DiscardAlbumMovieWriteStream),
             MAKE_SERVICE_COMMAND_META(DiscardAlbumMovieWriteStreamNoDelete),
-            MAKE_SERVICE_COMMAND_META(CommitAlbumMovieWriteStreamEx, hos::Version_700),
+            MAKE_SERVICE_COMMAND_META(CommitAlbumMovieWriteStreamEx, hos::Version_7_0_0),
             MAKE_SERVICE_COMMAND_META(StartAlbumMovieWriteStreamDataSection),
             MAKE_SERVICE_COMMAND_META(EndAlbumMovieWriteStreamDataSection),
             MAKE_SERVICE_COMMAND_META(StartAlbumMovieWriteStreamMetaSection),
@@ -118,7 +119,7 @@ namespace ams::capsrv {
 
     class AccessorApplicationSession : public ISession {
       public:
-        virtual Result OpenAlbumMovieReadStream(sf::Out<u64> stream, const sf::ClientProcessId &client_pid, const CapsApplicationAlbumFileEntry &entry);
+        virtual Result OpenAlbumMovieReadStream(sf::Out<StreamId> stream, const sf::ClientProcessId &client_pid, const ApplicationAlbumFileEntry &entry);
 
       public:
         DEFINE_SERVICE_DISPATCH_TABLE{

@@ -4,7 +4,7 @@
 #include "../capsrv_types.hpp"
 #include "capsrv_stream_session.hpp"
 
-namespace ams::capsrv {
+namespace ams::capsrv::server {
 
     /* Service definition. */
     class AlbumAccessorService final : public sf::IServiceObject {
@@ -52,43 +52,43 @@ namespace ams::capsrv {
         };
 
       public:
-        virtual Result GetAlbumFileCount(sf::Out<u64> out, StorageId storage);
-        virtual Result GetAlbumFileList(sf::OutBuffer buffer, sf::Out<u64> out, StorageId storage);
-        virtual Result LoadAlbumFile(sf::OutBuffer image, sf::Out<u64> out, const FileId &fileId);
-        virtual Result DeleteAlbumFile(const FileId &fileId);
-        virtual Result StorageCopyAlbumFile(StorageId storage, const FileId &fileId);
-        virtual Result IsAlbumMounted(sf::Out<bool> out, StorageId storage);
-        virtual Result GetAlbumUsage(sf::Out<CapsAlbumUsage2> usage, StorageId storage);
-        virtual Result GetAlbumFileSize(sf::Out<u64> out, const FileId &fileId);
-        virtual Result LoadAlbumFileThumbnail(sf::OutBuffer image, sf::Out<u64> out, const FileId &fileId);
-        virtual Result LoadAlbumScreenShotImage(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId);
-        virtual Result LoadAlbumScreenShotThumbnailImage(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId);
-        virtual Result GetAlbumEntryFromApplicationAlbumEntry(sf::Out<Entry> out, const ApplicationEntry &appEntry, u64 appId);
-        virtual Result LoadAlbumScreenShotImageEx(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
-        virtual Result LoadAlbumScreenShotThumbnailImageEx(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
-        virtual Result LoadAlbumScreenShotImageEx0(sf::Out<CapsScreenShotAttribute> attrs, sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
-        virtual Result GetAlbumUsage3(sf::Out<CapsAlbumUsage3> usage, StorageId storage);
-        virtual Result GetAlbumMountResult(StorageId storage);
-        virtual Result GetAlbumUsage16(sf::Out<AlbumUsage16> usage, StorageId storage, u8 flags);
+        virtual Result GetAlbumFileCount(sf::Out<u64> out, StorageId storage_id);
+        virtual Result GetAlbumFileList(sf::Out<u64> out, sf::OutArray<AlbumEntry> entries, StorageId storage_id);
+        virtual Result LoadAlbumFile(sf::OutBuffer image, sf::Out<u64> out, const AlbumFileId &file_id);
+        virtual Result DeleteAlbumFile(const AlbumFileId &file_id);
+        virtual Result StorageCopyAlbumFile(StorageId storage_id, const AlbumFileId &file_id);
+        virtual Result IsAlbumMounted(sf::Out<bool> out, StorageId storage_id);
+        virtual Result GetAlbumUsage(sf::Out<CapsAlbumUsage2> usage, StorageId storage_id);
+        virtual Result GetAlbumFileSize(sf::Out<s64> out, const AlbumFileId &file_id);
+        virtual Result LoadAlbumFileThumbnail(sf::OutBuffer image, sf::Out<u64> out, const AlbumFileId &file_id);
+        virtual Result LoadAlbumScreenShotImage(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const AlbumFileId &file_id);
+        virtual Result LoadAlbumScreenShotThumbnailImage(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const AlbumFileId &file_id);
+        virtual Result GetAlbumEntryFromApplicationAlbumEntry(sf::Out<AlbumEntry> out, const ApplicationAlbumEntry &app_entry, u64 appId);
+        virtual Result LoadAlbumScreenShotImageEx(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const AlbumFileId &file_id, const CapsScreenShotDecodeOption &opts);
+        virtual Result LoadAlbumScreenShotThumbnailImageEx(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const AlbumFileId &file_id, const CapsScreenShotDecodeOption &opts);
+        virtual Result LoadAlbumScreenShotImageEx0(sf::Out<CapsScreenShotAttribute> attrs, sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const AlbumFileId &file_id, const CapsScreenShotDecodeOption &opts);
+        virtual Result GetAlbumUsage3(sf::Out<CapsAlbumUsage3> usage, StorageId storage_id);
+        virtual Result GetAlbumMountResult(StorageId storage_id);
+        virtual Result GetAlbumUsage16(sf::Out<AlbumUsage16> usage, StorageId storage_id, u8 flags);
         virtual Result GetMinMaxAppletId(sf::OutNonSecureBuffer minMax, sf::Out<bool> success);
-        virtual Result GetAlbumFileCountEx0(sf::Out<u64> out, StorageId storage, u8 flags);
-        virtual Result GetAlbumFileListEx0(sf::OutBuffer buffer, sf::Out<u64> out, u64 storage, u64 flags);
-        virtual Result SaveEditedScreenShot(sf::InBuffer buf0, sf::InBuffer buf1, sf::Out<Entry> out, u64 a, u64 b, u64 c, u64 d, u64 e, u64 f, u64 g);
-        virtual Result GetLastOverlayScreenShotThumbnail(sf::OutBuffer buffer, sf::Out<FileId> out, sf::Out<u64> size);
-        virtual Result GetLastOverlayMovieThumbnail(sf::OutBuffer buffer, sf::Out<FileId> out, sf::Out<u64> size);
+        virtual Result GetAlbumFileCountEx0(sf::Out<u64> out, StorageId storage_id, u8 flags);
+        virtual Result GetAlbumFileListEx0(sf::OutArray<AlbumEntry> entries, sf::Out<u64> out, StorageId storage_id, u8 flags);
+        virtual Result SaveEditedScreenShot(sf::InBuffer buf0, sf::InBuffer buf1, sf::Out<AlbumEntry> out, u64 a, u64 b, u64 c, u64 d, u64 e, u64 f, u64 g);
+        virtual Result GetLastOverlayScreenShotThumbnail(sf::OutBuffer buffer, sf::Out<AlbumFileId> out, sf::Out<u64> size);
+        virtual Result GetLastOverlayMovieThumbnail(sf::OutBuffer buffer, sf::Out<AlbumFileId> out, sf::Out<u64> size);
         virtual Result GetAutoSavingStorage(sf::Out<StorageId> out);
         virtual Result GetRequiredStorageSpaceSizeToCopyAll(sf::Out<u64> out, StorageId dst, StorageId src);
-        virtual Result LoadAlbumScreenShotThumbnailImageEx0(sf::Out<CapsScreenShotAttribute> attrs, sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
-        virtual Result LoadAlbumScreenShotImageEx1(sf::Out<LoadAlbumScreenShotImageOutput> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
-        virtual Result LoadAlbumScreenShotThumbnailImageEx1(sf::Out<LoadAlbumScreenShotImageOutput> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts);
-        virtual Result ForceAlbumUnmounted(StorageId storage);
-        virtual Result ResetAlbumMountStatus(StorageId storage);
-        virtual Result RefreshAlbumCache(StorageId storage);
-        virtual Result GetAlbumCache(sf::Out<CapsAlbumCache> cache, StorageId storage);
-        virtual Result GetAlbumCacheEx(sf::Out<CapsAlbumCache> cache, StorageId storage, const ContentType type);
-        virtual Result GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<Entry> out, const sf::ClientAppletResourceUserId &aruid, const ApplicationEntry &appEntry);
-        virtual Result SetInternalErrorConversionEnabled(const bool enabled);
-        virtual Result LoadMakerNoteInfoForDebug(sf::Out<u64> out, sf::OutBuffer unk0, sf::OutBuffer unk1, const FileId &fileId);
+        virtual Result LoadAlbumScreenShotThumbnailImageEx0(sf::Out<CapsScreenShotAttribute> attrs, sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const AlbumFileId &file_id, const CapsScreenShotDecodeOption &opts);
+        virtual Result LoadAlbumScreenShotImageEx1(sf::Out<LoadAlbumScreenShotImageOutput> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const AlbumFileId &file_id, const CapsScreenShotDecodeOption &opts);
+        virtual Result LoadAlbumScreenShotThumbnailImageEx1(sf::Out<LoadAlbumScreenShotImageOutput> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const AlbumFileId &file_id, const CapsScreenShotDecodeOption &opts);
+        virtual Result ForceAlbumUnmounted(StorageId storage_id);
+        virtual Result ResetAlbumMountStatus(StorageId storage_id);
+        virtual Result RefreshAlbumCache(StorageId storage_id);
+        virtual Result GetAlbumCache(sf::Out<CapsAlbumCache> cache, StorageId storage_id);
+        virtual Result GetAlbumCacheEx(sf::Out<CapsAlbumCache> cache, StorageId storage_id, const ContentType type);
+        virtual Result GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<AlbumEntry> out, const sf::ClientAppletResourceUserId &aruid, const ApplicationAlbumEntry &app_entry);
+        virtual Result SetInternalErrorConversionEnabled(bool mode);
+        virtual Result LoadMakerNoteInfoForDebug(sf::Out<u64> out, sf::OutBuffer unk0, sf::OutBuffer unk1, const AlbumFileId &file_id);
         virtual Result OpenAccessorSession(sf::Out<std::shared_ptr<AccessorSession>> out, const sf::ClientAppletResourceUserId &aruid);
 
       public:
@@ -102,35 +102,35 @@ namespace ams::capsrv {
             MAKE_SERVICE_COMMAND_META(GetAlbumUsage),
             MAKE_SERVICE_COMMAND_META(GetAlbumFileSize),
             MAKE_SERVICE_COMMAND_META(LoadAlbumFileThumbnail),
-            MAKE_SERVICE_COMMAND_META(LoadAlbumScreenShotImage, hos::Version_200),
-            MAKE_SERVICE_COMMAND_META(LoadAlbumScreenShotThumbnailImage, hos::Version_200),
-            MAKE_SERVICE_COMMAND_META(GetAlbumEntryFromApplicationAlbumEntry, hos::Version_200),
-            MAKE_SERVICE_COMMAND_META(LoadAlbumScreenShotImageEx, hos::Version_300),
-            MAKE_SERVICE_COMMAND_META(LoadAlbumScreenShotThumbnailImageEx, hos::Version_300),
-            MAKE_SERVICE_COMMAND_META(LoadAlbumScreenShotImageEx0, hos::Version_300),
-            MAKE_SERVICE_COMMAND_META(GetAlbumUsage3, hos::Version_400),
-            MAKE_SERVICE_COMMAND_META(GetAlbumMountResult, hos::Version_400),
-            MAKE_SERVICE_COMMAND_META(GetAlbumUsage16, hos::Version_400),
-            MAKE_SERVICE_COMMAND_META(GetMinMaxAppletId, hos::Version_600),
-            MAKE_SERVICE_COMMAND_META(GetAlbumFileCountEx0, hos::Version_500),
-            MAKE_SERVICE_COMMAND_META(GetAlbumFileListEx0, hos::Version_500),
-            MAKE_SERVICE_COMMAND_META(SaveEditedScreenShot, hos::Version_100, hos::Version_200),
+            MAKE_SERVICE_COMMAND_META(LoadAlbumScreenShotImage,                     hos::Version_2_0_0),
+            MAKE_SERVICE_COMMAND_META(LoadAlbumScreenShotThumbnailImage,            hos::Version_2_0_0),
+            MAKE_SERVICE_COMMAND_META(GetAlbumEntryFromApplicationAlbumEntry,       hos::Version_2_0_0),
+            MAKE_SERVICE_COMMAND_META(LoadAlbumScreenShotImageEx,                   hos::Version_3_0_0),
+            MAKE_SERVICE_COMMAND_META(LoadAlbumScreenShotThumbnailImageEx,          hos::Version_3_0_0),
+            MAKE_SERVICE_COMMAND_META(LoadAlbumScreenShotImageEx0,                  hos::Version_3_0_0),
+            MAKE_SERVICE_COMMAND_META(GetAlbumUsage3,                               hos::Version_4_0_0),
+            MAKE_SERVICE_COMMAND_META(GetAlbumMountResult,                          hos::Version_4_0_0),
+            MAKE_SERVICE_COMMAND_META(GetAlbumUsage16,                              hos::Version_4_0_0),
+            MAKE_SERVICE_COMMAND_META(GetMinMaxAppletId,                            hos::Version_6_0_0),
+            MAKE_SERVICE_COMMAND_META(GetAlbumFileCountEx0,                         hos::Version_5_0_0),
+            MAKE_SERVICE_COMMAND_META(GetAlbumFileListEx0,                          hos::Version_5_0_0),
+            MAKE_SERVICE_COMMAND_META(SaveEditedScreenShot,                         hos::Version_1_0_0, hos::Version_2_0_0),
             MAKE_SERVICE_COMMAND_META(GetLastOverlayScreenShotThumbnail),
-            MAKE_SERVICE_COMMAND_META(GetLastOverlayMovieThumbnail, hos::Version_400),
+            MAKE_SERVICE_COMMAND_META(GetLastOverlayMovieThumbnail,                 hos::Version_4_0_0),
             MAKE_SERVICE_COMMAND_META(GetAutoSavingStorage),
             MAKE_SERVICE_COMMAND_META(GetRequiredStorageSpaceSizeToCopyAll),
-            MAKE_SERVICE_COMMAND_META(LoadAlbumScreenShotThumbnailImageEx0, hos::Version_300),
-            MAKE_SERVICE_COMMAND_META(LoadAlbumScreenShotImageEx1, hos::Version_400),
-            MAKE_SERVICE_COMMAND_META(LoadAlbumScreenShotThumbnailImageEx1, hos::Version_400),
+            MAKE_SERVICE_COMMAND_META(LoadAlbumScreenShotThumbnailImageEx0,         hos::Version_3_0_0),
+            MAKE_SERVICE_COMMAND_META(LoadAlbumScreenShotImageEx1,                  hos::Version_4_0_0),
+            MAKE_SERVICE_COMMAND_META(LoadAlbumScreenShotThumbnailImageEx1,         hos::Version_4_0_0),
             MAKE_SERVICE_COMMAND_META(ForceAlbumUnmounted),
             MAKE_SERVICE_COMMAND_META(ResetAlbumMountStatus),
             MAKE_SERVICE_COMMAND_META(RefreshAlbumCache),
             MAKE_SERVICE_COMMAND_META(GetAlbumCache),
-            MAKE_SERVICE_COMMAND_META(GetAlbumCacheEx, hos::Version_400),
-            MAKE_SERVICE_COMMAND_META(GetAlbumEntryFromApplicationAlbumEntryAruid, hos::Version_200),
+            MAKE_SERVICE_COMMAND_META(GetAlbumCacheEx,                              hos::Version_4_0_0),
+            MAKE_SERVICE_COMMAND_META(GetAlbumEntryFromApplicationAlbumEntryAruid,  hos::Version_2_0_0),
             MAKE_SERVICE_COMMAND_META(SetInternalErrorConversionEnabled),
-            MAKE_SERVICE_COMMAND_META(LoadMakerNoteInfoForDebug, hos::Version_600),
-            MAKE_SERVICE_COMMAND_META(OpenAccessorSession, hos::Version_400)};
+            MAKE_SERVICE_COMMAND_META(LoadMakerNoteInfoForDebug,                    hos::Version_6_0_0),
+            MAKE_SERVICE_COMMAND_META(OpenAccessorSession,                          hos::Version_4_0_0)};
     };
 
 }

@@ -7,25 +7,30 @@ namespace ams::capsrv::crypto {
 
     Result Initialize();
 
-    Result GenerateScreenshotMac(u64 out[2], const u8 *in, size_t size, size_t makerNoteOffset);
-    Result GenerateMovieMac(u64 out[2], const u8 *in, size_t size);
+    Result GenerateScreenshotMac(u64 *dst, const u8 *in, size_t size, size_t makernote_offset);
+    Result GenerateMovieMac(u64 *dst, const u8 *in, size_t size);
 
-    void ComputeScreenShotHMAC(u64 out[2], const u8 *in, size_t size, size_t makerNoteOffset);
+    void ComputeScreenShotHMAC(u64 *dst, const u8 *in, size_t size, size_t makernote_offset);
 
-    namespace aes128 {
+    namespace path {
 
+        struct Cypher {
+            u8 c[0x10];
+        };
+
+        Cypher EncryptExtraPath(u64 application_id);
+        Cypher EncryptFileExtension(u64 application_id, bool is_extra);
         void Decrypt(u64 *dst, const u64 *src);
-        void Encrypt(u64 *dst, const u64 *src);
 
     }
 
-    namespace aes256 {
+    namespace application {
 
-        void EncryptV0(ApplicationEntry *out, const Entry *src, const u8 v0Key[0x20]);
-        void DecryptV0(Entry *out, const ApplicationEntry *src, const u8 v0Key[0x20]);
+        void EncryptV0(ApplicationAlbumEntry *dst, const AlbumEntry *src, const u8 v0Key[0x20]);
+        void DecryptV0(AlbumEntry *dst, const ApplicationAlbumEntry *src, const u8 v0Key[0x20]);
 
-        Result EncryptV1(ApplicationEntry *out, const Entry *src, u64 version);
-        Result DecryptV1(Entry *out, const ApplicationEntry *src, u64 applicationId);
+        Result EncryptV1(ApplicationAlbumEntry *dst, const AlbumEntry *src, u64 version);
+        Result DecryptV1(AlbumEntry *dst, const ApplicationAlbumEntry *src, u64 application_id);
 
     }
 
