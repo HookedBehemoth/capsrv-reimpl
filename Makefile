@@ -1,25 +1,15 @@
-all: nro
+all: sys
 
-nro:
-	-rm capsrv/build/capsrv_main.*
-	-rm capsrv/build/logger.*
-	$(MAKE) -C capsrv
-
-clean: sys-clean
+clean:
 	$(MAKE) -C capsrv clean
+	rm -rf dist/
 
 sys:
 	-rm capsrv/build/capsrv_main.*
 	-rm capsrv/build/logger.*
-	$(MAKE) -C capsrv -f sys-Makefile
-	-mkdir dist
-	-mkdir dist/0100000000000022
-	-mkdir dist/0100000000000022/flags
+	$(MAKE) -C capsrv
+	-mkdir -p dist/0100000000000022/flags
 	-touch dist/0100000000000022/flags/boot2.flag
 	cp capsrv/capsrv.nsp dist/0100000000000022/exefs.nsp
-
-sys-clean:
-	$(MAKE) -C capsrv -f sys-Makefile clean
-	rm -rf dist/
 
 .PHONY: all
