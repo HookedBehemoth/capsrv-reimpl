@@ -4,7 +4,7 @@
 #include "../capsrv_types.hpp"
 #include "capsrv_stream_session.hpp"
 
-namespace ams::capsrv {
+namespace ams::capsrv::server {
 
     /* Service definition. */
     class AlbumApplicationService final : public sf::IServiceObject {
@@ -29,17 +29,17 @@ namespace ams::capsrv {
       public:
         virtual Result SetShimLibraryVersion(u64 version, const sf::ClientAppletResourceUserId &aruid);
         virtual Result GetAlbumFileList0AafeAruidDeprecated(sf::OutBuffer buffer, const sf::ClientAppletResourceUserId &aruid, ContentType type, u64 startTimestamp, u64 endTimestamp);
-        virtual Result DeleteAlbumFileByAruid(const sf::ClientAppletResourceUserId &aruid, ContentType type, const ApplicationFileEntry &appFileEntry);
-        virtual Result GetAlbumFileSizeByAruid(sf::Out<u64> out, const sf::ClientAppletResourceUserId &aruid, const ApplicationFileEntry &appFileEntry);
-        virtual Result DeleteAlbumFileByAruidForDebug(const sf::ClientAppletResourceUserId &aruid, const ApplicationFileEntry &appFileEntry);
-        virtual Result LoadAlbumScreenShotImageByAruid(sf::Out<LoadAlbumScreenShotImageOutputForApplication> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const sf::ClientAppletResourceUserId &aruid, const ApplicationFileEntry &appFileEntry, const CapsScreenShotDecodeOption &opts);
-        virtual Result LoadAlbumScreenShotThumbnailImageByAruid(sf::Out<LoadAlbumScreenShotImageOutputForApplication> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const sf::ClientAppletResourceUserId &aruid, const ApplicationFileEntry &appFileEntry, const CapsScreenShotDecodeOption &opts);
+        virtual Result DeleteAlbumFileByAruid(const sf::ClientAppletResourceUserId &aruid, ContentType type, const ApplicationAlbumFileEntry &app_file_entry);
+        virtual Result GetAlbumFileSizeByAruid(sf::Out<u64> out, const sf::ClientAppletResourceUserId &aruid, const ApplicationAlbumFileEntry &app_file_entry);
+        virtual Result DeleteAlbumFileByAruidForDebug(const sf::ClientAppletResourceUserId &aruid, const ApplicationAlbumFileEntry &app_file_entry);
+        virtual Result LoadAlbumScreenShotImageByAruid(sf::Out<LoadAlbumScreenShotImageOutputForApplication> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const sf::ClientAppletResourceUserId &aruid, const ApplicationAlbumFileEntry &app_file_entry, const CapsScreenShotDecodeOption &opts);
+        virtual Result LoadAlbumScreenShotThumbnailImageByAruid(sf::Out<LoadAlbumScreenShotImageOutputForApplication> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const sf::ClientAppletResourceUserId &aruid, const ApplicationAlbumFileEntry &app_file_entry, const CapsScreenShotDecodeOption &opts);
         virtual Result PrecheckToCreateContentsByAruid(ContentType type, u64 unk, const sf::ClientAppletResourceUserId &aruid);
-        virtual Result GetAlbumFileList1AafeAruidDeprecated(sf::OutBuffer buffer, sf::Out<u64> out, const sf::ClientAppletResourceUserId &aruid, ContentType type, DateTime start, DateTime end);
-        virtual Result GetAlbumFileList2AafeUidAruidDeprecated(sf::OutBuffer buffer, sf::Out<u64> out, const sf::ClientAppletResourceUserId &aruid, ContentType type, DateTime start, DateTime end, const AccountUid &uid);
-        virtual Result GetAlbumFileList3AaeAruid(sf::OutBuffer buffer, sf::Out<u64> out, const sf::ClientAppletResourceUserId &aruid, ContentType type, DateTime start, DateTime end);
-        virtual Result GetAlbumFileList4AaeUidAruid(sf::OutBuffer buffer, sf::Out<u64> out, const sf::ClientAppletResourceUserId &aruid, ContentType type, DateTime start, DateTime end, const AccountUid &uid);
-        virtual Result OpenAccessorSessionForApplication(sf::Out<std::shared_ptr<AccessorApplicationSession>> out, const sf::ClientAppletResourceUserId &aruid, const ApplicationFileEntry &appFileEntry);
+        virtual Result GetAlbumFileList1AafeAruidDeprecated(sf::OutBuffer buffer, sf::Out<u64> out, const sf::ClientAppletResourceUserId &aruid, ContentType type, AlbumDateTime start, AlbumDateTime end);
+        virtual Result GetAlbumFileList2AafeUidAruidDeprecated(sf::OutBuffer buffer, sf::Out<u64> out, const sf::ClientAppletResourceUserId &aruid, ContentType type, AlbumDateTime start, AlbumDateTime end, const AccountUid &uid);
+        virtual Result GetAlbumFileList3AaeAruid(sf::OutBuffer buffer, sf::Out<u64> out, const sf::ClientAppletResourceUserId &aruid, ContentType type, AlbumDateTime start, AlbumDateTime end);
+        virtual Result GetAlbumFileList4AaeUidAruid(sf::OutBuffer buffer, sf::Out<u64> out, const sf::ClientAppletResourceUserId &aruid, ContentType type, AlbumDateTime start, AlbumDateTime end, const AccountUid &uid);
+        virtual Result OpenAccessorSessionForApplication(sf::Out<std::shared_ptr<AccessorApplicationSession>> out, const sf::ClientAppletResourceUserId &aruid, const ApplicationAlbumFileEntry &app_file_entry);
 
       public:
         DEFINE_SERVICE_DISPATCH_TABLE{
@@ -51,10 +51,10 @@ namespace ams::capsrv {
             MAKE_SERVICE_COMMAND_META(LoadAlbumScreenShotImageByAruid),
             MAKE_SERVICE_COMMAND_META(LoadAlbumScreenShotThumbnailImageByAruid),
             MAKE_SERVICE_COMMAND_META(PrecheckToCreateContentsByAruid),
-            MAKE_SERVICE_COMMAND_META(GetAlbumFileList1AafeAruidDeprecated, hos::Version_600),
-            MAKE_SERVICE_COMMAND_META(GetAlbumFileList2AafeUidAruidDeprecated, hos::Version_600),
-            MAKE_SERVICE_COMMAND_META(GetAlbumFileList3AaeAruid, hos::Version_700),
-            MAKE_SERVICE_COMMAND_META(GetAlbumFileList4AaeUidAruid, hos::Version_700),
+            MAKE_SERVICE_COMMAND_META(GetAlbumFileList1AafeAruidDeprecated,     hos::Version_6_0_0),
+            MAKE_SERVICE_COMMAND_META(GetAlbumFileList2AafeUidAruidDeprecated,  hos::Version_6_0_0),
+            MAKE_SERVICE_COMMAND_META(GetAlbumFileList3AaeAruid,                hos::Version_7_0_0),
+            MAKE_SERVICE_COMMAND_META(GetAlbumFileList4AaeUidAruid,             hos::Version_7_0_0),
             MAKE_SERVICE_COMMAND_META(OpenAccessorSessionForApplication),
         };
     };

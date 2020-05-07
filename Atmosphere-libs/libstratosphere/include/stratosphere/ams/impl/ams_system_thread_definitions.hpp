@@ -74,6 +74,11 @@ namespace ams::impl {
     AMS_DEFINE_SYSTEM_THREAD(11, dmnt, CheatDetect);
     AMS_DEFINE_SYSTEM_THREAD(20, dmnt, CheatVirtualMachine);
 
+    /* capsrv. */
+    AMS_DEFINE_SYSTEM_THREAD(21, capsrv, Main);
+    AMS_DEFINE_SYSTEM_THREAD(21, capsrv, SystemIpcServer);
+    AMS_DEFINE_SYSTEM_THREAD(21, capsrv, ApplicationIpcServer);
+
     /* fatal */
     AMS_DEFINE_SYSTEM_THREAD(-13, fatal, Main);
     AMS_DEFINE_SYSTEM_THREAD(-13, fatalsrv, FatalTaskThread);

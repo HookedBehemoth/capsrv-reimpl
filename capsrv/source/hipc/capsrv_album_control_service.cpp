@@ -1,107 +1,129 @@
 #include "capsrv_album_control_service.hpp"
 
-#include "../impl/capsrv_controller.hpp"
-#include "../impl/capsrv_manager.hpp"
-#include "../impl/capsrv_overlay.hpp"
-#include "../impl/capsrv_file_id_generator.hpp"
-#include "../logger.hpp"
+#include "../server/capsrv_album_object.hpp"
 
-namespace ams::capsrv {
+namespace ams::capsrv::server {
 
     Result AlbumControlService::CaptureRawImage(sf::OutNonSecureBuffer out, u64 a, u64 b, u64 c, u64 d) {
-        WriteLogFile("Control", "CaptureRawImage: buf_size: %ld, [%ld, %ld, %ld, %ld]", out.GetSize(), a, b, c, d);
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
     
     Result AlbumControlService::CaptureRawImageWithTimeout(sf::OutNonSecureBuffer out, u64 a, u64 b, u64 c, u64 d, u64 e) {
-        WriteLogFile("Control", "CaptureRawImageWithTimeout: buf_size: %ld, [%ld, %ld, %ld, %ld, %ld]", out.GetSize(), a, b, c, d, e);
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
     Result AlbumControlService::SetShimLibraryVersion(u64 version, u64 aruid) {
-        WriteLogFile("Control", "SetShimLibraryVersion: version(%ld), aruid(%ld)", version, aruid);
-        return control::SetShimLibraryVersion(version, aruid);
+        std::scoped_lock lk(g_AlbumMutex);
+
+        return g_AlbumErrorConverter.ConvertError(g_ApplicationAlbumManager.SetShimLibraryVersion(version, aruid));
     }
 
     Result AlbumControlService::RequestTakingScreenShot(u64 a, u64 b) {
-        WriteLogFile("Control", "RequestTakingScreenShot: [%ld, %ld]", a, b);
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
     Result AlbumControlService::RequestTakingScreenShotWithTimeout(u64 a, u64 b, u64 c) {
-        WriteLogFile("Control", "RequestTakingScreenShotWithTimeout: [%ld, %ld, %ld]", a, b, c);
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
     Result AlbumControlService::NotifyTakingScreenShotRefused(u64 a) {
-        WriteLogFile("Control", "NotifyTakingScreenShotRefused: [%ld]", a);
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result AlbumControlService::NotifyAlbumStorageIsAvailable(StorageId storage) {
-        WriteLogFile("Control", "NotifyAlbumStorageIsAvailable: storage(%hhd)", storage);
-        return impl::MountAlbum(storage);
+    Result AlbumControlService::NotifyAlbumStorageIsAvailable(StorageId storage_id) {
+        std::scoped_lock lk(g_AlbumMutex);
+
+        Result rc = g_AlbumManager.UnmountImageDirectory(storage_id);
+        if (rc.IsSuccess()) rc = g_AlbumManager.RefreshCache(storage_id);
+        return g_AlbumErrorConverter.ConvertError(rc);
     }
 
-    Result AlbumControlService::NotifyAlbumStorageIsUnavailable(StorageId storage) {
-        WriteLogFile("Control", "NotifyAlbumStorageIsUnavailable: storage(%hhd)", storage);
-        return impl::UnmountAlbum(storage);
+    Result AlbumControlService::NotifyAlbumStorageIsUnavailable(StorageId storage_id) {
+        std::scoped_lock lk(g_AlbumMutex);
+
+        return g_AlbumErrorConverter.ConvertError(g_AlbumManager.CloseImageDirectory(storage_id));
     }
 
-    Result AlbumControlService::RegisterAppletResourceUserId(u64 aruid, u64 appId) {
-        WriteLogFile("Control", "RegisterAppletResourceUserId: aruid(%ld)", aruid);
-        return control::RegisterAppletResourceUserId(aruid, appId);
+    Result AlbumControlService::RegisterAppletResourceUserId(u64 aruid, u64 application_id) {
+        return g_AlbumErrorConverter.ConvertError(g_ApplicationAlbumManager.RegisterAppletResourceUserId(aruid, application_id));
     }
 
-    Result AlbumControlService::UnregisterAppletResourceUserId(u64 aruid, u64 appId) {
-        WriteLogFile("Control", "UnregisterAppletResourceUserId: aruid(%ld)", aruid);
-        return control::UnregisterAppletResourceUserId(aruid, appId);
+    Result AlbumControlService::UnregisterAppletResourceUserId(u64 aruid, u64 application_id) {
+        g_ApplicationAlbumManager.UnregisterAppletResourceUserId(aruid, application_id);
+        return ResultSuccess();
     }
 
-    Result AlbumControlService::GetApplicationIdFromAruid(sf::Out<u64> appId, u64 aruid) {
-        WriteLogFile("Control", "GetApplicationIdFromAruid: aruid(%ld)", aruid);
-        return control::GetApplicationIdFromAruid(appId.GetPointer(), aruid);
+    Result AlbumControlService::GetApplicationIdFromAruid(sf::Out<u64> out, u64 aruid) {
+        u64 application_id = 0;
+        R_TRY(g_AlbumErrorConverter.ConvertError(g_ApplicationAlbumManager.GetApplicationIdFromAruid(&application_id, aruid)));
+
+        out.SetValue(application_id);
+        return ResultSuccess();
     }
 
-    Result AlbumControlService::CheckApplicationIdRegistered(u64 appId) {
-        WriteLogFile("Control", "CheckApplicationIdRegistered: applicationId(%lx)", appId);
-        return control::CheckApplicationIdRegistered(appId);
+    Result AlbumControlService::CheckApplicationIdRegistered(u64 application_id) {
+        return g_AlbumErrorConverter.ConvertError(g_ApplicationAlbumManager.CheckApplicationIdRegistered(application_id));
     }
 
-    Result AlbumControlService::GenerateCurrentAlbumFileId(sf::Out<FileId> out, u64 appId, ContentType type) {
-        WriteLogFile("Control", "GenerateCurrentAlbumFileId: applicationId(%lx), type(%hhd)", appId, type);
-        return impl::GenerateCurrentAlbumFileId(out.GetPointer(), appId, type);
+    Result AlbumControlService::GenerateCurrentAlbumFileId(sf::Out<AlbumFileId> out, u64 application_id, ContentType type) {
+        AlbumFileId file_id = {};
+        R_TRY(g_AlbumErrorConverter.ConvertError(g_AlbumFileIdGenerator.GenerateFileId(&file_id, application_id, type, &g_AlbumManager)));
+
+        out.SetValue(file_id);
+        return ResultSuccess();
     }
 
-    Result AlbumControlService::GenerateApplicationAlbumEntry(sf::Out<ApplicationEntry> out, const Entry &entry, u64 appId) {
-        WriteLogFile("Control", "GenerateApplicationAlbumEntry: applicationId(%lx), fileId(%s)", appId, entry.AsString());
-        return control::GenerateApplicationAlbumEntry(out.GetPointer(), entry, appId);
+    Result AlbumControlService::GenerateApplicationAlbumEntry(sf::Out<ApplicationAlbumEntry> out, const AlbumEntry &entry, u64 application_id) {
+        ApplicationAlbumEntry app_entry = {};
+        R_TRY(g_AlbumErrorConverter.ConvertError(g_ApplicationAlbumManager.GenerateApplicationAlbumEntry(&app_entry, entry, application_id)));
+
+        out.SetValue(app_entry);
+        return ResultSuccess();
     }
 
-    Result AlbumControlService::SaveAlbumScreenShotFile(sf::InBuffer buffer, const FileId &fileId) {
-        WriteLogFile("Control", "SaveAlbumScreenShotFile: bufferSize(%ld), fileId(%s)", buffer.GetSize(), fileId.AsString());
-        return impl::SaveAlbumScreenShotFile(buffer.GetPointer(), buffer.GetSize(), fileId);
+    Result AlbumControlService::SaveAlbumScreenShotFile(sf::InBuffer buffer, const AlbumFileId &file_id) {
+        std::scoped_lock lk(g_AlbumMutex);
+
+        return g_AlbumErrorConverter.ConvertError(g_AlbumManager.SaveScreenshotFile(buffer.GetPointer(), buffer.GetSize(), file_id));
     }
 
-    Result AlbumControlService::SaveAlbumScreenShotFileEx(sf::InNonSecureBuffer buffer, const FileId &fileId, u64 unk0, u64 unk1, u64 unk2) {
-        WriteLogFile("Control", "SaveAlbumScreenShotFileEx: bufferSize(%ld), fileId(%s), %ld:%ld:%ld", buffer.GetSize(), fileId.AsString(), unk0, unk1, unk2);
-        return impl::SaveAlbumScreenShotFile(buffer.GetPointer(), buffer.GetSize(), fileId);
+    Result AlbumControlService::SaveAlbumScreenShotFileEx(sf::InNonSecureBuffer buffer, const AlbumFileId &file_id, u64 unk0, u64 unk1, u64 unk2) {
+        std::scoped_lock lk(g_AlbumMutex);
+
+        return g_AlbumErrorConverter.ConvertError(g_AlbumManager.SaveScreenshotFile(buffer.GetPointer(), buffer.GetSize(), file_id, unk0, unk1, unk2));
     }
 
-    Result AlbumControlService::SetOverlayScreenShotThumbnailData(sf::InNonSecureBuffer buffer, const FileId &fileId) {
-        WriteLogFile("Control", "SetOverlayScreenShotThumbnailData: bufferSize(%ld), fileId(%s)", buffer.GetSize(), fileId.AsString());
-        return ovl::SetOverlayThumbnailData(buffer.GetPointer(), buffer.GetSize(), fileId, false);
+    Result AlbumControlService::SetOverlayScreenShotThumbnailData(sf::InNonSecureBuffer buffer, const AlbumFileId &file_id) {
+        const u8 *src_ptr = buffer.GetPointer();
+        size_t src_size = buffer.GetSize();
+        R_UNLESS(src_size >= g_OverlayThumbnailHolder.GetBufferSize(), capsrv::ResultAlbumError());
+
+        u8 *dst = g_OverlayThumbnailHolder.GetOverlayBuffer(file_id, ContentType::Screenshot);
+        std::memcpy(dst, src_ptr, g_OverlayThumbnailHolder.GetBufferSize());
+        g_OverlayThumbnailHolder.Signal(ContentType::Screenshot);
+
+        return ResultSuccess();
     }
 
-    Result AlbumControlService::SetOverlayMovieThumbnailData(sf::InNonSecureBuffer buffer, const FileId &fileId) {
-        WriteLogFile("Control", "SetOverlayMovieThumbnailData: bufferSize(%ld), fileId(%s)", buffer.GetSize(), fileId.AsString());
-        return ovl::SetOverlayThumbnailData(buffer.GetPointer(), buffer.GetSize(), fileId, true);
+    Result AlbumControlService::SetOverlayMovieThumbnailData(sf::InNonSecureBuffer buffer, const AlbumFileId &file_id) {
+        const u8 *src_ptr = buffer.GetPointer();
+        size_t src_size = buffer.GetSize();
+        R_UNLESS(src_size >= g_OverlayThumbnailHolder.GetBufferSize(), capsrv::ResultAlbumError());
+
+        u8 *dst = g_OverlayThumbnailHolder.GetOverlayBuffer(file_id, ContentType::Movie);
+        std::memcpy(dst, src_ptr, g_OverlayThumbnailHolder.GetBufferSize());
+        g_OverlayThumbnailHolder.Signal(ContentType::Movie);
+
+        return ResultSuccess();
     }
 
     Result AlbumControlService::OpenControlSession(sf::Out<std::shared_ptr<ControlSession>> out, const sf::ClientAppletResourceUserId &aruid) {
-        WriteLogFile("Control", "OpenControlSession: aruid(%ld)", aruid.GetValue());
-        auto session = std::make_shared<ControlSession>();
-        out.SetValue(std::move(session));
+        out.SetValue(std::make_shared<ControlSession>());
         return ResultSuccess();
     }
 

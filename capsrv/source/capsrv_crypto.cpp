@@ -23,21 +23,21 @@ namespace ams::capsrv::crypto {
         u8 hmac_key[0x20] = {0};
 
         /* AES 128 key for path names. */
-        constexpr u8 aes128_encrypted_key[0x10] = {0xD9, 0x63, 0x84, 0x08, 0x48, 0x9B, 0x43, 0xDB, 0x79, 0x50, 0xDC, 0x3D, 0x32, 0x92, 0x2B, 0x3A};
-        u8 aes128_key[0x10] = {0};
+        constexpr u8 path_encrypted_key[0x10] = {0xD9, 0x63, 0x84, 0x08, 0x48, 0x9B, 0x43, 0xDB, 0x79, 0x50, 0xDC, 0x3D, 0x32, 0x92, 0x2B, 0x3A};
+        u8 path_key[0x10] = {0};
 
         /* AES 256 key for application entries. */
-        constexpr u8 aes256_encrypted_key[0x20] = {0x38, 0x5E, 0x44, 0xF9, 0x60, 0xFB, 0x37, 0x10, 0xEA, 0x2A, 0xD3, 0xC8, 0x40, 0xB8, 0x89, 0xA2, 0x34, 0x7B, 0xFD, 0xA3, 0xBC, 0xB5, 0x03, 0xD0, 0xCE, 0xD0, 0xE5, 0x81, 0x6F, 0x4D, 0x8B, 0xB8};
-        u8 aes256_key[0x20] = {0};
+        constexpr u8 application_encrypted_key[0x20] = {0x38, 0x5E, 0x44, 0xF9, 0x60, 0xFB, 0x37, 0x10, 0xEA, 0x2A, 0xD3, 0xC8, 0x40, 0xB8, 0x89, 0xA2, 0x34, 0x7B, 0xFD, 0xA3, 0xBC, 0xB5, 0x03, 0xD0, 0xCE, 0xD0, 0xE5, 0x81, 0x6F, 0x4D, 0x8B, 0xB8};
+        u8 application_key[0x20] = {0};
 
-        Result GenerateMac(u64 out[2], const u8 *in, size_t size, const u8 kek[0x10], const u8 key_source[0x10]) {
+        Result GenerateMac(u64 *dst, const u8 *in, size_t size, const u8 kek[0x10], const u8 key_source[0x10]) {
             u32 keyslot;
             R_TRY(splCryptoLockAesEngine(&keyslot));
             ON_SCOPE_EXIT {
                 splCryptoUnlockAesEngine(keyslot);
             };
             R_TRY(splCryptoLoadAesKey(kek, key_source, keyslot));
-            R_TRY(splCryptoComputeCmac(in, size, keyslot, out));
+            R_TRY(splCryptoComputeCmac(in, size, keyslot, dst));
             return ResultSuccess();
         }
 
@@ -57,16 +57,16 @@ namespace ams::capsrv::crypto {
         /* Decrypt official keys. */
         Aes128Context ctx;
         aes128ContextCreate(&ctx, aes_aes_key, 0);
-        aes128DecryptBlock(&ctx, aes128_key, aes128_encrypted_key);
-        aes128DecryptBlock(&ctx, aes256_key, aes256_encrypted_key);
-        aes128DecryptBlock(&ctx, aes256_key + 0x10, aes256_encrypted_key + 0x10);
+        aes128DecryptBlock(&ctx, path_key, path_encrypted_key);
+        aes128DecryptBlock(&ctx, application_key, application_encrypted_key);
+        aes128DecryptBlock(&ctx, application_key + 0x10, application_encrypted_key + 0x10);
         aes128DecryptBlock(&ctx, hmac_key, hmac_encrypted_key);
         aes128DecryptBlock(&ctx, hmac_key + 0x10, hmac_encrypted_key + 0x10);
 
         return ResultSuccess();
     }
 
-    Result GenerateScreenshotMac(u64 out[2], const u8 *in, size_t size, size_t makerNoteOffset) {
+    Result GenerateScreenshotMac(u64 *dst, const u8 *in, size_t size, size_t makerNoteOffset) {
         u8 nil[0x10]{};
         ams::crypto::Sha256Generator sha256;
         sha256.Initialize();
@@ -78,17 +78,17 @@ namespace ams::capsrv::crypto {
         u64 mac[2];
         R_TRY(GenerateMac(mac, hash, 0x20, screenshot_kek, screenshot_key_source));
 
-        out[0] = mac[0];
-        out[1] = mac[1];
+        dst[0] = mac[0];
+        dst[1] = mac[1];
 
         return ResultSuccess();
     }
 
-    Result GenerateMovieMac(u64 out[2], const u8 *in, size_t size) {
-        return GenerateMac(out, in, size, movie_kek, movie_key_source);
+    Result GenerateMovieMac(u64 *dst, const u8 *in, size_t size) {
+        return GenerateMac(dst, in, size, movie_kek, movie_key_source);
     }
 
-    void ComputeScreenShotHMAC(u64 out[2], const u8 *in, size_t size, size_t makerNoteOffset) {
+    void ComputeScreenShotHMAC(u64 *dst, const u8 *in, size_t size, size_t makerNoteOffset) {
         size_t off = makerNoteOffset + 0x10;
         u8 nil[0x10]{};
         HmacSha256Context ctx;
@@ -100,82 +100,96 @@ namespace ams::capsrv::crypto {
         u64 mac[4];
         hmacSha256ContextGetMac(&ctx, mac);
 
-        out[0] = mac[0];
-        out[1] = mac[1];
+        dst[0] = mac[0];
+        dst[1] = mac[1];
     }
 
-    namespace aes128 {
+    namespace path {
+
+        Cypher EncryptExtraPath(u64 application_id) {
+            u64 in[2] = {application_id, 0};
+            Cypher out;
+            Aes128Context ctx;
+            aes128ContextCreate(&ctx, path_key, true);
+            aes128EncryptBlock(&ctx, out.c, in);
+            return out;
+        }
+
+        Cypher EncryptFileExtension(u64 application_id, bool is_extra) {
+            u64 in[2] = {application_id, 0};
+            ((u8*)in)[0xf] = is_extra;
+            Cypher out;
+
+            Aes128Context ctx;
+            aes128ContextCreate(&ctx, path_key, true);
+            aes128EncryptBlock(&ctx, out.c, in);
+            return out;
+        }
 
         void Decrypt(u64 *dst, const u64 *src) {
             Aes128Context ctx;
-            aes128ContextCreate(&ctx, aes128_key, false);
+            aes128ContextCreate(&ctx, path_key, false);
             aes128DecryptBlock(&ctx, dst, src);
-        }
-
-        void Encrypt(u64 *dst, const u64 *src) {
-            Aes128Context ctx;
-            aes128ContextCreate(&ctx, aes128_key, true);
-            aes128EncryptBlock(&ctx, dst, src);
         }
 
     }
 
-    namespace aes256 {
+    namespace application {
 
-        void EncryptV0(ApplicationEntry *out, const Entry *src, const u8 v0Key[0x20]) {
+        void EncryptV0(ApplicationAlbumEntry *dst, const AlbumEntry *src, const u8 v0Key[0x20]) {
             Aes256Context ctx;
             aes256ContextCreate(&ctx, v0Key, 1);
-            aes256EncryptBlock(&ctx, out->data, ((u8 *)src));
-            aes256EncryptBlock(&ctx, out->data + 0x10, ((u8 *)src) + 0x10);
+            aes256EncryptBlock(&ctx, dst->data, ((u8 *)src));
+            aes256EncryptBlock(&ctx, dst->data + 0x10, ((u8 *)src) + 0x10);
         }
 
-        void DecryptV0(Entry *out, const ApplicationEntry *src, const u8 v0Key[0x20]) {
+        void DecryptV0(AlbumEntry *dst, const ApplicationAlbumEntry *src, const u8 v0Key[0x20]) {
             Aes256Context ctx;
             aes256ContextCreate(&ctx, v0Key, 0);
-            aes256DecryptBlock(&ctx, (u8 *)out, (u8 *)src);
-            aes256DecryptBlock(&ctx, (u8 *)out + 0x10, (u8 *)src + 0x10);
+            aes256DecryptBlock(&ctx, (u8 *)dst, (u8 *)src);
+            aes256DecryptBlock(&ctx, (u8 *)dst + 0x10, (u8 *)src + 0x10);
         }
 
-        Result EncryptV1(ApplicationEntry *out, const Entry *src, u64 version) {
+        Result EncryptV1(ApplicationAlbumEntry *dst, const AlbumEntry *src, u64 version) {
             R_UNLESS(version == 1, 0x800ce);
             u64 tmp[4];
-            Entry tmpEntry = *src;
+            AlbumEntry tmpEntry = *src;
             tmpEntry.fileId.pad[0x5] = 1;
             Aes256Context ctx;
-            aes256ContextCreate(&ctx, aes256_key, 1);
+            aes256ContextCreate(&ctx, application_key, 1);
             aes256EncryptBlock(&ctx, tmp, ((u8 *)&tmpEntry));
             aes256EncryptBlock(&ctx, tmp + 2, ((u8 *)&tmpEntry) + 0x10);
-            out->v1.size = src->size;
-            out->v1.hash = tmp[0] ^ tmp[1] ^ tmp[2] ^ tmp[3];
-            out->v1.datetime = src->fileId.datetime;
-            out->v1.storage = src->fileId.storage;
-            out->v1.content = src->fileId.type;
-            out->v1.unk_x1f = 1;
+            dst->v1.size = src->size;
+            dst->v1.hash = tmp[0] ^ tmp[1] ^ tmp[2] ^ tmp[3];
+            dst->v1.date_time = src->fileId.date_time;
+            dst->v1.storage_id = src->fileId.storage_id;
+            dst->v1.type = src->fileId.type;
+            dst->v1.unk_x1f = 1;
             return ResultSuccess();
         }
 
-        Result DecryptV1(Entry *out, const ApplicationEntry *src, u64 applicationId) {
-            R_UNLESS(src->v1.unk_x1f == '\x01', capsrv::ResultInvalidApplicationId());
+        Result DecryptV1(AlbumEntry *dst, const ApplicationAlbumEntry *src, u64 application_id) {
+            R_UNLESS(src->v1.unk_x1f == '\x01', capsrv::ResultAlbumInvalidApplicationId());
 
             /* Mimic valid Entry. */
             u64 tmp[4];
-            ApplicationEntry tmpEntry = *src;
-            tmpEntry.v1.hash = applicationId;
+            ApplicationAlbumEntry tmpEntry = *src;
+            tmpEntry.v1.hash = application_id;
             Aes256Context ctx;
-            aes256ContextCreate(&ctx, aes256_key, 1);
+            aes256ContextCreate(&ctx, application_key, 1);
             aes256EncryptBlock(&ctx, tmp, ((u8 *)&tmpEntry));
             aes256EncryptBlock(&ctx, tmp + 2, ((u8 *)&tmpEntry) + 0x10);
 
             /* Verify that hashs match. */
-            R_UNLESS(src->v1.hash == (tmp[0] ^ tmp[1] ^ tmp[2] ^ tmp[3]), capsrv::ResultInvalidApplicationId());
+            R_UNLESS(src->v1.hash == (tmp[0] ^ tmp[1] ^ tmp[2] ^ tmp[3]), capsrv::ResultAlbumInvalidApplicationId());
 
-            out->size = src->v1.size;
-            out->fileId.applicationId = applicationId;
-            out->fileId.datetime = src->v1.datetime;
-            out->fileId.storage = StorageId(src->v1.storage);
-            out->fileId.type = ContentType(src->v1.content);
+            dst->size = src->v1.size;
+            dst->fileId.application_id = application_id;
+            dst->fileId.date_time = src->v1.date_time;
+            dst->fileId.storage_id = src->v1.storage_id;
+            dst->fileId.type = src->v1.type;
             for (int i = 0; i < 6; i++)
-                out->fileId.pad[i] = 0;
+                dst->fileId.pad[i] = 0;
 
             return ResultSuccess();
         }

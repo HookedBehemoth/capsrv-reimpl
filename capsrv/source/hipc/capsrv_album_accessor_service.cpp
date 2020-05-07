@@ -1,104 +1,185 @@
 #include "capsrv_album_accessor_service.hpp"
 
-#include "../impl/capsrv_controller.hpp"
-#include "../impl/capsrv_manager.hpp"
-#include "../impl/capsrv_overlay.hpp"
-#include "../logger.hpp"
+#include "../server/capsrv_album_object.hpp"
+#include "../capsrv_environment.hpp"
 
-namespace ams::capsrv {
+namespace ams::capsrv::server {
 
-    Result AlbumAccessorService::GetAlbumFileCount(sf::Out<u64> out, StorageId storage) {
-        WriteLogFile("Accessor", "GetAlbumFileCount: storage(%hhd)", storage);
-        return impl::GetAlbumFileCount(out.GetPointer(), storage, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie);
+    Result AlbumAccessorService::GetAlbumFileCount(sf::Out<u64> out, StorageId storage_id) {
+        u64 count = 0;
+        {
+            std::scoped_lock lk(g_AlbumMutex);
+            R_TRY(g_AlbumErrorConverter.ConvertError(g_AlbumManager.CountEntries(&count, storage_id, ContentTypeFlag_Normal)));
+        }
+        out.SetValue(count);
+
+        return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetAlbumFileList(sf::OutBuffer buffer, sf::Out<u64> out, StorageId storage) {
-        WriteLogFile("Accessor", "GetAlbumFileList: storage(%hhd), bufferSize(%ld)", storage, buffer.GetSize());
-        return impl::GetAlbumFileList(buffer.GetPointer(), buffer.GetSize(), out.GetPointer(), storage, CapsAlbumFileContentsFlag_ScreenShot | CapsAlbumFileContentsFlag_Movie);
+    Result AlbumAccessorService::GetAlbumFileList(sf::Out<u64> out, sf::OutArray<AlbumEntry> entries, StorageId storage_id) {
+        u64 count = 0;
+        {
+            std::scoped_lock lk(g_AlbumMutex);
+            R_TRY(g_AlbumErrorConverter.ConvertError(g_AlbumManager.ListEntries(&count, entries.GetPointer(), entries.GetSize(), storage_id, ContentTypeFlag_Normal)));
+        }
+        out.SetValue(count);
+
+        return ResultSuccess();
     }
 
-    Result AlbumAccessorService::LoadAlbumFile(sf::OutBuffer image, sf::Out<u64> out, const FileId &fileId) {
-        WriteLogFile("Accessor", "LoadAlbumFile: fileId(%s), bufferSize(%ld)", fileId.AsString(), image.GetSize());
-        return impl::LoadAlbumFile(image.GetPointer(), image.GetSize(), out.GetPointer(), fileId);
+    Result AlbumAccessorService::LoadAlbumFile(sf::OutBuffer image, sf::Out<u64> out, const AlbumFileId &file_id) {
+        size_t size;
+        {
+            std::scoped_lock lk(g_AlbumMutex);
+            R_TRY(g_AlbumErrorConverter.ConvertError(g_AlbumManager.LoadJpeg(&size, image.GetPointer(), image.GetSize(), file_id)));
+        }
+        out.SetValue(size);
+
+        return ResultSuccess();
     }
 
-    Result AlbumAccessorService::DeleteAlbumFile(const FileId &fileId) {
-        WriteLogFile("Accessor", "DeleteAlbumFile: fileId(%s)", fileId.AsString());
-        return impl::DeleteAlbumFile(fileId);
+    Result AlbumAccessorService::DeleteAlbumFile(const AlbumFileId &file_id) {
+        std::scoped_lock lk(g_AlbumMutex);
+
+        return g_AlbumErrorConverter.ConvertError(g_AlbumManager.DeleteFile(file_id));
     }
 
-    Result AlbumAccessorService::StorageCopyAlbumFile(StorageId storage, const FileId &fileId) {
-        WriteLogFile("Accessor", "StorageCopyAlbumFile: fileId(%s), storage(%hhd)", fileId.AsString(), storage);
-        return impl::CopyAlbumFile(storage, fileId);
+    Result AlbumAccessorService::StorageCopyAlbumFile(StorageId dst, const AlbumFileId &file_id) {
+        std::scoped_lock lk(g_AlbumMutex);
+    
+        return g_AlbumErrorConverter.ConvertError(g_AlbumManager.CopyFile(file_id, dst));
     }
 
-    Result AlbumAccessorService::IsAlbumMounted(sf::Out<bool> out, StorageId storage) {
-        WriteLogFile("Accessor", "IsAlbumMounted: storage(%hhd)", storage);
-        return impl::IsAlbumMounted(out.GetPointer(), storage);
+    Result AlbumAccessorService::IsAlbumMounted(sf::Out<bool> out, StorageId storage_id) {
+        std::scoped_lock lk(g_AlbumMutex);
+
+        out.SetValue(g_AlbumManager.MountImageDirectory(storage_id).IsSuccess());
+
+        return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetAlbumUsage(sf::Out<CapsAlbumUsage2> usage, StorageId storage) {
-        WriteLogFile("Accessor", "GetAlbumUsage: storage(%hhd)", storage);
-        return impl::GetAlbumUsage(usage.GetPointer(), storage);
+    Result AlbumAccessorService::GetAlbumUsage(sf::Out<CapsAlbumUsage2> usage, StorageId storage_id) {
+        std::scoped_lock lk(g_AlbumMutex);
+
+        return g_AlbumErrorConverter.ConvertError(g_AlbumManager.GetAlbumUsage(&usage->usages[0], &usage->usages[1], 1, storage_id, ContentTypeFlag_ScreenShot));
     }
 
-    Result AlbumAccessorService::GetAlbumFileSize(sf::Out<u64> out, const FileId &fileId) {
-        WriteLogFile("Accessor", "GetAlbumFileSize: fileId(%s)", fileId.AsString());
-        return impl::GetAlbumFileSize(out.GetPointer(), fileId);
+    Result AlbumAccessorService::GetAlbumFileSize(sf::Out<s64> out, const AlbumFileId &file_id) {
+        s64 size;
+        {
+            std::scoped_lock lk(g_AlbumMutex);
+            R_TRY(g_AlbumErrorConverter.ConvertError(g_AlbumManager.GetFileSize(&size, file_id)));
+        }
+        out.SetValue(size);
+
+        return ResultSuccess();
     }
 
-    Result AlbumAccessorService::LoadAlbumFileThumbnail(sf::OutBuffer image, sf::Out<u64> out, const FileId &fileId) {
-        WriteLogFile("Accessor", "LoadAlbumFileThumbnail: imgSize(%ld), fileId(%s)", image.GetSize(), fileId.AsString());
-        return impl::LoadAlbumFileThumbnail(image.GetPointer(), image.GetSize(), out.GetPointer(), fileId);
+    Result AlbumAccessorService::LoadAlbumFileThumbnail(sf::OutBuffer image, sf::Out<u64> out, const AlbumFileId &file_id) {
+        std::scoped_lock lk(g_AlbumMutex);
+
+        size_t size;
+        Result rc = g_AlbumManager.LoadJpegThumbnail(&size, image.GetPointer(), image.GetSize(), file_id);
+        out.SetValue(size);
+
+        return g_AlbumErrorConverter.ConvertError(rc);
     }
 
-    Result AlbumAccessorService::LoadAlbumScreenShotImage(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId) {
-        WriteLogFile("Accessor", "LoadAlbumScreenShotImage: workSize(%ld), imgSize(%ld), fileId(%s)", work.GetSize(), image.GetSize(), fileId.AsString());
-        return impl::LoadAlbumScreenShotImage(width.GetPointer(), height.GetPointer(), work.GetPointer(), work.GetSize(), image.GetPointer(), image.GetSize(), fileId);
+    Result AlbumAccessorService::LoadAlbumScreenShotImage(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const AlbumFileId &file_id) {
+        ON_SCOPE_EXIT { std::memset(work.GetPointer(), 0, work.GetSize()); };
+        Dimensions dims = {};
+        CapsScreenShotAttribute attr = {};
+        CapsScreenShotDecodeOption opts = {};
+        {
+            std::scoped_lock lk(g_AlbumMutex);
+            /* TODO */
+        }
+        height.SetValue(dims.height);
+        width.SetValue(dims.width);
+        return ResultSuccess();
     }
 
-    Result AlbumAccessorService::LoadAlbumScreenShotThumbnailImage(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId) {
-        WriteLogFile("Accessor", "LoadAlbumScreenShotThumbnailImage: workSize(%ld), imgSize(%ld), fileId(%s)", work.GetSize(), image.GetSize(), fileId.AsString());
-        return impl::LoadAlbumScreenShotThumbnailImage(width.GetPointer(), height.GetPointer(), work.GetPointer(), work.GetSize(), image.GetPointer(), image.GetSize(), fileId);
+    Result AlbumAccessorService::LoadAlbumScreenShotThumbnailImage(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const AlbumFileId &file_id) {
+        ON_SCOPE_EXIT { std::memset(work.GetPointer(), 0, work.GetSize()); };
+        Dimensions dims = {};
+        CapsScreenShotAttribute attr = {};
+        CapsScreenShotDecodeOption opts = {};
+        {
+            std::scoped_lock lk(g_AlbumMutex);
+            /* TODO */
+        }
+        height.SetValue(dims.height);
+        width.SetValue(dims.width);
+        return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetAlbumEntryFromApplicationAlbumEntry(sf::Out<Entry> out, const ApplicationEntry &appEntry, u64 appId) {
-        WriteLogFile("Accessor", "GetAlbumEntryFromApplicationAlbumEntry: appEntry(#), appId(%016lx)", appId);
-        return control::GetAlbumEntryFromApplicationAlbumEntry(out.GetPointer(), &appEntry, appId);
+    Result AlbumAccessorService::GetAlbumEntryFromApplicationAlbumEntry(sf::Out<AlbumEntry> out, const ApplicationAlbumEntry &app_entry, u64 application_id) {
+        AlbumEntry entry;
+        R_TRY(g_AlbumErrorConverter.ConvertError(g_ApplicationAlbumManager.GetAlbumEntryFromApplicationAlbumEntry(&entry, &app_entry, application_id)));
+        out.SetValue(entry);
+
+        return ResultSuccess();
     }
 
-    Result AlbumAccessorService::LoadAlbumScreenShotImageEx(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
-        WriteLogFile("Accessor", "LoadAlbumScreenShotImageEx: workSize(%ld), imgSize(%ld), fileId(%s), opts()", work.GetSize(), image.GetSize(), fileId.AsString());
-        return impl::LoadAlbumScreenShotImageEx(width.GetPointer(), height.GetPointer(), work.GetPointer(), work.GetSize(), image.GetPointer(), image.GetSize(), fileId, opts);
+    Result AlbumAccessorService::LoadAlbumScreenShotImageEx(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const AlbumFileId &file_id, const CapsScreenShotDecodeOption &opts) {
+        ON_SCOPE_EXIT { std::memset(work.GetPointer(), 0, work.GetSize()); };
+        Dimensions dims = {};
+        CapsScreenShotAttribute attr = {};
+        {
+            std::scoped_lock lk(g_AlbumMutex);
+            /* TODO */
+        }
+        height.SetValue(dims.height);
+        width.SetValue(dims.width);
+        return ResultSuccess();
     }
 
-    Result AlbumAccessorService::LoadAlbumScreenShotThumbnailImageEx(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
-        WriteLogFile("Accessor", "LoadAlbumScreenShotThumbnailImageEx: workSize(%ld), imgSize(%ld), fileId(%s), opts()", work.GetSize(), image.GetSize(), fileId.AsString());
-        return impl::LoadAlbumScreenShotThumbnailImageEx(width.GetPointer(), height.GetPointer(), work.GetPointer(), work.GetSize(), image.GetPointer(), image.GetSize(), fileId, opts);
+    Result AlbumAccessorService::LoadAlbumScreenShotThumbnailImageEx(sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const AlbumFileId &file_id, const CapsScreenShotDecodeOption &opts) {
+        ON_SCOPE_EXIT { std::memset(work.GetPointer(), 0, work.GetSize()); };
+        Dimensions dims = {};
+        CapsScreenShotAttribute attr = {};
+        {
+            std::scoped_lock lk(g_AlbumMutex);
+            /* TODO */
+        }
+        height.SetValue(dims.height);
+        width.SetValue(dims.width);
+        return ResultSuccess();
     }
 
-    Result AlbumAccessorService::LoadAlbumScreenShotImageEx0(sf::Out<CapsScreenShotAttribute> attrs, sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
-        WriteLogFile("Accessor", "LoadAlbumScreenShotImageEx0: workSize(%ld), imgSize(%ld), fileId(%s), opts()", work.GetSize(), image.GetSize(), fileId.AsString());
-        return impl::LoadAlbumScreenShotImageEx0(attrs.GetPointer(), width.GetPointer(), height.GetPointer(), work.GetPointer(), work.GetSize(), image.GetPointer(), image.GetSize(), fileId, opts);
+    Result AlbumAccessorService::LoadAlbumScreenShotImageEx0(sf::Out<CapsScreenShotAttribute> out_attr, sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const AlbumFileId &file_id, const CapsScreenShotDecodeOption &opts) {
+        ON_SCOPE_EXIT { std::memset(work.GetPointer(), 0, work.GetSize()); };
+        Dimensions dims = {};
+        CapsScreenShotAttribute attr = {};
+        {
+            std::scoped_lock lk(g_AlbumMutex);
+            /* TODO */
+        }
+        height.SetValue(dims.height);
+        width.SetValue(dims.width);
+        out_attr.SetValue(attr);
+        return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetAlbumUsage3(sf::Out<CapsAlbumUsage3> usage, StorageId storage) {
-        WriteLogFile("Accessor", "GetAlbumUsage3: storage(%d)", storage);
-        return impl::GetAlbumUsage3(usage.GetPointer(), storage);
+    Result AlbumAccessorService::GetAlbumUsage3(sf::Out<CapsAlbumUsage3> usage, StorageId storage_id) {
+        std::scoped_lock lk(g_AlbumMutex);
+
+        return g_AlbumErrorConverter.ConvertError(g_AlbumManager.GetAlbumUsage(&usage->usages[0], &usage->usages[1], 2, storage_id, ContentTypeFlag_Normal));
     }
 
-    Result AlbumAccessorService::GetAlbumMountResult(StorageId storage) {
-        WriteLogFile("Accessor", "GetAlbumMountResult: storage(%d)", storage);
-        return impl::MountAlbum(storage);
+    Result AlbumAccessorService::GetAlbumMountResult(StorageId storage_id) {
+        std::scoped_lock lk(g_AlbumMutex);
+
+        return g_AlbumErrorConverter.ConvertError(g_AlbumManager.MountImageDirectory(storage_id));
     }
 
-    Result AlbumAccessorService::GetAlbumUsage16(sf::Out<AlbumUsage16> usage, StorageId storage, u8 flags) {
-        WriteLogFile("Accessor", "GetAlbumUsage16: storage(%hhd), flags(%hhd)", storage, flags);
-        return impl::GetAlbumUsage16(usage.GetPointer(), storage, flags);
+    Result AlbumAccessorService::GetAlbumUsage16(sf::Out<AlbumUsage16> usage, StorageId storage_id, u8 flags) {
+        std::scoped_lock lk(g_AlbumMutex);
+
+        return g_AlbumErrorConverter.ConvertError(g_AlbumManager.GetAlbumUsage(&usage->usages[0], &usage->usages[1], 0xf, storage_id, flags));
     }
 
     Result AlbumAccessorService::GetMinMaxAppletId(sf::OutNonSecureBuffer minMax, sf::Out<bool> success) {
-        WriteLogFile("Accessor", "GetMinMaxAppletId");
         if (minMax.GetSize() != 0) {
             u64 *arr = (u64 *)minMax.GetPointer();
             arr[0] = 0x100000000001000;
@@ -108,100 +189,190 @@ namespace ams::capsrv {
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetAlbumFileCountEx0(sf::Out<u64> out, StorageId storage, u8 flags) {
-        WriteLogFile("Accessor", "GetAlbumFileCountEx0: storage(%hhd), flags(%hhd)", storage, flags);
-        return impl::GetAlbumFileCount(out.GetPointer(), storage, flags);
-    }
+    Result AlbumAccessorService::GetAlbumFileCountEx0(sf::Out<u64> out, StorageId storage_id, u8 flags) {
+        u64 count = 0;
+        {
+            std::scoped_lock lk(g_AlbumMutex);
+            R_TRY(g_AlbumErrorConverter.ConvertError(g_AlbumManager.CountEntries(&count, storage_id, flags)));
+        }
+        out.SetValue(count);
 
-    Result AlbumAccessorService::GetAlbumFileListEx0(sf::OutBuffer buffer, sf::Out<u64> out, u64 storage, u64 flags) {
-        WriteLogFile("Accessor", "GetAlbumFileListEx0: bufferSize(%ld), storage(%ld), flags(%ld)", buffer.GetSize(), storage, flags);
-        return impl::GetAlbumFileList(buffer.GetPointer(), buffer.GetSize(), out.GetPointer(), StorageId(storage), flags);
-    }
-
-    Result AlbumAccessorService::SaveEditedScreenShot(sf::InBuffer buf0, sf::InBuffer buf1, sf::Out<Entry> out, u64 a, u64 b, u64 c, u64 d, u64 e, u64 f, u64 g) {
-        WriteLogFile("Accessor", "SaveEditedScreenShot: buf0Size: %ld, buf1Size: %ld, [%ld, %ld, %ld, %ld, %ld, %ld, %ld]", buf0.GetSize(), buf1.GetSize(), a, b, c, d, e, f, g);
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetLastOverlayScreenShotThumbnail(sf::OutBuffer buffer, sf::Out<FileId> out, sf::Out<u64> size) {
-        WriteLogFile("Accessor", "GetLastOverlayScreenShotThumbnail: bufferSize(%ld)", buffer.GetSize());
-        return ovl::GetLastOverlayThumbnail(buffer.GetPointer(), buffer.GetSize(), out.GetPointer(), size.GetPointer(), false);
+    Result AlbumAccessorService::GetAlbumFileListEx0(sf::OutArray<AlbumEntry> entries, sf::Out<u64> out, StorageId storage_id, u8 flags) {
+        u64 count = 0;
+        {
+            std::scoped_lock lk(g_AlbumMutex);
+            R_TRY(g_AlbumErrorConverter.ConvertError(g_AlbumManager.ListEntries(&count, entries.GetPointer(), entries.GetSize(), storage_id, flags)));
+        }
+        out.SetValue(count);
+
+        return ResultSuccess();
     }
 
-    Result AlbumAccessorService::GetLastOverlayMovieThumbnail(sf::OutBuffer buffer, sf::Out<FileId> out, sf::Out<u64> size) {
-        WriteLogFile("Accessor", "GetLastOverlayMovieThumbnail: bufferSize(%ld)", buffer.GetSize());
-        return ovl::GetLastOverlayThumbnail(buffer.GetPointer(), buffer.GetSize(), out.GetPointer(), size.GetPointer(), true);
+    Result AlbumAccessorService::SaveEditedScreenShot(sf::InBuffer buf0, sf::InBuffer buf1, sf::Out<AlbumEntry> out, u64 a, u64 b, u64 c, u64 d, u64 e, u64 f, u64 g) {
+        AMS_ABORT("Not implemneted");
+        return ResultSuccess();
+    }
+
+    Result AlbumAccessorService::GetLastOverlayScreenShotThumbnail(sf::OutBuffer buffer, sf::Out<AlbumFileId> out, sf::Out<u64> out_size) {
+        size_t size;
+        R_TRY(g_AlbumErrorConverter.ConvertError(g_OverlayThumbnailHolder.GetLastOverlayThumbnail(out.GetPointer(), &size, buffer.GetPointer(), buffer.GetSize(), ContentType::Screenshot)));
+        out_size.SetValue(size);
+
+        return ResultSuccess();
+    }
+
+    Result AlbumAccessorService::GetLastOverlayMovieThumbnail(sf::OutBuffer buffer, sf::Out<AlbumFileId> out, sf::Out<u64> out_size) {
+        size_t size;
+        R_TRY(g_AlbumErrorConverter.ConvertError(g_OverlayThumbnailHolder.GetLastOverlayThumbnail(out.GetPointer(), &size, buffer.GetPointer(), buffer.GetSize(), ContentType::Movie)));
+        out_size.SetValue(size);
+
+        return ResultSuccess();
     }
 
     Result AlbumAccessorService::GetAutoSavingStorage(sf::Out<StorageId> out) {
-        WriteLogFile("Accessor", "GetAutoSavingStorage");
-        return impl::GetAutoSavingStorage(out.GetPointer());
+        std::scoped_lock lk(g_AlbumMutex);
+
+        return g_AlbumErrorConverter.ConvertError(g_AlbumFileIdGenerator.GetAutoSavingStorage(out.GetPointer(), ContentType::Screenshot, &g_AlbumManager));
     }
 
     Result AlbumAccessorService::GetRequiredStorageSpaceSizeToCopyAll(sf::Out<u64> out, StorageId dst, StorageId src) {
-        WriteLogFile("Accessor", "GetRequiredStorageSpaceSizeToCopyAll: dst(%hhd), src(%hhd)", dst, src);
-        return impl::GetRequiredStorageSpaceSizeToCopyAll(out.GetPointer(), dst, src);
-    }
+        std::scoped_lock lk(g_AlbumMutex);
 
-    Result AlbumAccessorService::LoadAlbumScreenShotThumbnailImageEx0(sf::Out<CapsScreenShotAttribute> attrs, sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
-        WriteLogFile("Accessor", "LoadAlbumScreenShotImageEx0: workSize(%ld), imgSize(%ld), fileId(%s), opts()", work.GetSize(), image.GetSize(), fileId.AsString());
-        return impl::LoadAlbumScreenShotThumbnailImageEx0(attrs.GetPointer(), width.GetPointer(), height.GetPointer(), work.GetPointer(), work.GetSize(), image.GetPointer(), image.GetSize(), fileId, opts);
-    }
+        size_t size;
+        R_TRY(g_AlbumErrorConverter.ConvertError(g_AlbumManager.GetRequiredStorageSpaceSizeToCopyAll(&size, src, dst)));
+        out.SetValue(size);
 
-    Result AlbumAccessorService::LoadAlbumScreenShotImageEx1(sf::Out<LoadAlbumScreenShotImageOutput> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
-        WriteLogFile("Accessor", "LoadAlbumScreenShotImageEx0: workSize(%ld), imgSize(%ld), fileId(%s), opts()", work.GetSize(), image.GetSize(), fileId.AsString());
-        return impl::LoadAlbumScreenShotImageEx1(out.GetPointer(), work.GetPointer(), work.GetSize(), image.GetPointer(), image.GetSize(), fileId, opts);
-    }
-
-    Result AlbumAccessorService::LoadAlbumScreenShotThumbnailImageEx1(sf::Out<LoadAlbumScreenShotImageOutput> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const FileId &fileId, const CapsScreenShotDecodeOption &opts) {
-        WriteLogFile("Accessor", "LoadAlbumScreenShotImageEx0: workSize(%ld), imgSize(%ld), fileId(%s), opts()", work.GetSize(), image.GetSize(), fileId.AsString());
-        return impl::LoadAlbumScreenShotThumbnailImageEx1(out.GetPointer(), work.GetPointer(), work.GetSize(), image.GetPointer(), image.GetSize(), fileId, opts);
-    }
-
-    Result AlbumAccessorService::ForceAlbumUnmounted(StorageId storage) {
-        WriteLogFile("Accessor", "ForceAlbumUnmounted: storage(%hhd)", storage);
-        return impl::UnmountAlbum(storage);
-    }
-
-    Result AlbumAccessorService::ResetAlbumMountStatus(StorageId storage) {
-        WriteLogFile("Accessor", "ResetAlbumMountStatus: storage(%hhd)", storage);
-        return impl::MountAlbum(storage);
-    }
-
-    Result AlbumAccessorService::RefreshAlbumCache(StorageId storage) {
-        WriteLogFile("Accessor", "RefreshAlbumCache: storage(%hhd)", storage);
-        return impl::RefreshAlbumCache(storage);
-    }
-
-    Result AlbumAccessorService::GetAlbumCache(sf::Out<CapsAlbumCache> cache, StorageId storage) {
-        WriteLogFile("Accessor", "GetAlbumCache: storage(%hhd)", storage);
-        return impl::GetAlbumCache(cache.GetPointer(), storage, ContentType::Screenshot);
-    }
-
-    Result AlbumAccessorService::GetAlbumCacheEx(sf::Out<CapsAlbumCache> cache, StorageId storage, const ContentType type) {
-        WriteLogFile("Accessor", "GetAlbumCacheEx: storage(%hhd), type(%hhd)", storage, type);
-        return impl::GetAlbumCache(cache.GetPointer(), storage, type);
-    }
-
-    Result AlbumAccessorService::GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<Entry> out, const sf::ClientAppletResourceUserId &aruid, const ApplicationEntry &appEntry) {
-        WriteLogFile("Accessor", "GetAlbumEntryFromApplicationAlbumEntryAruid: ApplicationEntry(#), aruid(%ld)", aruid.GetValue());
-        return control::GetAlbumEntryFromApplicationAlbumEntryAruid(out.GetPointer(), &appEntry, aruid.GetValue().value);
-    }
-
-    Result AlbumAccessorService::SetInternalErrorConversionEnabled(bool enabled) {
-        WriteLogFile("Accessor", "SetInternalErrorConversionEnabled: enabled(%s)", enabled ? "true" : "false");
         return ResultSuccess();
     }
 
-    Result AlbumAccessorService::LoadMakerNoteInfoForDebug(sf::Out<u64> out, sf::OutBuffer makerNote, sf::OutBuffer workBuffer, const FileId &fileId) {
-        WriteLogFile("Accessor", "LoadMakerNoteInfoForDebug: bufferSize(%ld), bufferSize(%ld), fileId(%s)", makerNote.GetSize(), workBuffer.GetSize(), fileId.AsString());
-        return impl::LoadMakerNoteInfoForDebug(out.GetPointer(), makerNote.GetPointer(), makerNote.GetSize(), workBuffer.GetPointer(), workBuffer.GetSize(), fileId);
+    Result AlbumAccessorService::LoadAlbumScreenShotThumbnailImageEx0(sf::Out<CapsScreenShotAttribute> out_attr, sf::Out<u64> width, sf::Out<u64> height, sf::OutNonSecureBuffer work, sf::OutBuffer image, const AlbumFileId &file_id, const CapsScreenShotDecodeOption &opts) {
+        ON_SCOPE_EXIT { std::memset(work.GetPointer(), 0, work.GetSize()); };
+        Dimensions dims = {};
+        CapsScreenShotAttribute attr = {};
+        {
+            std::scoped_lock lk(g_AlbumMutex);
+            /* TODO */
+        }
+        height.SetValue(dims.height);
+        width.SetValue(dims.width);
+        out_attr.SetValue(attr);
+        return ResultSuccess();
+    }
+
+    Result AlbumAccessorService::LoadAlbumScreenShotImageEx1(sf::Out<LoadAlbumScreenShotImageOutput> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const AlbumFileId &file_id, const CapsScreenShotDecodeOption &opts) {
+        ON_SCOPE_EXIT { std::memset(work.GetPointer(), 0, work.GetSize()); };
+        Dimensions dims = {};
+        CapsScreenShotAttribute attr = {};
+        {
+            std::scoped_lock lk(g_AlbumMutex);
+            /* TODO */
+        }
+        out->height = dims.height;
+        out->width = dims.width;
+        out->attr = attr;
+        return ResultSuccess();
+    }
+
+    Result AlbumAccessorService::LoadAlbumScreenShotThumbnailImageEx1(sf::Out<LoadAlbumScreenShotImageOutput> out, sf::OutNonSecureBuffer work, sf::OutBuffer image, const AlbumFileId &file_id, const CapsScreenShotDecodeOption &opts) {
+        ON_SCOPE_EXIT { std::memset(work.GetPointer(), 0, work.GetSize()); };
+        Dimensions dims = {};
+        CapsScreenShotAttribute attr = {};
+        {
+            std::scoped_lock lk(g_AlbumMutex);
+            /* TODO */
+        }
+        out->height = dims.height;
+        out->width = dims.width;
+        out->attr = attr;
+        return ResultSuccess();
+    }
+
+    Result AlbumAccessorService::ForceAlbumUnmounted(StorageId storage_id) {
+        std::scoped_lock lk(g_AlbumMutex);
+
+        return g_AlbumErrorConverter.ConvertError(g_AlbumManager.CloseImageDirectory(storage_id));
+    }
+
+    Result AlbumAccessorService::ResetAlbumMountStatus(StorageId storage_id) {
+        std::scoped_lock lk(g_AlbumMutex);
+
+        return g_AlbumErrorConverter.ConvertError(g_AlbumManager.UnmountImageDirectory(storage_id));
+    }
+
+    Result AlbumAccessorService::RefreshAlbumCache(StorageId storage_id) {
+        std::scoped_lock lk(g_AlbumMutex);
+
+        return g_AlbumErrorConverter.ConvertError(g_AlbumManager.RefreshCache(storage_id));
+    }
+
+    Result AlbumAccessorService::GetAlbumCache(sf::Out<CapsAlbumCache> cache, StorageId storage_id) {
+        if (hos::GetVersion() < hos::Version_4_0_0) {
+            return GetAlbumCacheEx(cache, storage_id, ContentType::Screenshot);
+        } else {
+            return capsrv::ResultAlbumUnsupportedVersion();
+        }
+    }
+
+    Result AlbumAccessorService::GetAlbumCacheEx(sf::Out<CapsAlbumCache> cache, StorageId storage_id, const ContentType type) {
+        std::scoped_lock lk(g_AlbumMutex);
+
+        return g_AlbumErrorConverter.ConvertError(g_AlbumManager.GetCache(cache.GetPointer(), storage_id, type));
+    }
+
+    Result AlbumAccessorService::GetAlbumEntryFromApplicationAlbumEntryAruid(sf::Out<AlbumEntry> out, const sf::ClientAppletResourceUserId &aruid, const ApplicationAlbumEntry &app_entry) {
+        AlbumEntry entry;
+        R_TRY(g_AlbumErrorConverter.ConvertError(g_ApplicationAlbumManager.GetAlbumEntryFromApplicationAlbumEntryAruid(&entry, &app_entry, aruid.GetValue().value)));
+        out.SetValue(entry);
+
+        return ResultSuccess();
+    }
+
+    Result AlbumAccessorService::SetInternalErrorConversionEnabled(bool mode) {
+        g_AlbumErrorConverter.SetMode(mode);
+        return ResultSuccess();
+    }
+
+    Result AlbumAccessorService::LoadMakerNoteInfoForDebug(sf::Out<u64> out, sf::OutBuffer makernote, sf::OutBuffer work, const AlbumFileId &file_id) {
+        /* Only available for debug. */
+        R_UNLESS(IsDebug(), capsrv::ResultNotSupported());
+
+        /* Only available on [6.0.0]+ so we only care for it's buffer size */
+        size_t makernote_buffer_size = 0xc78;
+        u8 tmp_makernote[makernote_buffer_size];
+
+        /* Verify buffer sufficiency. */
+        R_UNLESS(makernote.GetSize() >= makernote_buffer_size, capsrv::ResultAlbumReadBufferShortage());
+        R_UNLESS(work.GetSize() >= 0x7d000, capsrv::ResultAlbumWorkMemoryError());
+
+        /* Clear buffer. */
+        std::memset(makernote.GetPointer(), 0, makernote.GetSize());
+        std::memset(tmp_makernote, 0, makernote_buffer_size);
+
+        /* Disable verification. */
+        bool should_verify = g_AlbumSettings.SetVerifyScreenshotFiledata(false);
+
+        /* Restore verification state and cleanup work buffer on exit. */
+        ON_SCOPE_EXIT {
+            std::memset(work.GetPointer(), 0, work.GetSize());
+            g_AlbumSettings.SetVerifyScreenshotFiledata(should_verify);
+        };
+
+        /* Load makernote. */
+        size_t size;
+        R_TRY(g_AlbumErrorConverter.ConvertError(g_AlbumManager.LoadMakerNoteInfo(&size, tmp_makernote, file_id, work.GetPointer(), work.GetSize())));
+
+        /* Copy makernote to output. */
+        out.SetValue(size);
+        std::memcpy(makernote.GetPointer(), tmp_makernote, size);
+
+        return ResultSuccess();
     }
 
     Result AlbumAccessorService::OpenAccessorSession(sf::Out<std::shared_ptr<AccessorSession>> out, const sf::ClientAppletResourceUserId &aruid) {
-        WriteLogFile("Accessor", "OpenAccessorSession: aruid(%ld)", aruid.GetValue());
-        auto session = std::make_shared<AccessorSession>();
-        out.SetValue(std::move(session));
+        out.SetValue(std::make_shared<AccessorSession>());
         return ResultSuccess();
     }
 

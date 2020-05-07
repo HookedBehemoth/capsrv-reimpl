@@ -22,8 +22,9 @@ namespace ams::capsrv {
 
     R_DEFINE_ERROR_RANGE(AlbumError, 2, 99);
         R_DEFINE_ERROR_RESULT(AlbumWorkMemoryError,                     3);
+        R_DEFINE_ERROR_RESULT(AlbumUnsupportedVersion,                  4);
 
-        R_DEFINE_ERROR_RESULT(AlbumAlreadyOpened,                       7);
+        R_DEFINE_ERROR_RESULT(AlbumInvalidState,                        7);
         R_DEFINE_ERROR_RESULT(AlbumOutOfRange,                          8);
 
         R_DEFINE_ERROR_RANGE(AlbumInvalidFileId, 10, 19);
@@ -32,14 +33,21 @@ namespace ams::capsrv {
             R_DEFINE_ERROR_RESULT(AlbumInvalidStorage,                  13);
             R_DEFINE_ERROR_RESULT(AlbumInvalidFileContents,             14);
 
-        R_DEFINE_ERROR_RESULT(AlbumIsNotMounted,                        21);
-        R_DEFINE_ERROR_RESULT(AlbumIsFull,                              22);
-        R_DEFINE_ERROR_RESULT(AlbumFileNotFound,                        23);
-        R_DEFINE_ERROR_RESULT(AlbumInvalidFileData,                     24);
-        R_DEFINE_ERROR_RESULT(AlbumFileCountLimit,                      25);
-        R_DEFINE_ERROR_RESULT(AlbumFileNoThumbnail,                     26);
+        R_DEFINE_ERROR_RANGE(AlbumStorageUnavailable, 20, 29);
+            R_DEFINE_ERROR_RESULT(AlbumIsNotMounted,                        21);
+            R_DEFINE_ERROR_RESULT(AlbumIsFull,                              22);
+            R_DEFINE_ERROR_RESULT(AlbumFileNotFound,                        23);
+            R_DEFINE_ERROR_RESULT(AlbumInvalidFileData,                     24);
+            R_DEFINE_ERROR_RESULT(AlbumFileCountLimit,                      25);
+            R_DEFINE_ERROR_RESULT(AlbumFileNoThumbnail,                     26);
+            R_DEFINE_ERROR_RESULT(AlbumUnexpected,                          28);
+            R_DEFINE_ERROR_RESULT(AlbumPathNotFound,                        29);
 
         R_DEFINE_ERROR_RESULT(AlbumReadBufferShortage,                  30);
+
+        R_DEFINE_ERROR_RANGE(AlbumPathUnavailable, 71, 73);
+            R_DEFINE_ERROR_RESULT(AlbumUnknown72,                           72);
+            R_DEFINE_ERROR_RESULT(AlbumUnknown73,                           73);
 
         R_DEFINE_ERROR_RANGE(AlbumFileSystemError, 90, 99);
             R_DEFINE_ERROR_RANGE(AlbumAccessCorrupted, 94, 96);
@@ -47,6 +55,7 @@ namespace ams::capsrv {
 
     R_DEFINE_ERROR_RANGE(ControlError, 800, 899);
     R_DEFINE_ERROR_RESULT(ControlResourceLimit, 820);
+    R_DEFINE_ERROR_RESULT(ControlAlreadyOpen,   821);
     R_DEFINE_ERROR_RESULT(ControlNotOpened,     822);
 
     R_DEFINE_ERROR_RESULT(NotSupported, 1023);

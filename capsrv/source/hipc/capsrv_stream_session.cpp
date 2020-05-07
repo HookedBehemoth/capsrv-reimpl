@@ -1,108 +1,136 @@
 #include "capsrv_stream_session.hpp"
 
-namespace ams::capsrv {
+#include "../server/capsrv_album_server.hpp"
 
-    Result AccessorSession::OpenAlbumMovieReadStream(sf::Out<u64> stream, const FileId &fileId) {
+namespace ams::capsrv::server {
+
+    Result AccessorSession::OpenAlbumMovieReadStream(sf::Out<StreamId> stream, const AlbumFileId &fileId) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ControlSession::OpenAlbumMovieReadStream(sf::Out<u64> stream, const FileId &fileId) {
+    Result ControlSession::OpenAlbumMovieReadStream(sf::Out<StreamId> stream, const AlbumFileId &fileId) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result AccessorApplicationSession::OpenAlbumMovieReadStream(sf::Out<u64> stream, const sf::ClientProcessId &client_pid, const CapsApplicationAlbumFileEntry &entry) {
+    Result AccessorApplicationSession::OpenAlbumMovieReadStream(sf::Out<StreamId> stream, const sf::ClientProcessId &client_pid, const ApplicationAlbumFileEntry &entry) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ISession::CloseAlbumMovieReadStream(u64 stream) {
+    Result ISession::CloseAlbumMovieReadStream(StreamId stream) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ISession::GetAlbumMovieReadStreamMovieDataSize(sf::Out<u64> size, u64 stream) {
+    Result ISession::GetAlbumMovieReadStreamMovieDataSize(sf::Out<u64> size, StreamId stream) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ISession::ReadMovieDataFromAlbumMovieReadStream(sf::OutBuffer buffer, sf::Out<u64> size, u64 stream, u64 offset) {
+    Result ISession::ReadMovieDataFromAlbumMovieReadStream(sf::OutBuffer buffer, sf::Out<u64> size, StreamId stream, u64 offset) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ISession::GetAlbumMovieReadStreamBrokenReason(u64 stream) {
+    Result ISession::GetAlbumMovieReadStreamBrokenReason(StreamId stream) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ISession::GetAlbumMovieReadStreamImageDataSize(sf::Out<u64> size, u64 stream) {
+    Result ISession::GetAlbumMovieReadStreamImageDataSize(sf::Out<u64> size, StreamId stream) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ISession::ReadImageDataFromAlbumMovieReadStream(sf::OutBuffer buffer, sf::Out<u64> size, u64 stream, u64 offset) {
+    Result ISession::ReadImageDataFromAlbumMovieReadStream(sf::OutBuffer buffer, sf::Out<u64> size, StreamId stream, u64 offset) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
     Result ISession::ReadFileAttributeFromAlbumMovieReadStream(sf::Out<CapsScreenShotAttribute> attrs) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ISession::OpenAlbumMovieWriteStream(sf::Out<u64> stream, const FileId &fileId) {
+    Result ISession::OpenAlbumMovieWriteStream(sf::Out<StreamId> stream, const AlbumFileId &fileId) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ISession::FinishAlbumMovieWriteStream(u64 stream) {
+    Result ISession::FinishAlbumMovieWriteStream(StreamId stream) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ISession::CommitAlbumMovieWriteStream(u64 stream) {
+    Result ISession::CommitAlbumMovieWriteStream(StreamId stream) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ISession::DiscardAlbumMovieWriteStream(u64 stream) {
+    Result ISession::DiscardAlbumMovieWriteStream(StreamId stream) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ISession::DiscardAlbumMovieWriteStreamNoDelete(u64 stream) {
+    Result ISession::DiscardAlbumMovieWriteStreamNoDelete(StreamId stream) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ISession::CommitAlbumMovieWriteStreamEx(sf::Out<CapsAlbumEntry> output, u64 stream) {
+    Result ISession::CommitAlbumMovieWriteStreamEx(sf::Out<CapsAlbumEntry> output, StreamId stream) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ISession::StartAlbumMovieWriteStreamDataSection(u64 stream) {
+    Result ISession::StartAlbumMovieWriteStreamDataSection(StreamId stream) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ISession::EndAlbumMovieWriteStreamDataSection(u64 stream) {
+    Result ISession::EndAlbumMovieWriteStreamDataSection(StreamId stream) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ISession::StartAlbumMovieWriteStreamMetaSection(u64 stream) {
+    Result ISession::StartAlbumMovieWriteStreamMetaSection(StreamId stream) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ISession::EndAlbumMovieWriteStreamMetaSection(u64 stream) {
+    Result ISession::EndAlbumMovieWriteStreamMetaSection(StreamId stream) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ISession::ReadDataFromAlbumMovieWriteStream(sf::OutBuffer out, u64 stream, u64 offset) {
+    Result ISession::ReadDataFromAlbumMovieWriteStream(sf::OutBuffer out, StreamId stream, u64 offset) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ISession::WriteDataToAlbumMovieWriteStream(sf::InBuffer data, u64 stream, u64 offset) {
+    Result ISession::WriteDataToAlbumMovieWriteStream(sf::InBuffer data, StreamId stream, u64 offset) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ISession::WriteMetaToAlbumMovieWriteStream(sf::InBuffer meta, u64 stream, u64 offset, u64 unk0, u64 unk1) {
+    Result ISession::WriteMetaToAlbumMovieWriteStream(sf::InBuffer meta, StreamId stream, u64 offset, u64 unk0, u64 unk1) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ISession::GetAlbumMovieWriteStreamBrokenReason(u64 stream) {
+    Result ISession::GetAlbumMovieWriteStreamBrokenReason(StreamId stream) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ISession::GetAlbumMovieWriteStreamDataSize(sf::Out<u64> size, u64 stream) {
+    Result ISession::GetAlbumMovieWriteStreamDataSize(sf::Out<u64> size, StreamId stream) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 
-    Result ISession::SetAlbumMovieWriteStreamDataSize(u64 stream, u64 size) {
+    Result ISession::SetAlbumMovieWriteStreamDataSize(StreamId stream, u64 size) {
+        AMS_ABORT("Not implemented");
         return ResultSuccess();
     }
 

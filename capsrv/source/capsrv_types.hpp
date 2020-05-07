@@ -1,27 +1,12 @@
 #pragma once
 #include <stratosphere.hpp>
 #include <string>
-#include <type_traits>
 
-#include "capsrv_results.hpp"
+#include "capsrv_album_settings.hpp"
 
 namespace ams::capsrv {
 
-    /* Storage IDs. */
-    enum StorageId : u8 {
-        Nand = 0,
-        Sd = 1,
-    };
-
-    /* Content IDs. */
-    enum ContentType : u8 {
-        Screenshot = 0,
-        Movie = 1,
-        ExtraScreenshot = 2,
-        ExtraMovie = 3,
-    };
-
-    struct DateTime {
+    struct AlbumDateTime {
         u16 year;
         u8 month;
         u8 day;
@@ -32,97 +17,101 @@ namespace ams::capsrv {
 
         const char *AsString() const;
     };
-    static_assert(sizeof(DateTime) == sizeof(CapsAlbumFileDateTime));
+    static_assert(sizeof(AlbumDateTime) == sizeof(CapsAlbumFileDateTime));
 
-    struct FileId {
-        u64 applicationId;
-        DateTime datetime;
-        StorageId storage;
+    struct AlbumFileId {
+        u64 application_id;
+        AlbumDateTime date_time;
+        StorageId storage_id;
         ContentType type;
         u8 pad[0x6];
 
-        const char *AsString() const;
-        u64 GetFolderPath(char *buffer, u64 max_length) const;
-        u64 GetFileName(char *buffer, u64 max_length) const;
-        u64 GetFilePath(char *buffer, u64 max_length) const;
+        Result Verify(AlbumSettings *settings) const;
 
-        inline bool IsExtra() const {
-            return (u8)this->type > 1;
+        static Result FromString(AlbumFileId *file_id, StorageId storage, const char *str);
+        ALWAYS_INLINE bool operator==(const AlbumFileId &file_id) {
+            return memcmp(this, &file_id, sizeof(file_id)) == 0;
         }
-        inline bool IsNormal() const {
-            return !IsExtra();
-        }
-
-        Result Verify() const;
-
-        static Result FromString(FileId *fileId, StorageId storage, const char *str);
-        inline bool operator==(const FileId &f) {
-            //return (this->applicationId == f.applicationId) && (this->storage == f.storage) && (this->type == f.type);
-            return memcmp(this, &f, sizeof(FileId)) == 0;
-        }
-        inline bool operator!=(const FileId &f) {
-            return !this->operator==(f);
+        ALWAYS_INLINE bool operator!=(const AlbumFileId &file_id) {
+            return !this->operator==(file_id);
         }
     };
-    static_assert(sizeof(FileId) == sizeof(CapsAlbumFileId));
+    static_assert(sizeof(AlbumFileId) == sizeof(CapsAlbumFileId));
 
-    struct Entry {
+    struct AlbumEntry {
         s64 size;
-        FileId fileId;
+        AlbumFileId fileId;
 
-        const char *AsString() const;
-        inline bool operator==(const Entry &f) {
-            return memcmp(this, &f, sizeof(FileId)) == 0;
+        ALWAYS_INLINE bool operator==(const AlbumEntry &f) {
+            return memcmp(this, &f, sizeof(AlbumEntry)) == 0;
         }
-        inline bool operator!=(const Entry &f) {
+        ALWAYS_INLINE bool operator!=(const AlbumEntry &f) {
             return !this->operator==(f);
         }
     };
-    static_assert(sizeof(Entry) == sizeof(CapsAlbumEntry));
+    static_assert(sizeof(AlbumEntry) == sizeof(CapsAlbumEntry));
 
-    struct ApplicationEntry {
-        union {
-            u8 data[0x20];
+    union ApplicationAlbumEntry {
+        u8 data[0x20];
 
-            struct {
-                u8 unk_x0[0x20];
-            } v0;
+        struct {
+            u8 hash[0x20];
+        } v0;
 
-            struct {
-                s64 size;
-                u64 hash;
-                DateTime datetime;
-                u8 storage;
-                u8 content;
-                u8 pad_x1a[0x5];
-                u8 unk_x1f;
-            } v1;
-        };
+        struct {
+            s64 size;
+            u64 hash;
+            AlbumDateTime date_time;
+            StorageId storage_id;
+            ContentType type;
+            u8 pad_x1a[0x5];
+            u8 unk_x1f;
+        } v1;
     };
-    static_assert(sizeof(ApplicationEntry) == sizeof(CapsApplicationAlbumEntry));
+    static_assert(sizeof(ApplicationAlbumEntry) == sizeof(CapsApplicationAlbumEntry));
 
-    struct ApplicationFileEntry {
-        ApplicationEntry entry;
-        DateTime datetime;
+    struct ApplicationAlbumFileEntry {
+        ApplicationAlbumEntry entry;
+        AlbumDateTime datetime;
         u64 unk_x28;
     };
-    static_assert(sizeof(ApplicationFileEntry) == sizeof(CapsApplicationAlbumFileEntry));
+    static_assert(sizeof(ApplicationAlbumFileEntry) == sizeof(CapsApplicationAlbumFileEntry));
 
     struct Dimensions {
         u64 width;
         u64 height;
     };
 
-    const char* GetFileExtension(ContentType type);
-    const char* GetMountName(StorageId storage);
+    struct AlbumManagerCache {
+        CapsAlbumCache cache[static_cast<u8>(StorageId::Count)][static_cast<u8>(ContentType::Count)]{};
 
-    struct ContentStorage {
-        CapsAlbumCache cache[2][4]{};
+        size_t GetCount(StorageId storage_id, ContentType type);
+        void Set(StorageId storage_id, ContentType type, CapsAlbumCache cache);
+        CapsAlbumCache Get(StorageId storage_id, ContentType type);
+        void Increment(StorageId storage_id, ContentType type);
+        void Decrement(StorageId storage_id, ContentType type);
+    };
 
-        Result CanSave(StorageId storage, ContentType type) const;
-        void Set(StorageId storage, ContentType type, CapsAlbumCache cache);
-        void Increment(StorageId storage, ContentType type);
-        void Decrement(StorageId storage, ContentType type);
+    struct AlbumReserve {
+        struct _Reserve {
+            bool used;
+            AlbumFileId file_id;
+        } reserve[10];
+
+        AlbumReserve();
+        ~AlbumReserve();
+        Result Reserve(const AlbumFileId &file_id);
+        Result Unreserve(const AlbumFileId &file_id);
+        bool IsReserved(const AlbumFileId &file_id);
+    };
+
+    struct AlbumPath {
+        char path_buffer[0x70];
+        u32 unk;
+        
+        AlbumPath() : path_buffer(), unk() { /* ... */ }
+
+        Result MakeAlbumPath(const AlbumFileId &file_id, u32 unk, AlbumSettings *settings);
     };
 
     struct AlbumUsage16 : sf::LargeData, sf::PrefersMapAliasTransferMode, CapsAlbumUsage16 {};

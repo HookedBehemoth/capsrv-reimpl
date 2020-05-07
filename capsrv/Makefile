@@ -4,8 +4,6 @@
 
 include $(dir $(abspath $(lastword $(MAKEFILE_LIST))))/../Atmosphere-libs/config/templates/stratosphere.mk
 
-export DEFINES	+=	-DAPPLET_TEST -D__DEBUG__
-
 #---------------------------------------------------------------------------------
 # no real need to edit anything past this point unless you need to add additional
 # rules for different file extensions
@@ -92,7 +90,7 @@ $(BUILD):
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).nro $(TARGET).kip $(TARGET).elf
+	@rm -fr $(BUILD) $(TARGET).nsp $(TARGET).kip $(TARGET).elf
 
 
 #---------------------------------------------------------------------------------
@@ -104,13 +102,11 @@ DEPENDS	:=	$(OFILES:.o=.d)
 #---------------------------------------------------------------------------------
 # main targets
 #---------------------------------------------------------------------------------
-all	:	$(OUTPUT).nro
+all	:	$(OUTPUT).nsp $(OUTPUT).nso
 
-ifeq ($(strip $(NO_NACP)),)
-$(OUTPUT).nro	:	$(OUTPUT).elf $(OUTPUT).nacp
-else
-$(OUTPUT).nro	:	$(OUTPUT).elf
-endif
+$(OUTPUT).nsp	:	$(OUTPUT).elf
+
+$(OUTPUT).nso	:	$(OUTPUT).elf
 
 $(OUTPUT).elf	:	$(OFILES)
 

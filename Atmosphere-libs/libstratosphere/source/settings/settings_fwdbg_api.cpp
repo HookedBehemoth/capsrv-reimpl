@@ -23,6 +23,12 @@ namespace ams::settings::fwdbg {
         return value;
     }
 
+    bool IsQuest() {
+        bool value = false;
+        R_ABORT_UNLESS(::setsysGetQuestFlag(std::addressof(value)));
+        return value;
+    }
+
     size_t WEAK_SYMBOL GetSettingsItemValueSize(const char *name, const char *key) {
         u64 size = 0;
         R_ABORT_UNLESS(setsysGetSettingsItemValueSize(name, key, &size));
