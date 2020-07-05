@@ -209,19 +209,20 @@ namespace ams::capsrv {
                 R_CONVERT(fs::ResultPathNotFound, capsrv::ResultAlbumPathNotFound())
                 R_CATCH_ALL() { /* ... */ }
             } R_END_TRY_CATCH_WITH_ABORT_UNLESS;
-        } else {
-            R_TRY(VerifyStorageId(storage_id));
 
-            R_TRY_CATCH(fs::MountImageDirectory(MountNames[u8(storage_id)], fs::ImageDirectoryId(storage_id))) {
-                R_CATCH(fs::ResultMountNameAlreadyExists, fs::ResultAllocationFailure) { AMS_ABORT(); }
-                R_CONVERT(fs::ResultSdCardAccessFailed, capsrv::ResultAlbumStorageUnavailable())
-                R_CONVERT(fs::ResultPathAlreadyExists,  capsrv::ResultAlbumPathUnavailable())
-                R_CATCH_ALL() { /* ... */ }
-            } R_END_TRY_CATCH;
+            return ResultSuccess();
         }
 
-        AMS_ASSERT(false);
-        return capsrv::ResultAlbumError();
+        R_TRY(VerifyStorageId(storage_id));
+
+        R_TRY_CATCH(fs::MountImageDirectory(MountNames[static_cast<u8>(storage_id)], static_cast<fs::ImageDirectoryId>(storage_id))) {
+            R_CATCH(fs::ResultMountNameAlreadyExists, fs::ResultAllocationFailure) { AMS_ABORT(); }
+            R_CONVERT(fs::ResultSdCardAccessFailed, capsrv::ResultAlbumStorageUnavailable())
+            R_CONVERT(fs::ResultPathAlreadyExists,  capsrv::ResultAlbumPathUnavailable())
+            R_CONVERT_ALL(capsrv::ResultAlbumError())
+        } R_END_TRY_CATCH;
+
+        return ResultSuccess();
     }
 
     Result UnmountAlbum(StorageId storage_id, AlbumSettings *settings) {

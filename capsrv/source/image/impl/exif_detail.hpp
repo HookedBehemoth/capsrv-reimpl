@@ -32,18 +32,18 @@ namespace ams::image::detail {
     };
 
     enum DataFormat : u16 {
-        unsignedByte = 1,
-        asciiStrings = 2,
-        unsignedShort = 3,
-        unsignedLong = 4,
+        unsignedByte     = 1,
+        asciiStrings     = 2,
+        unsignedShort    = 3,
+        unsignedLong     = 4,
         unsignedRational = 5,
-        signedByte = 6,
-        undefined = 7,
-        signedShort = 8,
-        signedLong = 9,
-        signedRational = 10,
-        signedFloat = 11,
-        doubleFloat = 12
+        signedByte       = 6,
+        undefined        = 7,
+        signedShort      = 8,
+        signedLong       = 9,
+        signedRational   = 10,
+        signedFloat      = 11,
+        doubleFloat      = 12
     };
 
     /* ImageFileDirectory */

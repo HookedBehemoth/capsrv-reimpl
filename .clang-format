@@ -1,5 +1,6 @@
 ﻿---
 AccessModifierOffset: -2
+AlignConsecutiveAssignments: true
 BasedOnStyle: LLVM
 BreakBeforeBraces: Attach
 NamespaceIndentation: All

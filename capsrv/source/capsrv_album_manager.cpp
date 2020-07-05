@@ -1,17 +1,119 @@
 #include "capsrv_album_manager.hpp"
-#include "capsrv_storage.hpp"
+
 #include "capsrv_environment.hpp"
+#include "capsrv_storage.hpp"
 
 namespace ams::capsrv {
 
     namespace {
+
+        struct ProcessDirArguments {
+            std::function<bool(const AlbumEntry &)> AlbumFileCallback;
+            /* more? */
+        };
+
+        Result ProcessImageDirectory(StorageId storage, ProcessDirArguments &args, u8 *work, size_t work_size, AlbumSettings *settings) {
+            char path[fs::EntryNameLengthMax + 1];
+            std::snprintf(path, sizeof(path), "%s:/", MountPoints[static_cast<u8>(storage)]);
+            const size_t root_dir_path_len = std::strlen(path);
+
+            /* Open root directory. Only read directories. */
+            fs::DirectoryHandle root_dir;
+            R_TRY(fs::OpenDirectory(&root_dir, path, fs::OpenDirectoryMode_Directory));
+            /* Close directory on scope exit. */
+            ON_SCOPE_EXIT { fs::CloseDirectory(root_dir); };
+
+            /* Iterate over the root directory. */
+            while (true) {
+                /* Read the next entry. */
+                s64 count;
+                fs::DirectoryEntry entry;
+                if (R_FAILED(fs::ReadDirectory(&count, &entry, root_dir, 1)) || count == 0) {
+                    break;
+                }
+
+                /* Only read directories with 'valid' year names. */
+                int year = atoi(entry.name);
+                if (10000 < year)
+                    continue;
+
+                /* Print the path for this directory. */
+                std::snprintf(path + root_dir_path_len, sizeof(path) - root_dir_path_len, "%s/", entry.name);
+                const size_t year_dir_path_len = root_dir_path_len + 1 + std::strlen(entry.name);
+
+                /* Open year directory. Only read directories. */
+                fs::DirectoryHandle year_dir;
+                R_TRY(fs::OpenDirectory(&year_dir, path, fs::OpenDirectoryMode_Directory));
+                /* Close directory on scope exit. */
+                ON_SCOPE_EXIT { fs::CloseDirectory(year_dir); };
+
+                /* Iterate over the year directory. */
+                while (true) {
+                    if (R_FAILED(fs::ReadDirectory(&count, &entry, year_dir, 1)) || count == 0) {
+                        break;
+                    }
+
+                    /* Only read directories with 'valid' month names. */
+                    int month = atoi(entry.name);
+                    if (month < 1 || 12 < month)
+                        continue;
+
+                    /* Print the path for this directory. */
+                    std::snprintf(path + year_dir_path_len, sizeof(path) - year_dir_path_len, "%s/", entry.name);
+                    const size_t month_dir_path_len = year_dir_path_len + 1 + std::strlen(entry.name);
+
+                    /* Open month directory. Only read directories. */
+                    fs::DirectoryHandle month_dir;
+                    R_TRY(fs::OpenDirectory(&month_dir, path, fs::OpenDirectoryMode_Directory));
+                    /* Close directory on scope exit. */
+                    ON_SCOPE_EXIT { fs::CloseDirectory(month_dir); };
+
+                    while (true) {
+                        if (R_FAILED(fs::ReadDirectory(&count, &entry, month_dir, 1)) || count == 0) {
+                            break;
+                        }
+
+                        /* Only read directories with 'valid' day names. */
+                        int day = atoi(entry.name);
+                        if (day < 1 || 31 < day)
+                            continue;
+
+                        /* Print the path for this directory. */
+                        std::snprintf(path + month_dir_path_len, sizeof(path) - month_dir_path_len, "%s/", entry.name);
+
+                        /* Open day directory. Only read files. */
+                        fs::DirectoryHandle day_dir;
+                        R_TRY(fs::OpenDirectory(&day_dir, path, fs::OpenDirectoryMode_File));
+                        /* Close directory on scope exit. */
+                        ON_SCOPE_EXIT { fs::CloseDirectory(day_dir); };
+
+                        while (true) {
+                            if (R_FAILED(fs::ReadDirectory(&count, &entry, day_dir, 1)) || count == 0) {
+                                break;
+                            }
+
+                            AlbumEntry album_entry = {
+                                .size   = entry.file_size,
+                            };
+                            R_TRY_CATCH(album_entry.fileId.FromString(storage, entry.name)) {
+                                R_CATCH_ALL() { continue; }
+                            } R_END_TRY_CATCH;
+                            
+                            if (args.AlbumFileCallback(album_entry))
+                                return ResultSuccess();
+                        }
+                    }
+                }
+            }
+            return ResultSuccess();
+        }
 
         Result CreateAlbumFileImpl(fs::FileHandle *file, char *path, s64 size, int mode) {
             R_UNLESS(!IsQuest(), capsrv::ResultAlbumIsFull());
 
             /* Ensure the path to the file exists. */
             R_TRY(fs::EnsureParentDirectoryRecursively(path));
-            
+
             /* Create the file. */
             R_TRY_CATCH(fs::CreateFile(path, size, fs::CreateOption_None)) {
                 R_CATCH(fs::ResultPathAlreadyExists) {
@@ -26,7 +128,8 @@ namespace ams::capsrv {
                     close_guard.Cancel();
                     return ResultSuccess();
                 }
-            } R_END_TRY_CATCH;
+            }
+            R_END_TRY_CATCH;
 
             /* Delete new file on failure. */
             auto delete_guard = SCOPE_GUARD { fs::DeleteFile(path); };
@@ -46,21 +149,22 @@ namespace ams::capsrv {
     }
 
     void AlbumManager::Initialize(AlbumSettings *set, StreamIdGenerator *gen) {
-        this->settings = set;
+        this->settings            = set;
         this->stream_id_generator = gen;
 
         if (hosversionAtLeast(4, 0, 0)) {
-            /* Attempt to open savedata filesystem and mount it. */
-            Result rc = fs::CreateSystemSaveData(0x8000000000000140, 0x80000, 0x80000, 0);
-            if (R_SUCCEEDED(rc) || (rc.GetValue() == fs::ResultPathAlreadyExists().GetValue())) {
-                R_ABORT_UNLESS(fs::MountSystemSaveData("TM", 0x8000000000000140));
-            } else {
-                AMS_ABORT();
+            /* Attempt to create savedata filesystem and mount it. */
+            R_TRY_CATCH(fs::CreateSystemSaveData(0x8000000000000140, 0x80000, 0x80000, 0)) {
+                R_CATCH(fs::ResultPathAlreadyExists) { /* ... */
+                }
             }
+            R_END_TRY_CATCH_WITH_ABORT_UNLESS;
+
+            R_ABORT_UNLESS(fs::MountSystemSaveData("TM", 0x8000000000000140));
         }
-        nand_mount_status = MountStatus();
-        sd_mount_status = MountStatus();
-        this->read_reserve = AlbumReserve();
+        nand_mount_status   = MountStatus();
+        sd_mount_status     = MountStatus();
+        this->read_reserve  = AlbumReserve();
         this->write_reserve = AlbumReserve();
         this->movie_controller.Initialize(set, stream_id_generator, &this->read_reserve, &this->write_reserve);
     }
@@ -81,12 +185,12 @@ namespace ams::capsrv {
         fs::Unmount("TM");
 
         this->movie_controller.Exit();
-        this->settings = nullptr;
+        this->settings            = nullptr;
         this->stream_id_generator = nullptr;
     }
 
     void AlbumManager::SetMemory(u8 *ptr, size_t size) {
-        this->work_memory = ptr;
+        this->work_memory      = ptr;
         this->work_memory_size = size;
     }
 
@@ -99,26 +203,27 @@ namespace ams::capsrv {
         /* If storage isn't available return the last result code. */
         R_UNLESS(mount_status.state == MountState::available, mount_status.last_error);
 
-        Result last_result;
+        Result last_result = ResultSuccess();
 
         R_TRY_CATCH(MountAlbum(storage_id, this->settings)) {
             R_CATCH(capsrv::ResultAlbumPathUnavailable) {
                 mount_status.state = MountState::unmounted;
-                last_result = capsrv::ResultAlbumPathNotFound();
+                last_result        = capsrv::ResultAlbumPathNotFound();
             }
             R_CATCH(capsrv::ResultAlbumUnexpected) {
                 mount_status.state = MountState::unmounted;
-                last_result = capsrv::ResultAlbumIsNotMounted();
+                last_result        = capsrv::ResultAlbumIsNotMounted();
             }
             R_CATCH_ALL() {
                 mount_status.state = MountState::available;
-                last_result = capsrv::ResultAlbumIsNotMounted();
+                last_result        = capsrv::ResultAlbumIsNotMounted();
             }
-            } else {}
-        } else {
+        }
+        R_END_TRY_CATCH;
+
+        if (last_result.IsSuccess()) {
             mount_status.state = MountState::mounted;
-            last_result = ResultSuccess();
-        }});
+        }
 
         mount_status.last_error = last_result;
         return last_result;
@@ -129,11 +234,11 @@ namespace ams::capsrv {
 
         /* Obtain mount status of the requested storage. */
         MountStatus &mount_status = (storage_id == StorageId::Nand) ? this->nand_mount_status : this->sd_mount_status;
-        
+
         if (mount_status.state != MountState::available) {
             Result last_result = mount_status.last_error;
             R_SUCCEED_IF(last_result.IsSuccess());
-            
+
             if (last_result.GetValue() != 206) {
                 return last_result;
             } else if (capsrv::ResultAlbumPathUnavailable().Includes(last_result)) {
@@ -151,26 +256,27 @@ namespace ams::capsrv {
             return aaaaaa;
         }
 
-        Result last_result;
+        Result last_result = ResultSuccess();
 
         R_TRY_CATCH(MountAlbum(storage_id, this->settings)) {
             R_CATCH(capsrv::ResultAlbumPathUnavailable) {
                 mount_status.state = MountState::unmounted;
-                last_result = capsrv::ResultAlbumPathNotFound();
+                last_result        = capsrv::ResultAlbumPathNotFound();
             }
             R_CATCH(capsrv::ResultAlbumUnexpected) {
                 mount_status.state = MountState::unmounted;
-                last_result = capsrv::ResultAlbumIsNotMounted();
+                last_result        = capsrv::ResultAlbumIsNotMounted();
             }
             R_CATCH_ALL() {
                 mount_status.state = MountState::available;
-                last_result = capsrv::ResultAlbumIsNotMounted();
+                last_result        = capsrv::ResultAlbumIsNotMounted();
             }
-            } else {}
-        } else {
+        }
+        R_END_TRY_CATCH;
+
+        if (last_result.IsSuccess()) {
             mount_status.state = MountState::mounted;
-            last_result = ResultSuccess();
-        }});
+        }
 
         mount_status.last_error = last_result;
         return last_result;
@@ -188,7 +294,7 @@ namespace ams::capsrv {
         }
 
         /* Update mount status. */
-        mount_status.state = MountState::unmounted;
+        mount_status.state      = MountState::unmounted;
         mount_status.last_error = capsrv::ResultAlbumIsNotMounted();
         return ResultSuccess();
     }
@@ -205,7 +311,7 @@ namespace ams::capsrv {
         }
 
         /* Update mount status. */
-        mount_status.state = MountState::available;
+        mount_status.state      = MountState::available;
         mount_status.last_error = capsrv::ResultAlbumIsNotMounted();
         return ResultSuccess();
     }
@@ -219,8 +325,17 @@ namespace ams::capsrv {
         R_TRY(VerifyStorageId(storage_id));
         R_TRY(this->EnsureMountState(storage_id, MountState::mounted));
 
-        /* TODO: Process image directory */
         CapsAlbumCache cache[4];
+        ProcessDirArguments args = {};
+        args.AlbumFileCallback = [&](const AlbumEntry &entry) -> bool {
+            if (ContentTypeValid(entry.fileId.type)) {
+                cache[static_cast<u8>(entry.fileId.type)].count++;
+                //cache[static_cast<u8>(entry.fileId.type)].unk_x8 += entry.size;
+            }
+            return false;
+        };
+
+        ProcessImageDirectory(storage_id, args, this->work_memory, this->work_memory_size, this->settings);
 
         /* Updated cache. */
         this->cache.Set(storage_id, ContentType::Screenshot, cache[0]);
@@ -244,10 +359,11 @@ namespace ams::capsrv {
     Result AlbumManager::CanSave(StorageId storage_id, ContentType type, size_t count) {
         R_TRY(VerifyStorageId(storage_id));
         R_TRY(VerifyContentType(type, this->settings));
-        
-        size_t max_count = this->settings->GetFileMaxCount(storage_id, type);
+
+        size_t max_count     = this->settings->GetFileMaxCount(storage_id, type);
         size_t current_count = this->cache.GetCount(storage_id, type);
         R_UNLESS(current_count < max_count, capsrv::ResultInternalAlbumLimitationFileCountLimit());
+
         return ResultSuccess();
     }
 
@@ -258,25 +374,47 @@ namespace ams::capsrv {
         R_TRY(VerifyStorageId(storage_id));
         R_TRY(this->EnsureMountState(storage_id, MountState::mounted));
 
-        /* TODO: Process image directory */
         size_t count = 0;
+        ProcessDirArguments args = {};
+        args.AlbumFileCallback = [&](const AlbumEntry &entry) -> bool {
+            if ((1 << static_cast<u8>(entry.fileId.type)) & content_type_flags &&
+                !this->write_reserve.IsReserved(entry.fileId)) {
+                    count++;
+                }
+            return false;
+        };
+
+        ProcessImageDirectory(storage_id, args, this->work_memory, this->work_memory_size, this->settings);
 
         /* Updated cache. */
         *out_count = count;
         return ResultSuccess();
     }
 
-    Result AlbumManager::ListEntries(u64 *out_count, AlbumEntry *entries, size_t entries_count, StorageId storage_id, u8 content_type_flags) {
+    Result AlbumManager::ListEntries(u64 *out_count, AlbumEntry *entries, size_t max_entries, StorageId storage_id, u8 content_type_flags) {
         std::memset(this->work_memory, 0, this->work_memory_size);
         ON_SCOPE_EXIT { std::memset(this->work_memory, 0, this->work_memory_size); };
 
         *out_count = 0;
-        std::memset(entries, 0, entries_count * sizeof(AlbumEntry));
+        std::memset(entries, 0, max_entries * sizeof(AlbumEntry));
 
         R_TRY(this->EnsureMountState(storage_id, MountState::mounted));
 
-        /* TODO: Process image directory */
         size_t count = 0;
+        ProcessDirArguments args = {};
+        args.AlbumFileCallback = [&](const AlbumEntry &entry) -> bool {
+            if ((1 << static_cast<u8>(entry.fileId.type)) & content_type_flags &&
+                !this->write_reserve.IsReserved(entry.fileId)) {
+                *entries = entry;
+                entries++;
+                count++;
+            }
+
+            /* Official software doesn't break on max entries. */
+            return max_entries == count;
+        };
+
+        ProcessImageDirectory(storage_id, args, this->work_memory, this->work_memory_size, this->settings);
 
         /* Updated cache. */
         *out_count = count;
@@ -316,7 +454,7 @@ namespace ams::capsrv {
         fs::FileHandle file_handle;
         R_TRY(fs::OpenFile(&file_handle, path.path_buffer, fs::OpenMode_Read));
         ON_SCOPE_EXIT { fs::CloseFile(file_handle); };
-        
+
         /* Get file size. */
         s64 file_size;
         R_TRY(fs::GetFileSize(&file_size, file_handle));
@@ -416,7 +554,7 @@ namespace ams::capsrv {
         R_TRY(this->EnsureMountState(dst_storage_id, MountState::mounted));
 
         AlbumFileId dst_file_id = src_file_id;
-        dst_file_id.storage_id = dst_storage_id;
+        dst_file_id.storage_id  = dst_storage_id;
 
         /* Make path to file. */
         AlbumPath src_path, dst_path;
@@ -427,7 +565,7 @@ namespace ams::capsrv {
         fs::FileHandle src_file_handle;
         R_TRY(fs::OpenFile(&src_file_handle, src_path.path_buffer, fs::OpenMode_Read));
         ON_SCOPE_EXIT { fs::CloseFile(src_file_handle); };
-        
+
         /* Get file size. */
         s64 file_size;
         R_TRY(fs::GetFileSize(&file_size, src_file_handle));
@@ -436,8 +574,8 @@ namespace ams::capsrv {
         R_UNLESS(file_size <= static_cast<s64>(max_size), capsrv::ResultAlbumFileNotFound());
 
         /* Ensure we can save the file. */
-        ContentType type = src_file_id.type;
-        size_t max_count = this->settings->GetFileMaxCount(dst_storage_id, type);
+        ContentType type     = src_file_id.type;
+        size_t max_count     = this->settings->GetFileMaxCount(dst_storage_id, type);
         size_t current_count = this->cache.GetCount(dst_storage_id, type);
         R_UNLESS(current_count < max_count, ResultInternalAlbumLimitationFileCountLimit());
 
@@ -469,7 +607,10 @@ namespace ams::capsrv {
 
         *remains = {};
         std::memset(usage, 0, count * sizeof(CapsAlbumContentsUsage));
-        auto cleanup_guard = SCOPE_GUARD { *remains = {}; std::memset(usage, 0, count * sizeof(CapsAlbumContentsUsage)); };
+        auto cleanup_guard = SCOPE_GUARD {
+            *remains = {};
+            std::memset(usage, 0, count * sizeof(CapsAlbumContentsUsage));
+        };
 
         R_TRY(this->EnsureMountState(storage_id, MountState::mounted));
 

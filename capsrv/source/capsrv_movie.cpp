@@ -105,7 +105,7 @@ namespace ams::capsrv {
     }
 
     MovieController::MovieController()
-        : settings(), stream_id_generator(), output_streams({}), input_streams({}) {
+        : settings(), stream_id_generator(), output_streams(), input_streams() {
     }
 
     void MovieController::Initialize(AlbumSettings *set, StreamIdGenerator *gen, AlbumReserve *read_reserve, AlbumReserve *write_reserve) {
