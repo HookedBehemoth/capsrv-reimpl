@@ -90,6 +90,8 @@ namespace ams::capsrv::server {
         Dimensions dims = {};
         CapsScreenShotAttribute attr = {};
         CapsScreenShotDecodeOption opts = {};
+        (void)attr;
+        (void)opts;
         {
             std::scoped_lock lk(g_AlbumMutex);
             /* TODO */
@@ -104,6 +106,8 @@ namespace ams::capsrv::server {
         Dimensions dims = {};
         CapsScreenShotAttribute attr = {};
         CapsScreenShotDecodeOption opts = {};
+        (void)attr;
+        (void)opts;
         {
             std::scoped_lock lk(g_AlbumMutex);
             /* TODO */
@@ -125,6 +129,7 @@ namespace ams::capsrv::server {
         ON_SCOPE_EXIT { std::memset(work.GetPointer(), 0, work.GetSize()); };
         Dimensions dims = {};
         CapsScreenShotAttribute attr = {};
+        (void)attr;
         {
             std::scoped_lock lk(g_AlbumMutex);
             /* TODO */
@@ -138,6 +143,7 @@ namespace ams::capsrv::server {
         ON_SCOPE_EXIT { std::memset(work.GetPointer(), 0, work.GetSize()); };
         Dimensions dims = {};
         CapsScreenShotAttribute attr = {};
+        (void)attr;
         {
             std::scoped_lock lk(g_AlbumMutex);
             /* TODO */

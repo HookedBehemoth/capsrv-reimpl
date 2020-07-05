@@ -34,4 +34,10 @@ namespace ams::capsrv::crypto {
 
     }
 
+    namespace exif {
+
+        void Decrypt(u8 *ptr, size_t size, size_t offset);
+
+    }
+
 }

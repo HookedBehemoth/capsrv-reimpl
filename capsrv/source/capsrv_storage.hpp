@@ -31,7 +31,7 @@ namespace ams::capsrv {
         return storage == StorageId::Nand || storage == StorageId::Sd;
     }
 
-    static Result VerifyStorageId(StorageId storage) {
+    ALWAYS_INLINE Result VerifyStorageId(StorageId storage) {
         if (StorageValid(storage)) {
             return ResultSuccess();
         } else {

@@ -13,7 +13,7 @@ namespace ams::capsrv {
     struct TemporaryFile {
         static inline std::atomic<u32> total_count = 0;
         fs::FileHandle tm_file;
-        kvdb::BoundedString<0x15> path;
+        kvdb::BoundedString<0x16> path;
         
         Result Make(s64 file_size);
         void Delete();

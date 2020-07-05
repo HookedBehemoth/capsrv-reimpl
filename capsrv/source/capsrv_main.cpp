@@ -1,25 +1,25 @@
+#include <stratosphere.hpp>
+
 #include "capsrv_crypto.hpp"
 #include "capsrv_environment.hpp"
 #include "server/capsrv_album_server.hpp"
 
 extern "C" {
-    extern u32 __start__;
+u32 __nx_applet_type     = AppletType_None;
+u32 __nx_fs_num_sessions = 2;
 
-    u32 __nx_applet_type = AppletType_None;
-    TimeServiceType __nx_time_service_type = TimeServiceType_User;
+#define INNER_HEAP_SIZE 0x10000
+size_t nx_inner_heap_size = INNER_HEAP_SIZE;
+char nx_inner_heap[INNER_HEAP_SIZE];
 
-    #define INNER_HEAP_SIZE 0x8000
-    size_t nx_inner_heap_size = INNER_HEAP_SIZE;
-    char nx_inner_heap[INNER_HEAP_SIZE];
+void __libnx_initheap(void);
+void __appInit(void);
+void __appExit(void);
 
-    void __libnx_initheap(void);
-    void __appInit(void);
-    void __appExit(void);
-
-    /* Exception handling. */
-    alignas(16) u8 __nx_exception_stack[ams::os::MemoryPageSize];
-    u64 __nx_exception_stack_size = sizeof(__nx_exception_stack);
-    void __libnx_exception_handler(ThreadExceptionDump *ctx);
+/* Exception handling. */
+alignas(16) u8 __nx_exception_stack[ams::os::MemoryPageSize];
+u64 __nx_exception_stack_size = sizeof(__nx_exception_stack);
+void __libnx_exception_handler(ThreadExceptionDump *ctx);
 }
 
 namespace ams {
@@ -37,7 +37,7 @@ namespace ams {
 using namespace ams;
 
 void __libnx_initheap(void) {
-    void *addr = nx_inner_heap;
+    void *addr  = nx_inner_heap;
     size_t size = nx_inner_heap_size;
 
     /* Newlib */
@@ -45,19 +45,25 @@ void __libnx_initheap(void) {
     extern char *fake_heap_end;
 
     fake_heap_start = (char *)addr;
-    fake_heap_end = (char *)addr + size;
+    fake_heap_end   = (char *)addr + size;
+}
+
+void __libnx_exception_handler(ThreadExceptionDump *ctx) {
+    ams::CrashHandler(ctx);
 }
 
 void __appInit(void) {
     hos::InitializeForStratosphere();
 
     sm::DoWithSession([] {
-        R_ASSERT(setsysInitialize());
-        R_ASSERT(splCryptoInitialize());
-        R_ASSERT(time::Initialize());
-        R_ASSERT(fsInitialize());
-        R_ASSERT(capsdcInitialize());
+        R_ABORT_UNLESS(setsysInitialize());
+        spl::InitializeForCrypto();
+        R_ABORT_UNLESS(time::Initialize());
+        R_ABORT_UNLESS(fsInitialize());
+        R_ABORT_UNLESS(capsdcInitialize());
     });
+
+    ams::CheckApiVersion();
 }
 
 void __appExit(void) {
@@ -79,15 +85,11 @@ namespace {
 }
 
 int main(int argc, char **argv) {
-    /* TODO: Initialize StandardAllocator */
-    /* Cache environment variables. */
+    /* Cache environment info. */
     capsrv::LoadEnvironment();
 
     os::SetThreadNamePointer(os::GetCurrentThread(), AMS_GET_SYSTEM_THREAD_NAME(capsrv, Main));
-    os::ChangeThreadPriority(os::GetCurrentThread(), 0x15);
-
-    /* TODO: Unknown */
-    /* TODO: More allocator memes. */
+    os::ChangeThreadPriority(os::GetCurrentThread(), AMS_GET_SYSTEM_THREAD_PRIORITY(capsrv, Main));
 
     /* Official software sets the mac generation functions here. */
     R_ABORT_UNLESS(capsrv::crypto::Initialize());

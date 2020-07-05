@@ -160,21 +160,21 @@ namespace ams::capsrv {
         return ResultSuccess();
     }
 
-    Result AlbumFileId::FromString(AlbumFileId *fileId, StorageId storage, const char *str) {
+    Result AlbumFileId::FromString(StorageId storage, const char *str) {
         size_t length = std::strlen(str);
         R_UNLESS(length == 0x35 || length == 0x36, 0x10);
-        R_TRY(DateTimeFromString(&fileId->date_time, str, &str));
+        R_TRY(DateTimeFromString(&this->date_time, str, &str));
         R_UNLESS(*str == '-', capsrv::ResultAlbumInvalidFileId());
         str++;
         bool isExtra;
-        R_TRY(DecryptFileIdentifier(&fileId->application_id, &isExtra, str, &str));
+        R_TRY(DecryptFileIdentifier(&this->application_id, &isExtra, str, &str));
         if (isExtra) {
             R_UNLESS(*str == 'X', capsrv::ResultAlbumInvalidFileId());
             str++;
         }
         R_UNLESS(*str == '.', capsrv::ResultAlbumInvalidFileId());
-        R_TRY(GetFileType(&fileId->type, isExtra, str));
-        fileId->storage_id = storage;
+        R_TRY(GetFileType(&this->type, isExtra, str));
+        this->storage_id = storage;
         return ResultSuccess();
     }
 
@@ -206,19 +206,19 @@ namespace ams::capsrv {
     }
 
     AlbumReserve::AlbumReserve() {
-        for (auto res : this->reserve) {
+        for (auto &res : this->reserve) {
             res.used = false;
         }
     }
 
     AlbumReserve::~AlbumReserve() {
-        for (auto res : this->reserve) {
+        for (auto &res : this->reserve) {
             res.used = false;
         }
     }
 
     Result AlbumReserve::Reserve(const AlbumFileId &file_id) {
-        for (auto res : this->reserve) {
+        for (auto &res : this->reserve) {
             if (res.used)
                 continue;
 
@@ -230,7 +230,7 @@ namespace ams::capsrv {
     }
 
     Result AlbumReserve::Unreserve(const AlbumFileId &file_id) {
-        for (auto res : this->reserve) {
+        for (auto &res : this->reserve) {
             if (!res.used)
                 continue;
 
@@ -243,7 +243,7 @@ namespace ams::capsrv {
     }
 
     bool AlbumReserve::IsReserved(const AlbumFileId &file_id) {
-        for (auto res : this->reserve) {
+        for (auto &res : this->reserve) {
             if (!res.used)
                 continue;
 

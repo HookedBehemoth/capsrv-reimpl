@@ -17,7 +17,7 @@
 #pragma once
 #include <vapours.hpp>
 
-#include "exif_types.hpp"
+#include "image_types.hpp"
 #include "impl/exif_detail.hpp"
 
 namespace ams::image {
@@ -25,18 +25,23 @@ namespace ams::image {
     class ExifExtractor {
       public:
         ExifExtractor(detail::ExifBinary *exifBinary);
+        virtual ~ExifExtractor() = default;
 
         void SetExifData(const u8 *data, u64 size);
-        bool Analyse();
+        int Analyse();
 
-        const char *ExtractDateTime(u32 *size);
         const char *ExtractMaker(u32 *size);
-        const u8 *ExtractMakerNote(u32 *size);
+        const char *ExtractModel(u32 *size);
         bool ExtractOrientation(ExifOrientation *orientation);
+        const char *ExtractSoftware(u32 *size);
+        const char *ExtractDateTime(u32 *size);
+        const u8 *ExtractMakerNote(u32 *size);
+        bool ExtractEffectiveDimension(Dimension *dimensions);
+        const char *ExtractUniqueId(u32 *size);
         const u8 *ExtractThumbnail(u32 *size);
 
       private:
-        int state;
+        ProcessStage stage;
         const u8 *data;
         u64 size;
         detail::ExifBinary *exifBinary;

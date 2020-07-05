@@ -201,4 +201,13 @@ namespace ams::capsrv::crypto {
 
     }
 
+    namespace exif {
+
+        void Decrypt(u8 *ptr, size_t size, size_t offset) {
+            u8 iv[0x10] = {0x34, 0x62, 0xbd, 0x0e, 0xbe, 0x71, 0x82, 0x74, 0x28, 0xb9, 0x7c, 0x3b, 0x29, 0xbf, 0xdf, 0x97};
+            ams::crypto::DecryptAes128CtrPartial(ptr, size - offset, exif_key, sizeof(exif_key), iv, sizeof(iv), offset, ptr, size);
+        }
+
+    }
+
 }

@@ -28,7 +28,7 @@ namespace ams::capsrv {
 
         Result Verify(AlbumSettings *settings) const;
 
-        static Result FromString(AlbumFileId *file_id, StorageId storage, const char *str);
+        Result FromString(StorageId storage, const char *str);
         ALWAYS_INLINE bool operator==(const AlbumFileId &file_id) {
             return memcmp(this, &file_id, sizeof(file_id)) == 0;
         }

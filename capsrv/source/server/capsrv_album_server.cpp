@@ -84,7 +84,7 @@ namespace ams::capsrv::server {
     }
 
     void Exit() {
-        R_ABORT_UNLESS(IsInitialized);
+        AMS_ABORT_UNLESS(IsInitialized);
 
         /* <Service Cleanup> */
         g_ApplicationAlbumManager.Exit();
@@ -100,13 +100,13 @@ namespace ams::capsrv::server {
     }
 
     void AlbumControlServerThreadFunction(void *) {
-        R_ABORT_UNLESS(IsInitialized);
+        AMS_ABORT_UNLESS(IsInitialized);
 
         g_AlbumControlServerManager.LoopProcess();
     }
 
     void AlbumServerThreadFunction(void *) {
-        R_ABORT_UNLESS(IsInitialized);
+        AMS_ABORT_UNLESS(IsInitialized);
 
         g_AlbumServerManager.LoopProcess();
     }

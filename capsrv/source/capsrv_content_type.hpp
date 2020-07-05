@@ -23,6 +23,7 @@ namespace ams::capsrv {
         ContentTypeFlag_Extra   = ContentTypeFlag_ExtraScreenShot | ContentTypeFlag_ExtraMovie,
     };
 
+    [[maybe_unused]]
     static const char *GetFileExtension(ContentType type) {
         switch (type) {
             case ContentType::Screenshot:
