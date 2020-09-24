@@ -21,6 +21,7 @@ namespace ams::image {
     };
 
     enum class ExifOrientation : u16 {
+        Invalid    = 0,
         UpperLeft  = 1,
         LowerRight = 3,
         UpperRight = 6,
